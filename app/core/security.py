@@ -8,6 +8,7 @@ import redis
 from fastapi import Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
+
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
