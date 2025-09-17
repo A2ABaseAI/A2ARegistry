@@ -1,0 +1,17 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503, F401, F841, F821, E402, E711, E712
+exclude = 
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    .tox,
+    .pytest_cache,
+    node_modules,
+    frontend/node_modules,
+    frontend/build,
+    alembic/versions
+per-file-ignores =
+    tests/*:E501
+    app/*:E501,F401,F841,F821,E402,E711,E712

@@ -119,7 +119,7 @@ def test_create_agent(auth_headers):
 
     data = response.json()
     assert data["name"] == "Test Agent"
-    assert data["is_public"] == True
+    assert data["is_public"] is True
 
 
 def test_get_agent(auth_headers):
