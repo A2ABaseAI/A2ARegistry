@@ -1,0 +1,40 @@
+# Global code owners
+* @a2aproject/maintainers
+
+# Core application files
+/app/ @a2aproject/core-team
+/app/main.py @a2aproject/core-team
+/app/config.py @a2aproject/core-team
+
+# Security-related files
+/app/core/security.py @a2aproject/security-team
+/app/auth.py @a2aproject/security-team
+SECURITY.md @a2aproject/security-team
+
+# Documentation
+README.md @a2aproject/docs-team
+PRODUCTION.md @a2aproject/docs-team
+CONTRIBUTING.md @a2aproject/docs-team
+CHANGELOG.md @a2aproject/docs-team
+
+# CI/CD and deployment
+.github/ @a2aproject/devops-team
+docker-compose*.yml @a2aproject/devops-team
+Dockerfile* @a2aproject/devops-team
+scripts/ @a2aproject/devops-team
+
+# Database migrations
+alembic/ @a2aproject/core-team
+/migrations/ @a2aproject/core-team
+
+# Configuration files
+requirements*.txt @a2aproject/core-team
+pyproject.toml @a2aproject/core-team
+alembic.ini @a2aproject/core-team
+
+# Tests
+tests/ @a2aproject/core-team
+
+# License and legal
+LICENSE @a2aproject/maintainers
+CODE_OF_CONDUCT.md @a2aproject/maintainers

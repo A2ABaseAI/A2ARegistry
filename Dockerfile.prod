@@ -1,0 +1,79 @@
+# Production Dockerfile for A2A Agent Registry
+
+# Frontend build stage
+FROM node:18-alpine as frontend-builder
+
+# Set working directory for frontend
+WORKDIR /app/frontend
+
+# Copy frontend package files
+COPY frontend/package*.json ./
+
+# Install frontend dependencies
+RUN npm install --legacy-peer-deps
+
+# Copy frontend source code
+COPY frontend/ .
+
+# Build frontend
+RUN npm run build
+
+# Backend build stage
+FROM python:3.11-slim as builder
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies for building
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements-prod.txt .
+RUN pip install --no-cache-dir --user -r requirements-prod.txt
+
+# Production stage
+FROM python:3.11-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash app
+
+# Set working directory
+WORKDIR /app
+
+# Copy Python packages from builder
+COPY --from=builder /root/.local /home/app/.local
+
+# Copy application code
+COPY --chown=app:app . .
+
+# Copy built frontend from frontend-builder stage
+COPY --from=frontend-builder --chown=app:app /app/frontend/build ./frontend/build
+
+# Create log directories
+RUN mkdir -p /var/log/a2a-registry && chown -R app:app /var/log/a2a-registry
+
+# Switch to non-root user
+USER app
+
+# Add user packages to PATH
+ENV PATH=/home/app/.local/bin:$PATH
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health/live || exit 1
+
+# Run the application with gunicorn
+CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "--error-logfile", "-"]
