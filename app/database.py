@@ -11,8 +11,10 @@ from .models.base import Base
 engine = create_engine(
     settings.database_url,
     poolclass=StaticPool,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {},
-    echo=settings.debug
+    connect_args=(
+        {"check_same_thread": False} if "sqlite" in settings.database_url else {}
+    ),
+    echo=settings.debug,
 )
 
 # Create session factory

@@ -1,12 +1,13 @@
 """Peering-related Pydantic schemas."""
 
 from typing import List, Optional
+
 from pydantic import BaseModel, Field, HttpUrl
 
 
 class PeerRegistryCreate(BaseModel):
     """Schema for creating a peer registry."""
-    
+
     name: str = Field(..., description="Peer registry name")
     base_url: HttpUrl = Field(..., description="Peer registry base URL")
     description: Optional[str] = Field(None, description="Peer registry description")
@@ -17,19 +18,23 @@ class PeerRegistryCreate(BaseModel):
 
 class PeerRegistryUpdate(BaseModel):
     """Schema for updating a peer registry."""
-    
+
     name: Optional[str] = Field(None, description="Updated peer registry name")
     base_url: Optional[HttpUrl] = Field(None, description="Updated base URL")
     description: Optional[str] = Field(None, description="Updated description")
     auth_token: Optional[str] = Field(None, description="Updated auth token")
-    sync_enabled: Optional[bool] = Field(None, description="Updated sync enabled status")
-    sync_interval_minutes: Optional[int] = Field(None, ge=1, description="Updated sync interval")
+    sync_enabled: Optional[bool] = Field(
+        None, description="Updated sync enabled status"
+    )
+    sync_interval_minutes: Optional[int] = Field(
+        None, ge=1, description="Updated sync interval"
+    )
     is_active: Optional[bool] = Field(None, description="Active status")
 
 
 class PeerRegistryResponse(BaseModel):
     """Schema for peer registry response."""
-    
+
     id: str = Field(..., description="Peer registry ID")
     name: str = Field(..., description="Peer registry name")
     base_url: str = Field(..., description="Peer registry base URL")

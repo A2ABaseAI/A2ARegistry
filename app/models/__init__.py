@@ -1,17 +1,21 @@
 """Database models for the A2A Agent Registry."""
 
+# Import Pydantic schemas for convenience
+from ..schemas.agent import (
+    AgentAuthScheme,
+    AgentCapabilities,
+    AgentCard,
+    AgentTeeDetails,
+)
 from .agent import Agent
+from .base import Base
 from .client import Client, ClientEntitlement
 from .peering import PeerRegistry, PeerSync
-from .base import Base
-
-# Import Pydantic schemas for convenience
-from ..schemas.agent import AgentCard, AgentCapabilities, AgentAuthScheme, AgentTeeDetails
 
 __all__ = [
     "Base",
     "Agent",
-    "AgentCard", 
+    "AgentCard",
     "AgentCapabilities",
     "AgentAuthScheme",
     "AgentTeeDetails",

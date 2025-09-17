@@ -1,38 +1,38 @@
 """Pydantic schemas for the A2A Agent Registry."""
 
 from .agent import (
-    AgentCard,
-    AgentCapabilities,
     AgentAuthScheme,
-    AgentTeeDetails,
+    AgentCapabilities,
+    AgentCard,
     AgentCreate,
-    AgentUpdate,
     AgentResponse,
     AgentSearchRequest,
     AgentSearchResponse,
+    AgentTeeDetails,
+    AgentUpdate,
 )
 from .client import (
     ClientCreate,
-    ClientUpdate,
-    ClientResponse,
     ClientEntitlementCreate,
     ClientEntitlementResponse,
-)
-from .peering import (
-    PeerRegistryCreate,
-    PeerRegistryUpdate,
-    PeerRegistryResponse,
+    ClientResponse,
+    ClientUpdate,
 )
 from .common import (
     ErrorResponse,
-    SuccessResponse,
-    PaginationParams,
     PaginatedResponse,
+    PaginationParams,
+    SuccessResponse,
+)
+from .peering import (
+    PeerRegistryCreate,
+    PeerRegistryResponse,
+    PeerRegistryUpdate,
 )
 
 __all__ = [
     "AgentCard",
-    "AgentCapabilities", 
+    "AgentCapabilities",
     "AgentAuthScheme",
     "AgentTeeDetails",
     "AgentCreate",
@@ -41,7 +41,7 @@ __all__ = [
     "AgentSearchRequest",
     "AgentSearchResponse",
     "ClientCreate",
-    "ClientUpdate", 
+    "ClientUpdate",
     "ClientResponse",
     "ClientEntitlementCreate",
     "ClientEntitlementResponse",

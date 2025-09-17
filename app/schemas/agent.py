@@ -1,14 +1,19 @@
 """Agent-related Pydantic schemas."""
 
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field, HttpUrl
 
 
 class AgentAuthScheme(BaseModel):
     """Agent authentication scheme."""
-    
-    type: str = Field(..., description="Authentication type (apiKey, oauth2, jwt, mTLS)")
-    location: Optional[str] = Field(None, description="Location of credentials (header, query, body)")
+
+    type: str = Field(
+        ..., description="Authentication type (apiKey, oauth2, jwt, mTLS)"
+    )
+    location: Optional[str] = Field(
+        None, description="Location of credentials (header, query, body)"
+    )
     name: Optional[str] = Field(None, description="Parameter name for credentials")
     flow: Optional[str] = Field(None, description="OAuth2 flow type")
     token_url: Optional[HttpUrl] = Field(None, description="OAuth2 token URL")
@@ -17,51 +22,65 @@ class AgentAuthScheme(BaseModel):
 
 class AgentTeeDetails(BaseModel):
     """Trusted Execution Environment details."""
-    
+
     enabled: bool = Field(False, description="Whether TEE is enabled")
-    provider: Optional[str] = Field(None, description="TEE provider (Intel SGX, AMD SEV, etc.)")
+    provider: Optional[str] = Field(
+        None, description="TEE provider (Intel SGX, AMD SEV, etc.)"
+    )
     attestation: Optional[str] = Field(None, description="Attestation requirements")
     version: Optional[str] = Field(None, description="TEE version")
 
 
 class AgentCapabilities(BaseModel):
     """Agent capabilities and protocol information."""
-    
+
     a2a_version: str = Field(..., description="A2A protocol version")
-    supported_protocols: List[str] = Field(..., description="Supported protocols (http, grpc, websocket)")
-    max_concurrent_requests: Optional[int] = Field(None, description="Maximum concurrent requests")
-    timeout_seconds: Optional[int] = Field(None, description="Default timeout in seconds")
-    rate_limit_per_minute: Optional[int] = Field(None, description="Rate limit per minute")
+    supported_protocols: List[str] = Field(
+        ..., description="Supported protocols (http, grpc, websocket)"
+    )
+    max_concurrent_requests: Optional[int] = Field(
+        None, description="Maximum concurrent requests"
+    )
+    timeout_seconds: Optional[int] = Field(
+        None, description="Default timeout in seconds"
+    )
+    rate_limit_per_minute: Optional[int] = Field(
+        None, description="Rate limit per minute"
+    )
 
 
 class AgentCard(BaseModel):
     """Agent Card schema - core metadata for agent discovery."""
-    
+
     # Core identification
     id: str = Field(..., description="Unique agent identifier")
     name: str = Field(..., description="Human-readable agent name")
     version: str = Field(..., description="Agent version")
     description: str = Field(..., description="Agent description")
-    
+
     # Capabilities and protocols
     capabilities: AgentCapabilities = Field(..., description="Agent capabilities")
-    skills: Dict[str, Any] = Field(..., description="Agent skills and input/output schemas")
-    
+    skills: Dict[str, Any] = Field(
+        ..., description="Agent skills and input/output schemas"
+    )
+
     # Authentication
-    auth_schemes: List[AgentAuthScheme] = Field(..., description="Supported authentication schemes")
-    
+    auth_schemes: List[AgentAuthScheme] = Field(
+        ..., description="Supported authentication schemes"
+    )
+
     # Security and execution
     tee_details: Optional[AgentTeeDetails] = Field(None, description="TEE details")
-    
+
     # Metadata
     provider: str = Field(..., description="Agent provider")
     tags: List[str] = Field(default_factory=list, description="Agent tags")
     contact_url: Optional[HttpUrl] = Field(None, description="Contact URL")
     documentation_url: Optional[HttpUrl] = Field(None, description="Documentation URL")
-    
+
     # Location
     location: Dict[str, Any] = Field(..., description="Agent location information")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -74,42 +93,38 @@ class AgentCard(BaseModel):
                     "supported_protocols": ["http", "grpc"],
                     "max_concurrent_requests": 100,
                     "timeout_seconds": 30,
-                    "rate_limit_per_minute": 1000
+                    "rate_limit_per_minute": 1000,
                 },
                 "skills": {
                     "input_schema": {
                         "type": "object",
                         "properties": {
                             "query": {"type": "string"},
-                            "context": {"type": "object"}
-                        }
+                            "context": {"type": "object"},
+                        },
                     },
                     "output_schema": {
                         "type": "object",
                         "properties": {
                             "response": {"type": "string"},
-                            "confidence": {"type": "number"}
-                        }
-                    }
+                            "confidence": {"type": "number"},
+                        },
+                    },
                 },
                 "auth_schemes": [
-                    {
-                        "type": "apiKey",
-                        "location": "header",
-                        "name": "X-API-Key"
-                    },
+                    {"type": "apiKey", "location": "header", "name": "X-API-Key"},
                     {
                         "type": "oauth2",
                         "flow": "client_credentials",
                         "token_url": "https://auth.example.com/oauth/token",
-                        "scopes": ["agent:read", "agent:write"]
-                    }
+                        "scopes": ["agent:read", "agent:write"],
+                    },
                 ],
                 "tee_details": {
                     "enabled": True,
                     "provider": "Intel SGX",
                     "attestation": "required",
-                    "version": "2.0"
+                    "version": "2.0",
                 },
                 "provider": "Enterprise IT",
                 "tags": ["support", "it", "troubleshooting"],
@@ -117,15 +132,15 @@ class AgentCard(BaseModel):
                 "documentation_url": "https://docs.example.com/it-agent",
                 "location": {
                     "url": "https://it.example.com/.well-known/agent.json",
-                    "type": "agent_card"
-                }
+                    "type": "agent_card",
+                },
             }
         }
 
 
 class AgentCreate(BaseModel):
     """Schema for creating a new agent."""
-    
+
     agent_card: AgentCard = Field(..., description="Agent card data")
     is_public: bool = Field(False, description="Whether agent is publicly discoverable")
     client_id: Optional[str] = Field(None, description="Client that owns this agent")
@@ -133,7 +148,7 @@ class AgentCreate(BaseModel):
 
 class AgentUpdate(BaseModel):
     """Schema for updating an existing agent."""
-    
+
     agent_card: Optional[AgentCard] = Field(None, description="Updated agent card data")
     is_public: Optional[bool] = Field(None, description="Updated public visibility")
     is_active: Optional[bool] = Field(None, description="Whether agent is active")
@@ -141,7 +156,7 @@ class AgentUpdate(BaseModel):
 
 class AgentResponse(BaseModel):
     """Schema for agent response."""
-    
+
     id: str = Field(..., description="Agent ID")
     name: str = Field(..., description="Agent name")
     version: str = Field(..., description="Agent version")
@@ -151,8 +166,12 @@ class AgentResponse(BaseModel):
     is_public: bool = Field(..., description="Public visibility")
     is_active: bool = Field(..., description="Active status")
     location: Dict[str, Any] = Field(..., description="Agent location")
-    capabilities: Optional[AgentCapabilities] = Field(None, description="Agent capabilities")
-    auth_schemes: Optional[List[AgentAuthScheme]] = Field(None, description="Authentication schemes")
+    capabilities: Optional[AgentCapabilities] = Field(
+        None, description="Agent capabilities"
+    )
+    auth_schemes: Optional[List[AgentAuthScheme]] = Field(
+        None, description="Authentication schemes"
+    )
     tee_details: Optional[AgentTeeDetails] = Field(None, description="TEE details")
     created_at: Optional[str] = Field(None, description="Creation timestamp")
     updated_at: Optional[str] = Field(None, description="Last update timestamp")
@@ -160,12 +179,16 @@ class AgentResponse(BaseModel):
 
 class AgentSearchRequest(BaseModel):
     """Schema for agent search requests."""
-    
+
     query: Optional[str] = Field(None, description="Search query")
     filters: Optional[Dict[str, Any]] = Field(None, description="Search filters")
     semantic: bool = Field(False, description="Use semantic search")
-    vector: Optional[List[float]] = Field(None, description="Search vector for semantic search")
-    similarity_threshold: float = Field(0.7, ge=0.0, le=1.0, description="Similarity threshold")
+    vector: Optional[List[float]] = Field(
+        None, description="Search vector for semantic search"
+    )
+    similarity_threshold: float = Field(
+        0.7, ge=0.0, le=1.0, description="Similarity threshold"
+    )
     top: int = Field(20, ge=1, le=100, description="Maximum number of results")
     page: int = Field(1, ge=1, description="Page number")
     per_page: int = Field(20, ge=1, le=100, description="Items per page")
@@ -173,7 +196,7 @@ class AgentSearchRequest(BaseModel):
 
 class AgentSearchResponse(BaseModel):
     """Schema for agent search responses."""
-    
+
     registry_version: str = Field(..., description="Registry version")
     timestamp: str = Field(..., description="Search timestamp")
     resources: List[AgentResponse] = Field(..., description="Search results")
