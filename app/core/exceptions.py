@@ -1,6 +1,7 @@
 """Custom exceptions and error handling."""
 
-from typing import Any, Dict, Optional
+import time
+from typing import Any, Dict
 
 from fastapi import HTTPException, status
 
@@ -92,7 +93,9 @@ class FederationError(A2ARegistryException):
 
     def __init__(self, peer_id: str, operation: str, reason: str):
         super().__init__(
-            message=f"Federation error with peer {peer_id} during {operation}: {reason}",
+            message=(
+                f"Federation error with peer {peer_id} during {operation}: {reason}"
+            ),
             error_code="FEDERATION_ERROR",
             details={"peer_id": peer_id, "operation": operation, "reason": reason},
         )
@@ -125,7 +128,9 @@ class ExternalServiceError(A2ARegistryException):
 
     def __init__(self, service: str, operation: str, reason: str):
         super().__init__(
-            message=f"External service error with {service} during {operation}: {reason}",
+            message=(
+                f"External service error with {service} during {operation}: {reason}"
+            ),
             error_code="EXTERNAL_SERVICE_ERROR",
             details={"service": service, "operation": operation, "reason": reason},
         )
@@ -275,7 +280,8 @@ def retry_on_exception(
 
                     if attempt == config.max_attempts - 1:
                         logger.error(
-                            f"Operation {operation_name} failed after {config.max_attempts} attempts",
+                            f"Operation {operation_name} failed after "
+                            f"{config.max_attempts} attempts",
                             extra={
                                 "operation": operation_name,
                                 "attempts": config.max_attempts,

@@ -1,8 +1,7 @@
 """Search service for agent discovery."""
 
-import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from elasticsearch import Elasticsearch
 from sentence_transformers import SentenceTransformer
@@ -54,7 +53,10 @@ class SearchService:
                 settings.enable_federation
             ):  # Use federation flag as proxy for semantic search
                 model = self._get_model()
-                text_for_embedding = f"{agent.name} {agent.description or ''} {' '.join(agent.tags or [])}"
+                text_for_embedding = (
+                    f"{agent.name} {agent.description or ''} "
+                    f"{' '.join(agent.tags or [])}"
+                )
                 embedding = model.encode(text_for_embedding).tolist()
                 doc["embedding"] = embedding
 
@@ -167,7 +169,10 @@ class SearchService:
                     "is_public": source["is_public"],
                     "is_active": source["is_active"],
                     "location": {
-                        "url": f"{settings.registry_base_url}/agents/{source['id']}/card",
+                        "url": (
+                            f"{settings.registry_base_url}/agents/"
+                            f"{source['id']}/card"
+                        ),
                         "type": "agent_card",
                     },
                     "capabilities": source["capabilities"],

@@ -1,9 +1,7 @@
-import os
 from pathlib import Path
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 router = APIRouter()
 
@@ -19,7 +17,9 @@ async def serve_index():
         return FileResponse(index_path)
     else:
         return {
-            "message": "Frontend not built. Run 'npm run build' in the frontend directory."
+            "message": (
+                "Frontend not built. Run 'npm run build' in the frontend directory."
+            )
         }
 
 
@@ -60,5 +60,7 @@ async def serve_spa(path: str):
         return FileResponse(index_path)
     else:
         return {
-            "message": "Frontend not built. Run 'npm run build' in the frontend directory."
+            "message": (
+                "Frontend not built. Run 'npm run build' in the frontend directory."
+            )
         }

@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -42,7 +41,7 @@ async def get_stats(db: Session = Depends(get_db)):
             "recent_registrations": recent_registrations,
             "search_queries_today": search_queries_today,
         }
-    except Exception as e:
+    except Exception:
         # Return mock data if there's an error
         return {
             "total_agents": 0,

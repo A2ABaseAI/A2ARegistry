@@ -1,6 +1,5 @@
 """Base database model."""
 
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import Column, DateTime, String

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 import redis
 from elasticsearch import Elasticsearch
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -17,7 +17,6 @@ from .core import (
     RequestLoggingMiddleware,
     RequestSizeLimitMiddleware,
     SecurityHeadersMiddleware,
-    handle_a2a_exception,
     handle_generic_exception,
     setup_logging,
 )
@@ -61,7 +60,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    description="A2A Agent Registry - Centralized agent discovery and management system",
+    description=(
+        "A2A Agent Registry - Centralized agent discovery and management system"
+    ),
     lifespan=lifespan,
 )
 
@@ -102,7 +103,9 @@ async def root():
     return {
         "name": settings.app_name,
         "version": settings.app_version,
-        "description": "A2A Agent Registry - Centralized agent discovery and management",
+        "description": (
+            "A2A Agent Registry - Centralized agent discovery and management"
+        ),
         "endpoints": {
             "agents": "/agents",
             "clients": "/clients",

@@ -1,7 +1,5 @@
 """Configuration settings for the A2A Agent Registry."""
 
-from typing import Optional
-
 from pydantic_settings import BaseSettings
 
 

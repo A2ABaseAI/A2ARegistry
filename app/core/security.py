@@ -1,18 +1,13 @@
 """Production security utilities and middleware."""
 
-import hashlib
-import hmac
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import redis
-from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
-
-from app.config import settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)

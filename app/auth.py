@@ -1,6 +1,5 @@
 """Authentication and authorization utilities."""
 
-import hashlib
 import secrets
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional

@@ -1,10 +1,9 @@
 """Agent database models."""
 
 import uuid
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import JSON, Boolean, Column, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from .base import Base

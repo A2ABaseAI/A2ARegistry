@@ -1,6 +1,6 @@
 """Well-known endpoints for agent discovery."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session

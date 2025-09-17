@@ -5,7 +5,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_client, require_admin
+from ..auth import require_admin
 from ..database import get_db
 from ..schemas.client import (
     ClientCreate,

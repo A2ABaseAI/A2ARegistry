@@ -121,7 +121,7 @@ class ClientService:
             .filter(
                 and_(
                     ClientEntitlement.client_id == client_id,
-                    ClientEntitlement.is_active == True,
+                    ClientEntitlement.is_active.is_(True),
                 )
             )
             .all()
@@ -134,7 +134,7 @@ class ClientService:
             .filter(
                 and_(
                     ClientEntitlement.agent_id == agent_id,
-                    ClientEntitlement.is_active == True,
+                    ClientEntitlement.is_active.is_(True),
                 )
             )
             .all()

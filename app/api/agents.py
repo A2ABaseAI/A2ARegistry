@@ -16,7 +16,7 @@ from ..schemas.agent import (
     AgentSearchResponse,
     AgentUpdate,
 )
-from ..schemas.common import ErrorResponse, PaginatedResponse
+from ..schemas.common import PaginatedResponse
 from ..services.agent_service import AgentService
 from ..services.search_service import SearchService
 

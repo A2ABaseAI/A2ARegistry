@@ -1,12 +1,11 @@
 """Agent service for managing agents and agent cards."""
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from ..config import settings
 from ..models.agent import Agent
 from ..models.client import ClientEntitlement
 from ..schemas.agent import AgentCreate, AgentSearchRequest, AgentUpdate
@@ -139,8 +138,8 @@ class AgentService:
             .filter(
                 and_(
                     ClientEntitlement.client_id == client_id,
-                    ClientEntitlement.is_active == True,
-                    Agent.is_active == True,
+                    ClientEntitlement.is_active.is_(True),
+                    Agent.is_active.is_(True),
                 )
             )
         )
@@ -150,7 +149,7 @@ class AgentService:
         """Get all public agents."""
         return (
             self.db.query(Agent)
-            .filter(and_(Agent.is_public == True, Agent.is_active == True))
+            .filter(and_(Agent.is_public.is_(True), Agent.is_active.is_(True)))
             .all()
         )
 
@@ -158,20 +157,20 @@ class AgentService:
         self, search_request: AgentSearchRequest, client_id: Optional[str] = None
     ) -> List[Agent]:
         """Search agents with various criteria."""
-        query = self.db.query(Agent).filter(Agent.is_active == True)
+        query = self.db.query(Agent).filter(Agent.is_active.is_(True))
 
         # Apply client entitlements if client_id provided
         if client_id:
             query = query.join(ClientEntitlement).filter(
                 and_(
                     ClientEntitlement.client_id == client_id,
-                    ClientEntitlement.is_active == True,
+                    ClientEntitlement.is_active.is_(True),
                 )
             )
         elif (
             not search_request.semantic
         ):  # Only public agents for non-authenticated search
-            query = query.filter(Agent.is_public == True)
+            query = query.filter(Agent.is_public.is_(True))
 
         # Text search
         if search_request.query:

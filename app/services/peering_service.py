@@ -5,10 +5,9 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 import httpx
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from ..config import settings
 from ..models.peering import PeerRegistry, PeerSync
 from ..schemas.peering import PeerRegistryCreate, PeerRegistryUpdate
 
@@ -96,7 +95,7 @@ class PeeringService:
         query = self.db.query(PeerRegistry)
 
         if active_only:
-            query = query.filter(PeerRegistry.is_active == True)
+            query = query.filter(PeerRegistry.is_active.is_(True))
 
         return query.all()
 
@@ -218,7 +217,8 @@ class PeeringService:
                         "location": agent_data.get("location", {}),
                     }
 
-                    # Create agent (simplified - in real implementation, use proper schema)
+                    # Create agent (simplified - in real implementation,
+                    # use proper schema)
                     from ..models.agent import Agent
 
                     agent = Agent(
@@ -271,10 +271,10 @@ class PeeringService:
             self.db.query(PeerRegistry)
             .filter(
                 and_(
-                    PeerRegistry.is_active == True,
-                    PeerRegistry.sync_enabled == True,
+                    PeerRegistry.is_active.is_(True),
+                    PeerRegistry.sync_enabled.is_(True),
                     or_(
-                        PeerRegistry.last_sync_at == None,
+                        PeerRegistry.last_sync_at.is_(None),
                         PeerRegistry.last_sync_at < cutoff_time,
                     ),
                 )

@@ -3,9 +3,12 @@
 import logging
 import logging.config
 import sys
+import time
 from typing import Any, Dict
 
+from fastapi import Request
 from pythonjsonlogger import jsonlogger
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
 
@@ -115,10 +118,6 @@ def get_logger(name: str) -> logging.Logger:
 
 
 # Request logging middleware
-import time
-
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):

@@ -1,7 +1,6 @@
 """Client database models."""
 
 import uuid
-from typing import List
 
 from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
