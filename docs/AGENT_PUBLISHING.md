@@ -428,8 +428,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 1. **Documentation**: Check the complete documentation at docs.a2areg.dev
 2. **Examples**: Review examples in the `examples/` directory
-3. **Community**: Join the community discussions on GitHub
-4. **Issues**: Report bugs and feature requests on GitHub Issues
+3. **Discord**: [Join our community chat](https://discord.gg/rpe5nMSumw) for real-time help and discussions
+4. **Community**: Join the community discussions on GitHub
+5. **Issues**: Report bugs and feature requests on GitHub Issues
 
 ## API Reference
 

@@ -678,3 +678,10 @@ logger.setLevel(logging.DEBUG)
 ```
 
 For more examples and advanced usage patterns, see the [examples directory](../examples/) in the repository.
+
+## Getting Help
+
+- **Discord**: [Join our community chat](https://discord.gg/rpe5nMSumw) for real-time help and discussions
+- **Documentation**: Check the complete documentation and guides
+- **GitHub Issues**: Report bugs and request features
+- **GitHub Discussions**: Community discussions and Q&A

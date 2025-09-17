@@ -417,10 +417,11 @@ See our [Security Policy](SECURITY.md) for more information.
 
 ## 🌍 Community
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/A2AReg/a2a-registry/issues)
-- **GitHub Discussions**: [Community discussions](https://github.com/A2AReg/a2a-registry/discussions)
-- **A2A Community**: [A2A Discussions](https://github.com/A2AReg/A2A/discussions)
-- **Documentation**: [Full API documentation](http://localhost:8000/docs)
+- **💬 Discord**: [Join our community chat](https://discord.gg/rpe5nMSumw) - Get help, share ideas, and connect with other developers
+- **🐛 GitHub Issues**: [Report bugs and request features](https://github.com/A2AReg/a2a-registry/issues)
+- **💡 GitHub Discussions**: [Community discussions](https://github.com/A2AReg/a2a-registry/discussions)
+- **🤖 A2A Community**: [A2A Discussions](https://github.com/A2AReg/A2A/discussions)
+- **📚 Documentation**: [Full API documentation](http://localhost:8000/docs)
 
 ## 🙏 Acknowledgments
 

@@ -815,3 +815,10 @@ curl -X POST http://localhost:8000/agents/search \
 ```
 
 For more examples and detailed usage, see the [SDK documentation](SDK_REFERENCE.md) and [examples directory](../examples/).
+
+## Getting Help
+
+- **Discord**: [Join our community chat](https://discord.gg/rpe5nMSumw) for real-time help and API discussions
+- **API Documentation**: Interactive API docs at `/docs` endpoint
+- **GitHub Issues**: Report API bugs and request new features
+- **GitHub Discussions**: Community discussions and API usage questions

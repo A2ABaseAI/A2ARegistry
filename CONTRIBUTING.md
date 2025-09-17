@@ -295,7 +295,7 @@ We are committed to providing a welcoming and inclusive environment. Please:
 - **Documentation**: Check README and docs/
 - **Issues**: Search existing issues
 - **Discussions**: Use GitHub Discussions
-- **Chat**: Join our community chat
+- **Discord**: [Join our community chat](https://discord.gg/rpe5nMSumw) for real-time help
 - **Email**: Contact maintainers
 
 ### Recognition
@@ -375,6 +375,7 @@ Add any other context or screenshots about the feature request.
 
 ## 📞 Contact
 
+- **Discord**: [Join our community chat](https://discord.gg/rpe5nMSumw) for real-time discussions
 - **GitHub Issues**: For bugs and feature requests
 - **Discussions**: For questions and ideas
 - **Email**: maintainers@a2areg.dev

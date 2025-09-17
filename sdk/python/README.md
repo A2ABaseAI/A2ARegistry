@@ -506,6 +506,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](../../
 
 ## Support
 
+- **Discord**: [Join our community chat](https://discord.gg/rpe5nMSumw) for real-time help and discussions
 - **Documentation**: [docs.a2areg.dev](https://docs.a2areg.dev)
 - **Issues**: [GitHub Issues](https://github.com/a2areg/a2a-registry/issues)
 - **Community**: [GitHub Discussions](https://github.com/a2areg/a2a-registry/discussions)
