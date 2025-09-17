@@ -1,5 +1,6 @@
 """Tests for agent API endpoints."""
 
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -10,9 +11,15 @@ from app.database import get_db, Base
 from app.models.client import Client
 from app.auth import get_password_hash
 
-# Test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+# Test database - use environment variable if available, otherwise sqlite
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
+if DATABASE_URL.startswith("postgresql"):
+    # For PostgreSQL in CI
+    engine = create_engine(DATABASE_URL)
+else:
+    # For SQLite in local testing
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Create test tables
@@ -30,6 +37,16 @@ def override_get_db():
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_database():
+    """Set up test database once for all tests."""
+    # Ensure all tables are created
+    Base.metadata.create_all(bind=engine)
+    yield
+    # Clean up after all tests
+    Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
