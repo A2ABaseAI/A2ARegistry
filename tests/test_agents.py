@@ -114,7 +114,7 @@ def test_create_agent(auth_headers):
         "is_public": True,
     }
 
-    response = client.post("/agents", json=agent_data, headers=auth_headers)
+    response = client.post("/agents/", json=agent_data, headers=auth_headers)
     assert response.status_code == 201
 
     data = response.json()
@@ -149,7 +149,7 @@ def test_get_agent(auth_headers):
         "is_public": True,
     }
 
-    create_response = client.post("/agents", json=agent_data, headers=auth_headers)
+    create_response = client.post("/agents/", json=agent_data, headers=auth_headers)
     agent_id = create_response.json()["id"]
 
     # Get the agent
@@ -206,7 +206,9 @@ def test_get_public_agents():
     assert response.status_code == 200
 
     data = response.json()
-    assert isinstance(data, list)
+    assert isinstance(data, dict)
+    assert "agents" in data
+    assert "total" in data
 
 
 def test_well_known_endpoints():

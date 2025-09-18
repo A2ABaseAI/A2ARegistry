@@ -101,7 +101,7 @@ async def get_registry_agent_card(db: Session = Depends(get_db)):
             {
                 "type": "oauth2",
                 "flow": "client_credentials",
-                "token_url": "/oauth/token",
+                "token_url": "http://localhost:8000/oauth/token",
                 "scopes": ["agent:read", "agent:write", "client:manage"],
             },
             {"type": "apiKey", "location": "header", "name": "X-API-Key"},
