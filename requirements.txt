@@ -1,6 +1,6 @@
 # Core web framework
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+fastapi>=0.116.0
+uvicorn[standard]>=0.24.0
 
 # Database
 sqlalchemy==2.0.23
@@ -12,20 +12,20 @@ pydantic-settings==2.1.0
 email-validator==2.1.0
 
 # Authentication and security
-python-jose[cryptography]==3.3.0
+PyJWT[crypto]>=2.8.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
+python-multipart>=0.0.18
 
 # HTTP client
-httpx==0.25.2
+httpx>=0.26.0,<0.29.0
 
 # External services
 redis==5.0.1
 elasticsearch==8.11.0
 
 # Search functionality
-sentence-transformers==2.7.0
-numpy==1.24.3
+sentence-transformers>=3.1.0
+numpy>=1.26.2
 
 # Monitoring and logging
 prometheus-client==0.19.0

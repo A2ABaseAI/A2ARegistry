@@ -23,10 +23,12 @@ os.environ["ENABLE_FEDERATION"] = "false"  # Disable federation for tests
 @pytest.fixture(autouse=True)
 def mock_external_services():
     """Mock external services for all tests."""
-    with patch("redis.Redis") as mock_redis, \
-         patch("elasticsearch.Elasticsearch") as mock_es, \
-         patch("app.services.search_service.Elasticsearch") as mock_es_search, \
-         patch("app.services.search_service.SearchService") as mock_search_service:
+    with (
+        patch("redis.Redis") as mock_redis,
+        patch("elasticsearch.Elasticsearch") as mock_es,
+        patch("app.services.search_service.Elasticsearch") as mock_es_search,
+        patch("app.services.search_service.SearchService") as mock_search_service,
+    ):
 
         # Mock Redis
         mock_redis_instance = Mock()
@@ -50,40 +52,38 @@ def mock_external_services():
                     return {
                         "hits": {
                             "total": {"value": 1},
-                            "hits": [{
-                                "_id": "search-test-agent",
-                                "_source": {
-                                    "id": "search-test-agent",
-                                    "name": "Search Test Agent",
-                                    "description": "An agent for testing search",
-                                    "provider": "Search Test Provider",
-                                    "tags": ["search", "test"],
-                                    "is_public": True,
-                                    "is_active": True,
-                                    "capabilities": {
-                                        "a2a_version": "1.0",
-                                        "supported_protocols": ["http"]
+                            "hits": [
+                                {
+                                    "_id": "search-test-agent",
+                                    "_source": {
+                                        "id": "search-test-agent",
+                                        "name": "Search Test Agent",
+                                        "description": "An agent for testing search",
+                                        "provider": "Search Test Provider",
+                                        "tags": ["search", "test"],
+                                        "is_public": True,
+                                        "is_active": True,
+                                        "capabilities": {
+                                            "a2a_version": "1.0",
+                                            "supported_protocols": ["http"],
+                                        },
+                                        "auth_schemes": [
+                                            {
+                                                "type": "apiKey",
+                                                "location": "header",
+                                                "name": "X-API-Key",
+                                            }
+                                        ],
+                                        "tee_details": None,
+                                        "created_at": "2024-01-01T00:00:00Z",
+                                        "updated_at": "2024-01-01T00:00:00Z",
                                     },
-                                    "auth_schemes": [{
-                                        "type": "apiKey",
-                                        "location": "header",
-                                        "name": "X-API-Key"
-                                    }],
-                                    "tee_details": None,
-                                    "created_at": "2024-01-01T00:00:00Z",
-                                    "updated_at": "2024-01-01T00:00:00Z"
                                 }
-                            }]
+                            ],
                         },
-                        "took": 1
+                        "took": 1,
                     }
-            return {
-                "hits": {
-                    "total": {"value": 0},
-                    "hits": []
-                },
-                "took": 1
-            }
+            return {"hits": {"total": {"value": 0}, "hits": []}, "took": 1}
 
         mock_es_instance.search.side_effect = mock_search
         mock_es_instance.indices.create.return_value = {"acknowledged": True}
@@ -93,41 +93,47 @@ def mock_external_services():
 
         # Mock SearchService
         mock_search_instance = Mock()
-        
+
         def mock_search_agents(search_request, client_id=None):
             from app.schemas.agent import AgentSearchResponse
             from datetime import datetime
-            
+
             # Return mock search results
             return AgentSearchResponse(
                 registry_version="1.0.0",
                 timestamp=datetime.utcnow().isoformat(),
-                resources=[{
-                    "id": "search-test-agent",
-                    "name": "Search Test Agent",
-                    "version": "1.0.0",
-                    "description": "An agent for testing search",
-                    "provider": "Search Test Provider",
-                    "tags": ["search", "test"],
-                    "is_public": True,
-                    "is_active": True,
-                    "location": {
-                        "url": "http://localhost:8000/agents/search-test-agent/card",
-                        "type": "agent_card"
-                    },
-                    "capabilities": {
-                        "a2a_version": "1.0",
-                        "supported_protocols": ["http"]
-                    },
-                    "auth_schemes": [{
-                        "type": "apiKey",
-                        "location": "header",
-                        "name": "X-API-Key"
-                    }],
-                    "tee_details": None,
-                    "created_at": "2024-01-01T00:00:00Z",
-                    "updated_at": "2024-01-01T00:00:00Z"
-                }],
+                resources=[
+                    {
+                        "id": "search-test-agent",
+                        "name": "Search Test Agent",
+                        "version": "1.0.0",
+                        "description": "An agent for testing search",
+                        "provider": "Search Test Provider",
+                        "tags": ["search", "test"],
+                        "is_public": True,
+                        "is_active": True,
+                        "location": {
+                            "url": (
+                                "http://localhost:8000/agents/search-test-agent/card"
+                            ),
+                            "type": "agent_card",
+                        },
+                        "capabilities": {
+                            "a2a_version": "1.0",
+                            "supported_protocols": ["http"],
+                        },
+                        "auth_schemes": [
+                            {
+                                "type": "apiKey",
+                                "location": "header",
+                                "name": "X-API-Key",
+                            }
+                        ],
+                        "tee_details": None,
+                        "created_at": "2024-01-01T00:00:00Z",
+                        "updated_at": "2024-01-01T00:00:00Z",
+                    }
+                ],
                 total_count=1,
                 search_metadata={
                     "query": search_request.query,
@@ -135,21 +141,21 @@ def mock_external_services():
                     "search_time_ms": 1,
                     "total_hits": 1,
                     "semantic_search": search_request.semantic,
-                    "similarity_threshold": None
+                    "similarity_threshold": None,
                 },
                 pagination={
                     "page": search_request.page,
                     "per_page": search_request.per_page,
                     "total_count": 1,
-                    "total_pages": 1
-                }
+                    "total_pages": 1,
+                },
             )
-        
+
         mock_search_instance.search_agents.side_effect = mock_search_agents
         mock_search_service.return_value = mock_search_instance
 
         yield {
             "redis": mock_redis_instance,
             "elasticsearch": mock_es_instance,
-            "search_service": mock_search_instance
+            "search_service": mock_search_instance,
         }

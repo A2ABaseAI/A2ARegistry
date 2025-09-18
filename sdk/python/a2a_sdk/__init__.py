@@ -14,7 +14,7 @@ __version__ = "1.0.0"
 __all__ = [
     "A2AClient",
     "Agent",
-    "AgentCard", 
+    "AgentCard",
     "AgentCapabilities",
     "AuthScheme",
     "AgentTeeDetails",

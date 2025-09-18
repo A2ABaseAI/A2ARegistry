@@ -6,7 +6,8 @@ from typing import Any, Dict, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
@@ -57,7 +58,7 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
             token, settings.secret_key, algorithms=[settings.algorithm]
         )
         return payload
-    except JWTError:
+    except PyJWTError:
         return None
 
 
