@@ -187,7 +187,7 @@ def test_search_agents(auth_headers):
         "is_public": True,
     }
 
-    client.post("/agents", json=agent_data, headers=auth_headers)
+    client.post("/agents/", json=agent_data, headers=auth_headers)
 
     # Search for the agent
     search_data = {"query": "search test", "top": 10}
