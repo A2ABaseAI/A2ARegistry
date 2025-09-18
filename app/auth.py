@@ -4,9 +4,9 @@ import secrets
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-import jwt
 from jwt import PyJWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session

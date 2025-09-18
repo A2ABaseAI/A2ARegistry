@@ -1,8 +1,9 @@
 """Test configuration and fixtures."""
 
 import os
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 # Set test environment variables
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
@@ -95,8 +96,9 @@ def mock_external_services():
         mock_search_instance = Mock()
 
         def mock_search_agents(search_request, client_id=None):
-            from app.schemas.agent import AgentSearchResponse
             from datetime import datetime
+
+            from app.schemas.agent import AgentSearchResponse
 
             # Return mock search results
             return AgentSearchResponse(
