@@ -9,8 +9,8 @@ WORKDIR /app/frontend
 # Copy frontend package files
 COPY frontend/package*.json ./
 
-# Install frontend dependencies
-RUN npm install --legacy-peer-deps
+# Install frontend dependencies with cache
+RUN npm ci --legacy-peer-deps --only=production
 
 # Copy frontend source code
 COPY frontend/ .
@@ -33,7 +33,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY requirements-prod.txt .
-RUN pip install --no-cache-dir --user -r requirements-prod.txt
+RUN pip install --no-cache-dir --user --upgrade pip && \
+    pip install --no-cache-dir --user -r requirements-prod.txt
 
 # Production stage
 FROM python:3.11-slim

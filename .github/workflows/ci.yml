@@ -145,7 +145,7 @@ jobs:
     
     - name: Build Docker image
       uses: docker/build-push-action@v5
-      timeout-minutes: 10
+      timeout-minutes: 20
       with:
         context: .
         file: ./Dockerfile.prod
@@ -153,6 +153,8 @@ jobs:
         tags: a2a-registry:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
     
     - name: Test Docker image
       run: |
@@ -167,7 +169,7 @@ jobs:
     
     - name: Push to GitHub Container Registry
       uses: docker/build-push-action@v5
-      timeout-minutes: 10
+      timeout-minutes: 20
       with:
         context: .
         file: ./Dockerfile.prod
