@@ -156,7 +156,3 @@ jobs:
     - name: Test Docker image
       run: |
         docker run --rm a2a-registry:latest python -c "import app; print('App imports successfully')"
-
-      run: |
-        echo "Deploying to production environment..."
-        # Add production deployment commands here
