@@ -23,9 +23,9 @@ httpx>=0.26.0,<0.29.0
 redis==5.0.1
 elasticsearch==8.11.0
 
-# Search functionality
-sentence-transformers>=3.1.0
-numpy>=1.26.2
+# Search functionality (optional - only needed for semantic search)
+# sentence-transformers>=3.1.0
+# numpy>=1.26.2
 
 # Monitoring and logging
 prometheus-client==0.19.0

@@ -1,0 +1,9 @@
+# Optional dependencies for advanced features
+# Install with: pip install -r requirements-optional.txt
+
+# Semantic search (requires CUDA/GPU for best performance)
+sentence-transformers>=3.1.0
+numpy>=1.26.2
+
+# Note: These packages may download large models and CUDA dependencies
+# Only install if you need semantic search functionality
