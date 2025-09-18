@@ -18,5 +18,9 @@ export default defineConfig({
   build: {
     outDir: 'build',
     sourcemap: true
+  },
+  define: {
+    // Exclude test files from build
+    'import.meta.vitest': 'undefined'
   }
 })
