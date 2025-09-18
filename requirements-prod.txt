@@ -1,46 +1,38 @@
 # Production dependencies for A2A Agent Registry
 
 # Core framework
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+fastapi>=0.116.0
+uvicorn[standard]>=0.24.0
 
 # Database
 sqlalchemy==2.0.23
 alembic==1.12.1
-psycopg2-binary==2.9.9
 
 # Data validation
-pydantic==2.5.0
+pydantic>=2.6.0,<2.10.0
 pydantic-settings==2.1.0
 email-validator==2.1.0
 
 # Authentication & Security
-python-jose[cryptography]==3.3.0
+PyJWT[crypto]>=2.8.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
+python-multipart>=0.0.18
 
 # HTTP client
-httpx==0.25.2
+httpx>=0.26.0,<0.29.0
 
 # Caching
 redis==5.0.1
 
 # Search
 elasticsearch==8.11.0
-sentence-transformers==2.7.0
+# sentence-transformers is optional - install from requirements-optional.txt if needed
 
 # Monitoring & Logging
 prometheus-client==0.19.0
 python-json-logger==2.0.7
-psutil==5.9.6
+psutil>=6.1.0,<8.0
 
 # Production utilities
 gunicorn==21.2.0
 supervisor==4.2.5
-
-# Development (optional)
-pytest==7.4.3
-pytest-asyncio==0.21.1
-black==24.1.1
-isort==5.12.0
-flake8==6.0.0
