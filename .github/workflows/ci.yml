@@ -152,9 +152,10 @@ jobs:
         push: false
         tags: a2a-registry:latest
         cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-to: type=gha,mode=min
         build-args: |
           BUILDKIT_INLINE_CACHE=1
+        platforms: linux/amd64
     
     - name: Test Docker image
       run: |
@@ -178,4 +179,5 @@ jobs:
           ghcr.io/${{ github.repository }}:latest
           ghcr.io/${{ github.repository }}:${{ github.sha }}
         cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-to: type=gha,mode=min
+        platforms: linux/amd64
