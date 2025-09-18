@@ -17,5 +17,5 @@ types-redis==4.6.0.20241004
 types-requests==2.32.4.20250913
 
 # Security scanning
-safety==3.0.1
+safety==3.6.1
 bandit==1.7.5
