@@ -86,11 +86,11 @@ jobs:
     
     - name: Run black
       run: |
-        black --check --line-length 88 app/ tests/
+        black --check app/ tests/
     
     - name: Run isort
       run: |
-        isort --check-only --profile black --line-length 88 app/ tests/
+        isort --check-only app/ tests/
     
     - name: Run flake8
       run: |
