@@ -30,7 +30,8 @@ class SearchService:
         """Get or initialize the sentence transformer model."""
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
             raise ImportError(
-                "sentence-transformers is not available. Install it for semantic search."
+                "sentence-transformers is not available. "
+                "Install it for semantic search."
             )
         if self.model is None:
             self.model = SentenceTransformer("all-MiniLM-L6-v2")
