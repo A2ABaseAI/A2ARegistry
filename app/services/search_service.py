@@ -4,8 +4,10 @@ from datetime import datetime
 from typing import Optional
 
 from elasticsearch import Elasticsearch
+
 try:
     from sentence_transformers import SentenceTransformer
+
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
@@ -27,7 +29,9 @@ class SearchService:
     def _get_model(self):
         """Get or initialize the sentence transformer model."""
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
-            raise ImportError("sentence-transformers is not available. Install it for semantic search.")
+            raise ImportError(
+                "sentence-transformers is not available. Install it for semantic search."
+            )
         if self.model is None:
             self.model = SentenceTransformer("all-MiniLM-L6-v2")
         return self.model
@@ -95,7 +99,11 @@ class SearchService:
 
         # Text search
         if search_request.query:
-            if search_request.semantic and search_request.vector and SENTENCE_TRANSFORMERS_AVAILABLE:
+            if (
+                search_request.semantic
+                and search_request.vector
+                and SENTENCE_TRANSFORMERS_AVAILABLE
+            ):
                 # Semantic search using vector similarity
                 query["bool"]["must"].append(
                     {
