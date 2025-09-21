@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .api import agents, clients, health, oauth, peering, static, stats, well_known
+from .api import agents, clients, health, oauth, stats, well_known
 from .config import settings
 from .core import (
     CSPMiddleware,
@@ -89,12 +89,10 @@ app.add_middleware(
 # Include routers
 app.include_router(agents.router)
 app.include_router(clients.router)
-app.include_router(peering.router)
 app.include_router(well_known.router)
 app.include_router(oauth.router)
 app.include_router(health.router)
 app.include_router(stats.router)
-app.include_router(static.router)
 
 
 @app.get("/", tags=["root"])
@@ -109,7 +107,6 @@ async def root():
         "endpoints": {
             "agents": "/agents",
             "clients": "/clients",
-            "peers": "/peers",
             "oauth": "/oauth",
             "well_known": "/.well-known",
             "docs": "/docs",

@@ -24,11 +24,6 @@ from .common import (
     PaginationParams,
     SuccessResponse,
 )
-from .peering import (
-    PeerRegistryCreate,
-    PeerRegistryResponse,
-    PeerRegistryUpdate,
-)
 
 __all__ = [
     "AgentCard",
@@ -45,9 +40,6 @@ __all__ = [
     "ClientResponse",
     "ClientEntitlementCreate",
     "ClientEntitlementResponse",
-    "PeerRegistryCreate",
-    "PeerRegistryUpdate",
-    "PeerRegistryResponse",
     "ErrorResponse",
     "SuccessResponse",
     "PaginationParams",

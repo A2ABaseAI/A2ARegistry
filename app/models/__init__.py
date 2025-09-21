@@ -10,7 +10,6 @@ from ..schemas.agent import (
 from .agent import Agent
 from .base import Base
 from .client import Client, ClientEntitlement
-from .peering import PeerRegistry, PeerSync
 
 __all__ = [
     "Base",
@@ -21,6 +20,4 @@ __all__ = [
     "AgentTeeDetails",
     "Client",
     "ClientEntitlement",
-    "PeerRegistry",
-    "PeerSync",
 ]
