@@ -5,7 +5,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_client, get_current_client_optional, require_scope
+from ..auth import get_current_user_optional, require_auth
 from ..core.logging import get_logger
 from ..database import get_db
 from ..schemas.agent import (
@@ -62,7 +62,7 @@ async def get_public_agents(
 @router.get("/{agent_id}")
 async def get_agent(
     agent_id: str,
-    current_client=Depends(get_current_client_optional),
+    current_user=Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Get an agent by ID."""
@@ -74,25 +74,12 @@ async def get_agent(
             status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
         )
 
-    # Check if agent is public or if client has access
-    if not agent.is_public:
-        if not current_client:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Authentication required to access private agents",
-            )
-
-        # Check if client has entitlements to this agent
-        entitlements = (
-            current_client.entitlements if current_client.entitlements else []
+    # Simplified access control - only check if agent is public
+    if not agent.is_public and not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authentication required to access private agents",
         )
-        agent_entitled = any(ent.agent_id == agent_id for ent in entitlements)
-
-        if not agent_entitled:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this agent",
-            )
 
     return agent.to_agent_response()
 
@@ -100,7 +87,7 @@ async def get_agent(
 @router.get("/{agent_id}/card", response_model=AgentCard)
 async def get_agent_card(
     agent_id: str,
-    current_client=Depends(get_current_client_optional),
+    current_user=Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Get an agent's card data."""
@@ -114,23 +101,13 @@ async def get_agent_card(
 
     # Check if agent is public or if client has access
     if not agent.is_public:
-        if not current_client:
+        if not current_user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Authentication required to access private agents",
             )
 
-        # Check if client has entitlements to this agent
-        entitlements = (
-            current_client.entitlements if current_client.entitlements else []
-        )
-        agent_entitled = any(ent.agent_id == agent_id for ent in entitlements)
-
-        if not agent_entitled:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this agent",
-            )
+        # Simplified access control - authenticated users can access private agents
 
     return agent.agent_card
 
@@ -138,7 +115,7 @@ async def get_agent_card(
 @router.post("/", response_model=AgentResponse, status_code=status.HTTP_201_CREATED)
 async def create_agent(
     agent_data: AgentCreate,
-    current_client=Depends(require_scope("agent:write")),
+    current_user=Depends(require_auth),
     db: Session = Depends(get_db),
 ):
     """Create a new agent."""
@@ -152,7 +129,9 @@ async def create_agent(
             detail="Agent with this name already exists",
         )
 
-    agent = agent_service.create_agent(agent_data, current_client.id)
+    # Use user ID from token as owner_id
+    owner_id = current_user.get("sub", "anonymous")
+    agent = agent_service.create_agent(agent_data, owner_id)
     return agent.to_agent_response()
 
 
@@ -231,7 +210,7 @@ async def list_agents(
     per_page: int = Query(20, ge=1, le=100, description="Items per page"),
     provider: Optional[str] = Query(None, description="Filter by provider"),
     tags: Optional[List[str]] = Query(None, description="Filter by tags"),
-    current_client=Depends(get_current_client_optional),
+    current_user=Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """List agents with optional filters."""
@@ -276,7 +255,7 @@ async def get_entitled_agents(
 @router.post("/search", response_model=AgentSearchResponse)
 async def search_agents(
     search_request: AgentSearchRequest,
-    current_client=Depends(get_current_client_optional),
+    current_user=Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Search for agents using various criteria."""

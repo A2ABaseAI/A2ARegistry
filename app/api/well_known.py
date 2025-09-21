@@ -5,7 +5,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_client_optional
+from ..auth import get_current_user_optional
 from ..database import get_db
 from ..schemas.agent import AgentCard
 from ..services.agent_service import AgentService
@@ -115,7 +115,7 @@ async def get_registry_agent_card(db: Session = Depends(get_db)):
 @router.get("/agents/{agent_id}/card", response_model=AgentCard)
 async def get_agent_card_well_known(
     agent_id: str,
-    current_client=Depends(get_current_client_optional),
+    current_user=Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Get an agent card via well-known endpoint."""
@@ -128,24 +128,14 @@ async def get_agent_card_well_known(
         )
 
     # Check access permissions
-    if not agent.is_public and not current_client:
+    if not agent.is_public and not current_user:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Authentication required for private agents",
         )
 
-    if not agent.is_public and current_client:
-        from ..services.client_service import ClientService
-
-        client_service = ClientService(db)
-        entitlements = client_service.get_client_entitlements(current_client.id)
-        agent_entitled = any(ent.agent_id == agent_id for ent in entitlements)
-
-        if not agent_entitled and agent.client_id != current_client.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this agent",
-            )
+    if not agent.is_public and current_user:
+        # Simplified access control - authenticated users can access private agents
 
     return agent.to_agent_card()
 
@@ -153,7 +143,7 @@ async def get_agent_card_well_known(
 @router.get("/agents/{agent_id}", response_model=Dict[str, Any])
 async def get_agent_info_well_known(
     agent_id: str,
-    current_client=Depends(get_current_client_optional),
+    current_user=Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Get basic agent information via well-known endpoint."""
@@ -166,24 +156,14 @@ async def get_agent_info_well_known(
         )
 
     # Check access permissions (same as card endpoint)
-    if not agent.is_public and not current_client:
+    if not agent.is_public and not current_user:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Authentication required for private agents",
         )
 
-    if not agent.is_public and current_client:
-        from ..services.client_service import ClientService
-
-        client_service = ClientService(db)
-        entitlements = client_service.get_client_entitlements(current_client.id)
-        agent_entitled = any(ent.agent_id == agent_id for ent in entitlements)
-
-        if not agent_entitled and agent.client_id != current_client.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this agent",
-            )
+    if not agent.is_public and current_user:
+        # Simplified access control - authenticated users can access private agents
 
     return {
         "id": agent.id,

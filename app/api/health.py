@@ -159,18 +159,13 @@ async def status_check(db: Session = Depends(get_db)):
     # Check if core functionality is working
     try:
         from ..services.agent_service import AgentService
-        from ..services.client_service import ClientService
-
         agent_service = AgentService(db)
-        client_service = ClientService(db)
 
         # Verify we can perform basic operations
         agent_count = agent_service.get_agent_count()
-        client_count = len(client_service.list_clients(limit=1))
 
         status_info["operational_metrics"] = {
             "agents_registered": agent_count,
-            "clients_registered": client_count,
             "search_index_available": True,
         }
 

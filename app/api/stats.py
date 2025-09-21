@@ -5,8 +5,6 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models.agent import Agent
-from ..models.client import Client
-from ..models.peering import PeerRegistry
 
 router = APIRouter()
 
@@ -19,11 +17,6 @@ async def get_stats(db: Session = Depends(get_db)):
         total_agents = db.query(Agent).count()
         active_agents = db.query(Agent).filter(Agent.location_url.isnot(None)).count()
 
-        # Count clients
-        total_clients = db.query(Client).count()
-
-        # Count peer registries
-        total_peers = db.query(PeerRegistry).count()
 
         yesterday = datetime.utcnow() - timedelta(days=1)
         recent_registrations = (
@@ -35,8 +28,6 @@ async def get_stats(db: Session = Depends(get_db)):
 
         return {
             "total_agents": total_agents,
-            "total_clients": total_clients,
-            "total_peers": total_peers,
             "active_agents": active_agents,
             "recent_registrations": recent_registrations,
             "search_queries_today": search_queries_today,
@@ -45,8 +36,6 @@ async def get_stats(db: Session = Depends(get_db)):
         # Return mock data if there's an error
         return {
             "total_agents": 0,
-            "total_clients": 0,
-            "total_peers": 0,
             "active_agents": 0,
             "recent_registrations": 0,
             "search_queries_today": 0,

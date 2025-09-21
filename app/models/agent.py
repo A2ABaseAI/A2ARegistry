@@ -38,14 +38,8 @@ class Agent(Base):
     auth_schemes = Column(JSON)  # List of AgentAuthScheme
     tee_details = Column(JSON)  # AgentTeeDetails
 
-    # Ownership
-    client_id = Column(String, ForeignKey("clients.id"), nullable=True)
-
-    # Relationships
-    client = relationship("Client", back_populates="agents")
-    entitlements = relationship(
-        "ClientEntitlement", back_populates="agent", cascade="all, delete-orphan"
-    )
+    # Ownership - simplified without client relationships
+    owner_id = Column(String, nullable=True, index=True)  # Simple string identifier
 
     def to_agent_response(self) -> Dict[str, Any]:
         """Convert to AgentResponse format."""

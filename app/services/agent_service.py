@@ -7,7 +7,6 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from ..models.agent import Agent
-from ..models.client import ClientEntitlement
 from ..schemas.agent import AgentCreate, AgentSearchRequest, AgentUpdate
 
 
@@ -18,7 +17,7 @@ class AgentService:
         self.db = db
 
     def create_agent(
-        self, agent_data: AgentCreate, client_id: Optional[str] = None
+        self, agent_data: AgentCreate, owner_id: Optional[str] = None
     ) -> Agent:
         """Create a new agent."""
         agent_card = agent_data.agent_card
@@ -32,7 +31,7 @@ class AgentService:
             provider=agent_card.provider,
             agent_card=agent_card.dict(),
             is_public=agent_data.is_public,
-            client_id=client_id,
+            owner_id=owner_id,
             location_url=agent_card.location.get("url"),
             location_type=agent_card.location.get("type", "agent_card"),
             tags=agent_card.tags,
@@ -100,7 +99,7 @@ class AgentService:
 
     def list_agents(
         self,
-        client_id: Optional[str] = None,
+        owner_id: Optional[str] = None,
         is_public: Optional[bool] = None,
         is_active: Optional[bool] = None,
         provider: Optional[str] = None,
@@ -111,8 +110,8 @@ class AgentService:
         """List agents with optional filters."""
         query = self.db.query(Agent)
 
-        if client_id:
-            query = query.filter(Agent.client_id == client_id)
+        if owner_id:
+            query = query.filter(Agent.owner_id == owner_id)
 
         if is_public is not None:
             query = query.filter(Agent.is_public == is_public)
@@ -212,8 +211,8 @@ class AgentService:
         """Get total count of agents."""
         query = self.db.query(Agent)
 
-        if client_id:
-            query = query.filter(Agent.client_id == client_id)
+        if owner_id:
+            query = query.filter(Agent.owner_id == owner_id)
 
         return query.count()
 

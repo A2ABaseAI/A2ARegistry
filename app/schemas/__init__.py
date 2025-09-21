@@ -11,13 +11,6 @@ from .agent import (
     AgentTeeDetails,
     AgentUpdate,
 )
-from .client import (
-    ClientCreate,
-    ClientEntitlementCreate,
-    ClientEntitlementResponse,
-    ClientResponse,
-    ClientUpdate,
-)
 from .common import (
     ErrorResponse,
     PaginatedResponse,
@@ -35,11 +28,6 @@ __all__ = [
     "AgentResponse",
     "AgentSearchRequest",
     "AgentSearchResponse",
-    "ClientCreate",
-    "ClientUpdate",
-    "ClientResponse",
-    "ClientEntitlementCreate",
-    "ClientEntitlementResponse",
     "ErrorResponse",
     "SuccessResponse",
     "PaginationParams",

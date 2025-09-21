@@ -9,7 +9,6 @@ from ..schemas.agent import (
 )
 from .agent import Agent
 from .base import Base
-from .client import Client, ClientEntitlement
 
 __all__ = [
     "Base",
@@ -18,6 +17,4 @@ __all__ = [
     "AgentCapabilities",
     "AgentAuthScheme",
     "AgentTeeDetails",
-    "Client",
-    "ClientEntitlement",
 ]
