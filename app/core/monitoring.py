@@ -60,8 +60,8 @@ DATABASE_CONNECTIONS = Gauge(
 )
 
 ELASTICSEARCH_CONNECTIONS = Gauge(
-    "a2a_registry_elasticsearch_connections_active",
-    "Number of active Elasticsearch connections",
+    "a2a_registry_opensearch_connections_active",
+    "Number of active OpenSearch connections",
 )
 
 
@@ -112,10 +112,17 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 class HealthChecker:
     """Health check service for monitoring system components."""
 
-    def __init__(self, db_session_factory, redis_client, elasticsearch_client):
-        self.db_session_factory = db_session_factory
-        self.redis_client = redis_client
-        self.elasticsearch_client = elasticsearch_client
+    def __init__(self):
+        # Import here to avoid circular imports
+        from ..config import settings
+        from ..database import SessionLocal
+        import redis
+        from opensearchpy import OpenSearch
+        
+        self.settings = settings
+        self.db_session_factory = SessionLocal
+        self.redis_client = redis.from_url(settings.redis_url)
+        self.elasticsearch_client = OpenSearch([settings.opensearch_url])
 
     async def check_database(self) -> Dict[str, Any]:
         """Check database connectivity."""
@@ -138,7 +145,7 @@ class HealthChecker:
             return {"status": "unhealthy", "error": str(e)}
 
     async def check_elasticsearch(self) -> Dict[str, Any]:
-        """Check Elasticsearch connectivity."""
+        """Check OpenSearch connectivity."""
         try:
             start_time = time.time()
             self.elasticsearch_client.ping()

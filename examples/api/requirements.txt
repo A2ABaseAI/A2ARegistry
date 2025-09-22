@@ -1,0 +1,24 @@
+# Requirements for A2A Registry API Examples
+# Install with: pip install -r requirements.txt
+
+# HTTP client library for making API requests
+httpx>=0.24.0
+
+# JWT token creation and validation (for external JWT examples)
+PyJWT>=2.8.0
+cryptography>=41.0.0
+
+# Optional: For enhanced JSON handling and validation
+# pydantic>=2.0.0
+
+# Optional: For better error handling and retries
+# tenacity>=8.0.0
+
+# Optional: For configuration management
+# python-dotenv>=1.0.0
+
+# Note: The examples now use the built-in authentication system
+# External JWT tokens are optional and only needed for:
+# - jwt_token_examples.py
+# - simple_jwt_example.py
+# All other examples automatically register users and get tokens

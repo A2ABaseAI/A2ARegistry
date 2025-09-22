@@ -1,6 +1,6 @@
 """Redis caching utilities for production."""
 
-import pickle
+import orjson
 from typing import Any, Dict, Optional
 
 import redis
@@ -23,7 +23,7 @@ class CacheManager:
         try:
             value = self.redis_client.get(key)
             if value:
-                return pickle.loads(value)
+                return orjson.loads(value)
             return None
         except Exception as e:
             logger.error(f"Cache get error for key {key}: {e}")
@@ -33,7 +33,7 @@ class CacheManager:
         """Set value in cache."""
         try:
             ttl = ttl or self.default_ttl
-            serialized_value = pickle.dumps(value)
+            serialized_value = orjson.dumps(value)
             return self.redis_client.setex(key, ttl, serialized_value)
         except Exception as e:
             logger.error(f"Cache set error for key {key}: {e}")
@@ -236,18 +236,18 @@ class CacheWarmer:
 
     async def warm_agent_caches(self, db_session):
         """Warm up agent caches."""
-        from app.services.agent_service import AgentService
+        from app.services.registry_service import RegistryService
 
-        agent_service = AgentService(db_session)
+        registry_service = RegistryService(db_session)
 
         # Cache public agents
-        public_agents = agent_service.get_public_agents()
+        public_agents, _ = registry_service.list_public(tenant_id="default", top=100, skip=0)
         for agent in public_agents:
-            self.agent_cache.set_agent(agent.id, agent.to_agent_response())
+            self.agent_cache.set_agent(agent.id, {"id": agent.id, "name": agent.latest_version})
 
         # Cache agent counts
-        total_count = agent_service.get_agent_count()
-        active_count = len(agent_service.list_agents(is_active=True, limit=10000))
+        total_count = len(public_agents)
+        active_count = total_count
 
         self.cache.set("agent_counts", {"total": total_count, "active": active_count})
 

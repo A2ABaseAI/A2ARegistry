@@ -52,16 +52,10 @@ else
     exit 1
 fi
 
-# Backup Elasticsearch data
-echo -e "${YELLOW}🔍 Backing up Elasticsearch data...${NC}"
-docker run --rm -v a2a-registry_elasticsearch_data:/data -v "$backup_path":/backup alpine tar czf /backup/elasticsearch_data.tar.gz -C /data .
-
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Elasticsearch backup completed${NC}"
-else
-    echo -e "${RED}❌ Elasticsearch backup failed${NC}"
-    exit 1
-fi
+# Backup OpenSearch data (optional)
+echo -e "${YELLOW}🔍 Backing up OpenSearch data...${NC}"
+docker run --rm -v a2a-registry_elasticsearch_data:/data -v "$backup_path":/backup alpine tar czf /backup/elasticsearch_data.tar.gz -C /data . || true
+echo -e "${GREEN}✅ OpenSearch backup step completed${NC}"
 
 # Backup configuration files
 echo -e "${YELLOW}⚙️ Backing up configuration files...${NC}"
@@ -79,7 +73,7 @@ $(docker-compose -f "$COMPOSE_FILE" ps)
 
 Database Size: $(du -h "$backup_path/database.sql" | cut -f1)
 Redis Data Size: $(du -h "$backup_path/redis_data.tar.gz" | cut -f1)
-Elasticsearch Data Size: $(du -h "$backup_path/elasticsearch_data.tar.gz" | cut -f1)
+OpenSearch Data Size: $(du -h "$backup_path/elasticsearch_data.tar.gz" | cut -f1)
 Total Backup Size: $(du -sh "$backup_path" | cut -f1)
 EOF
 

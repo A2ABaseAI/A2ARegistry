@@ -6,6 +6,9 @@ from sqlalchemy.pool import StaticPool
 
 from .config import settings
 from .models.base import Base
+from .core.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Create database engine
 engine = create_engine(
@@ -23,6 +26,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def create_tables():
     """Create all database tables."""
+    # Ensure models are imported so tables are registered in metadata
+    try:
+        import app.models  # noqa: F401
+    except Exception as e:
+        logger.warning(f"Failed to import models: {e}")
     Base.metadata.create_all(bind=engine)
 
 

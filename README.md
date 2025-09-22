@@ -18,6 +18,44 @@ A centralized registry service for discovering and managing AI agents in the A2A
 - **🚀 High Performance**: Redis caching, connection pooling, and horizontal scaling
 - **📚 Well-Documented**: Complete API documentation and deployment guides
 
+## Core Quick Start (no frontend)
+
+This repository is now a core-only API service (no React UI). Use the steps below for a minimal local run:
+
+1. Start dependencies and API
+   ```bash
+   docker-compose up -d db redis opensearch registry
+   ```
+
+2. Apply migrations
+   ```bash
+   alembic upgrade head
+   ```
+
+3. Publish an agent card by URL (Administrator/CatalogManager token required)
+   ```bash
+   curl -X POST "http://localhost:8000/agents/publish" \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "cardUrl": "https://example.com/.well-known/agent-card.json",
+       "public": true
+     }'
+   ```
+
+4. Query public/entitled/search endpoints
+   ```bash
+   curl "http://localhost:8000/agents/public?top=20&skip=0"
+   curl -H "Authorization: Bearer YOUR_TOKEN" "http://localhost:8000/agents/entitled?top=20&skip=0"
+   curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" \
+     "http://localhost:8000/agents/search" -d '{"q":"payments","top":20,"skip":0}'
+   ```
+
+Authentication: Provide an OAuth2 client-credentials JWT issued by your IdP. JWKS verification is configured via settings.
+
+SLOs: p95 < 200 ms for cache-warm reads (local region), 99.9% availability, scale targets 10M agents / 2k RPS reads / 200 RPS writes.
+
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -26,7 +64,7 @@ A centralized registry service for discovering and managing AI agents in the A2A
 - Docker and Docker Compose
 - PostgreSQL 12+
 - Redis 6+
-- Elasticsearch 8+
+- OpenSearch 2.x
 
 ### Installation
 
@@ -74,7 +112,7 @@ A centralized registry service for discovering and managing AI agents in the A2A
 
 4. **Start services**
    ```bash
-   docker-compose up -d db redis elasticsearch
+   docker-compose up -d db redis opensearch
    ```
 
 5. **Run migrations**
@@ -137,7 +175,7 @@ DATABASE_URL="postgresql://user:password@localhost:5432/a2a_registry"
 # Redis
 REDIS_URL="redis://localhost:6379/0"
 
-# Elasticsearch
+# OpenSearch
 ELASTICSEARCH_URL="http://localhost:9200"
 ELASTICSEARCH_INDEX="a2a_agents"
 
@@ -367,7 +405,7 @@ alembic upgrade head
 1. **API Layer**: FastAPI-based REST API with OpenAPI documentation
 2. **Service Layer**: Business logic for agents, clients, search, and peering
 3. **Data Layer**: SQLAlchemy ORM with PostgreSQL backend
-4. **Search Layer**: Elasticsearch for high-performance search
+4. **Search Layer**: OpenSearch for high-performance search
 5. **Auth Layer**: OAuth 2.0 with JWT tokens
 6. **Federation Layer**: Peer-to-peer synchronization
 7. **Web Interface**: Modern React frontend with responsive design
@@ -428,5 +466,5 @@ See our [Security Policy](SECURITY.md) for more information.
 - [A2A Project](https://github.com/a2aproject/A2A) for the original proposal
 - [FastAPI](https://fastapi.tiangolo.com/) for the excellent web framework
 - [SQLAlchemy](https://www.sqlalchemy.org/) for database ORM
-- [Elasticsearch](https://www.elastic.co/) for search capabilities
+- [OpenSearch](https://opensearch.org/) for search capabilities
 - All contributors and the open source community

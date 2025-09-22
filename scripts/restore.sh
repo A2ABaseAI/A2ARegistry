@@ -67,7 +67,7 @@ echo -e "${GREEN}✅ Backup extracted to $backup_path${NC}"
 
 # Start services (without registry)
 echo -e "${YELLOW}🚀 Starting infrastructure services...${NC}"
-docker-compose -f "$COMPOSE_FILE" up -d db redis elasticsearch
+docker-compose -f "$COMPOSE_FILE" up -d db redis opensearch
 
 # Wait for services to be ready
 echo -e "${YELLOW}⏳ Waiting for services to be ready...${NC}"
@@ -104,13 +104,11 @@ else
     echo -e "${RED}❌ Redis backup not found${NC}"
 fi
 
-# Restore Elasticsearch data
-echo -e "${YELLOW}🔍 Restoring Elasticsearch data...${NC}"
+# Restore OpenSearch data (optional)
+echo -e "${YELLOW}🔍 Restoring OpenSearch data...${NC}"
 if [ -f "$backup_path/elasticsearch_data.tar.gz" ]; then
-    docker run --rm -v a2a-registry_elasticsearch_data:/data -v "$backup_path":/backup alpine tar xzf /backup/elasticsearch_data.tar.gz -C /data
-    echo -e "${GREEN}✅ Elasticsearch data restored${NC}"
-else
-    echo -e "${RED}❌ Elasticsearch backup not found${NC}"
+    docker run --rm -v a2a-registry_elasticsearch_data:/data -v "$backup_path":/backup alpine tar xzf /backup/elasticsearch_data.tar.gz -C /data || true
+    echo -e "${GREEN}✅ OpenSearch data restored (if applicable)${NC}"
 fi
 
 # Start all services
@@ -146,11 +144,11 @@ else
     echo -e "${RED}❌ Redis health check failed${NC}"
 fi
 
-# Check Elasticsearch health
+# Check OpenSearch health
 if curl -f http://localhost:9200/_cluster/health > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Elasticsearch is healthy${NC}"
+    echo -e "${GREEN}✅ OpenSearch is healthy${NC}"
 else
-    echo -e "${RED}❌ Elasticsearch health check failed${NC}"
+    echo -e "${RED}❌ OpenSearch health check failed${NC}"
 fi
 
 # Clean up temporary files

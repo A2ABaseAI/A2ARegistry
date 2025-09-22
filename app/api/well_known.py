@@ -2,180 +2,216 @@
 
 from typing import Any, Dict
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from ..auth import get_current_user_optional
-from ..database import get_db
-from ..schemas.agent import AgentCard
-from ..services.agent_service import AgentService
+from ..auth_jwks import require_oauth, extract_context
+from ..core.logging import get_logger
+from ..services.registry_service import RegistryService
+
+logger = get_logger(__name__)
 
 router = APIRouter(tags=["well-known"])
 
 
-@router.get("/.well-known/agents/index.json", response_model=Dict[str, Any])
-async def get_agents_index(db: Session = Depends(get_db)):
-    """Get the agents index for this registry."""
-    agent_service = AgentService(db)
-    public_agents = agent_service.get_public_agents()
-
-    agents_list = []
-    for agent in public_agents:
-        agents_list.append(
-            {
-                "id": agent.id,
-                "name": agent.name,
-                "description": agent.description or "",
-                "provider": agent.provider,
-                "tags": agent.tags or [],
-                "location": {"url": f"/agents/{agent.id}/card", "type": "agent_card"},
-            }
-        )
-
-    return {
+@router.get("/agents/index.json", response_model=Dict[str, Any])
+async def get_agents_index(
+    top: int = Query(20, ge=1, le=100),
+    skip: int = Query(0, ge=0),
+):
+    """
+    Get the agents index for this registry.
+    
+    Production-ready endpoint with comprehensive error handling
+    and graceful degradation.
+    """
+    default_response = {
         "registry_version": "1.0",
         "registry_name": "A2A Agent Registry",
-        "agents": agents_list,
-        "total_count": len(agents_list),
+        "agents": [],
+        "count": 0,
+        "total_count": 0,
+        "next": None,
+        "error": "Service temporarily unavailable"
     }
 
+    try:
+        logger.debug(f"Agents index request: top={top}, skip={skip}")
 
-@router.get("/.well-known/agent.json", response_model=AgentCard)
-async def get_registry_agent_card(db: Session = Depends(get_db)):
-    """Get the registry's own agent card."""
-    # This represents the registry as an agent itself
-    return AgentCard(
-        id="a2a-registry",
-        name="A2A Agent Registry",
-        version="1.0.0",
-        description="Centralized registry for A2A agent discovery and management",
-        capabilities={
-            "a2a_version": "1.0",
-            "supported_protocols": ["http", "https"],
-            "max_concurrent_requests": 1000,
-            "timeout_seconds": 30,
-            "rate_limit_per_minute": 10000,
-        },
-        skills={
-            "agent_discovery": {
-                "description": "Discover and search for available agents",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "query": {"type": "string"},
-                        "filters": {"type": "object"},
+        # Validate input parameters
+        if top < 1 or top > 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="top parameter must be between 1 and 100"
+            )
+        
+        if skip < 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="skip parameter must be non-negative"
+            )
+
+        # Get agents from registry service
+        try:
+            registry_service = RegistryService()
+            agents, total = registry_service.list_public(tenant_id="default", top=top, skip=skip)
+            logger.debug(f"Retrieved {len(agents)} agents from registry")
+        except Exception as e:
+            logger.error(f"Failed to retrieve agents from registry: {e}")
+            return default_response
+
+        # Build agents list with safe data extraction
+        agents_list = []
+        for agent in agents:
+            try:
+                agents_list.append({
+                    "id": agent.get("agentId", "unknown"),
+                    "name": agent.get("name") or "unknown",
+                    "description": agent.get("description") or "Agent from registry",
+                    "provider": agent.get("publisherId"),
+                    "tags": [],
+                    "location": {
+                        "url": f"/agents/{agent.get('agentId', 'unknown')}/card", 
+                        "type": "agent_card"
                     },
-                },
-                "output_schema": {
-                    "type": "object",
-                    "properties": {
-                        "agents": {
-                            "type": "array",
-                            "items": {"$ref": "#/definitions/AgentCard"},
-                        }
-                    },
-                },
-            },
-            "agent_management": {
-                "description": "Manage agent registrations and entitlements",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "action": {
-                            "type": "string",
-                            "enum": ["register", "update", "delete"],
-                        },
-                        "agent_data": {"type": "object"},
-                    },
-                },
-                "output_schema": {
-                    "type": "object",
-                    "properties": {
-                        "status": {"type": "string"},
-                        "agent_id": {"type": "string"},
-                    },
-                },
-            },
-        },
-        auth_schemes=[
-            {
-                "type": "oauth2",
-                "flow": "client_credentials",
-                "token_url": "http://localhost:8000/oauth/token",
-                "scopes": ["agent:read", "agent:write", "client:manage"],
-            },
-            {"type": "apiKey", "location": "header", "name": "X-API-Key"},
-        ],
-        provider="A2A Community",
-        tags=["registry", "discovery", "management", "federation"],
-        location={"url": "/.well-known/agent.json", "type": "agent_card"},
-    )
+                })
+            except Exception as e:
+                logger.warning(f"Failed to process agent: {e}")
+                # Skip malformed agents but continue processing
+                continue
+
+        response = {
+            "registry_version": "1.0",
+            "registry_name": "A2A Agent Registry",
+            "agents": agents_list,
+            "count": len(agents_list),
+            "total_count": total,
+            "next": (
+                f"/.well-known/agents/index.json?skip={skip+top}&top={top}"
+                if skip + top < total
+                else None
+            ),
+        }
+
+        logger.debug(f"Returning agents index with {len(agents_list)} agents")
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in agents index endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error while retrieving agents index"
+        )
 
 
-@router.get("/agents/{agent_id}/card", response_model=AgentCard)
+@router.get("/agents/{agent_id}/card")
 async def get_agent_card_well_known(
     agent_id: str,
-    current_user=Depends(get_current_user_optional),
-    db: Session = Depends(get_db),
+    payload=Depends(require_oauth),
 ):
-    """Get an agent card via well-known endpoint."""
-    agent_service = AgentService(db)
-    agent = agent_service.get_agent(agent_id)
+    """
+    Get an agent card via well-known endpoint.
+    
+    Production-ready endpoint with comprehensive error handling,
+    access control, and graceful degradation.
+    """
+    try:
+        logger.debug(f"Agent card request for agent_id: {agent_id}")
 
-    if not agent:
+        # Validate agent_id
+        if not agent_id or not agent_id.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Agent ID is required"
+            )
+
+        # Get agent from registry service
+        try:
+            registry_service = RegistryService()
+            result = registry_service.get_latest("default", agent_id)
+        except Exception as e:
+            logger.error(f"Failed to retrieve agent {agent_id}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error while retrieving agent"
+            )
+
+        if not result:
+            logger.info(f"Agent {agent_id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Agent not found"
+            )
+
+        agent_record, agent_version = result
+
+        # Validate agent data structure
+        if not agent_record or not agent_version:
+            logger.error(f"Invalid data structure for agent {agent_id}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Invalid agent data"
+            )
+
+        # Check access permissions (public, owner, or entitled)
+        if not agent_version.public:
+            logger.debug(f"Agent {agent_id} is private, checking access permissions")
+            
+            try:
+                ctx = extract_context(payload)
+                tenant = ctx.get("tenant") or "default"
+                client_id = ctx.get("client_id")
+                
+                entitled = False
+                if client_id:
+                    try:
+                        entitled = registry_service.is_entitled(tenant, client_id, agent_id)
+                        logger.debug(f"Entitlement check for {client_id} on {agent_id}: {entitled}")
+                    except Exception as e:
+                        logger.warning(f"Entitlement check failed: {e}")
+                        # If entitlement check fails, deny access for security
+                        entitled = False
+                
+                if not entitled:
+                    logger.info(f"Access denied for client {client_id} to private agent {agent_id}")
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN, 
+                        detail="Access denied"
+                    )
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error(f"Error checking access permissions: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Internal server error while checking permissions"
+                )
+
+        # Validate card data
+        card_json = agent_version.card_json
+        if card_json is None:
+            logger.warning(f"Agent {agent_id} has no card data")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Agent card data not available"
+            )
+
+        if not isinstance(card_json, dict):
+            logger.error(f"Invalid card data type for agent {agent_id}: {type(card_json)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Invalid card data format"
+            )
+
+        logger.debug(f"Successfully retrieved card for agent {agent_id}")
+        return card_json
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in agent card endpoint: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error while retrieving agent card"
         )
-
-    # Check access permissions
-    if not agent.is_public and not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authentication required for private agents",
-        )
-
-    if not agent.is_public and current_user:
-        # Simplified access control - authenticated users can access private agents
-
-    return agent.to_agent_card()
-
-
-@router.get("/agents/{agent_id}", response_model=Dict[str, Any])
-async def get_agent_info_well_known(
-    agent_id: str,
-    current_user=Depends(get_current_user_optional),
-    db: Session = Depends(get_db),
-):
-    """Get basic agent information via well-known endpoint."""
-    agent_service = AgentService(db)
-    agent = agent_service.get_agent(agent_id)
-
-    if not agent:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
-        )
-
-    # Check access permissions (same as card endpoint)
-    if not agent.is_public and not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authentication required for private agents",
-        )
-
-    if not agent.is_public and current_user:
-        # Simplified access control - authenticated users can access private agents
-
-    return {
-        "id": agent.id,
-        "name": agent.name,
-        "version": agent.version,
-        "description": agent.description or "",
-        "provider": agent.provider,
-        "tags": agent.tags or [],
-        "is_public": agent.is_public,
-        "is_active": agent.is_active,
-        "location": {"url": f"/agents/{agent.id}/card", "type": "agent_card"},
-        "capabilities": agent.capabilities or {},
-        "auth_schemes": agent.auth_schemes or [],
-        "tee_details": agent.tee_details,
-    }

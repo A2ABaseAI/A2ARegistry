@@ -1,7 +1,7 @@
 """Custom exceptions and error handling."""
 
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import HTTPException, status
 
@@ -14,7 +14,10 @@ class A2ARegistryException(Exception):
     """Base exception for A2A Registry."""
 
     def __init__(
-        self, message: str, error_code: str = None, details: Dict[str, Any] = None
+        self,
+        message: str,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
     ):
         self.message = message
         self.error_code = error_code
@@ -143,9 +146,9 @@ class ErrorResponse:
     def __init__(
         self,
         error: str,
-        error_code: str = None,
-        details: Dict[str, Any] = None,
-        request_id: str = None,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
     ):
         self.error = error
         self.error_code = error_code
@@ -154,7 +157,7 @@ class ErrorResponse:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
-        response = {"error": self.error, "timestamp": self._get_timestamp()}
+        response: Dict[str, Any] = {"error": self.error, "timestamp": self._get_timestamp()}
 
         if self.error_code:
             response["error_code"] = self.error_code
@@ -176,7 +179,7 @@ class ErrorResponse:
 
 # Exception handlers
 def handle_a2a_exception(
-    exc: A2ARegistryException, request_id: str = None
+    exc: A2ARegistryException, request_id: Optional[str] = None
 ) -> HTTPException:
     """Convert A2A exception to HTTP exception."""
 
@@ -205,7 +208,7 @@ def handle_a2a_exception(
     }
 
     http_status = status_mapping.get(
-        exc.error_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        exc.error_code or "UNKNOWN_ERROR", status.HTTP_500_INTERNAL_SERVER_ERROR
     )
 
     error_response = ErrorResponse(
@@ -218,7 +221,7 @@ def handle_a2a_exception(
     return HTTPException(status_code=http_status, detail=error_response.to_dict())
 
 
-def handle_generic_exception(exc: Exception, request_id: str = None) -> HTTPException:
+def handle_generic_exception(exc: Exception, request_id: Optional[str] = None) -> HTTPException:
     """Handle generic exceptions."""
 
     # Log the exception
@@ -261,7 +264,7 @@ class RetryConfig:
 
 
 def retry_on_exception(
-    exceptions: tuple, config: RetryConfig = None, operation_name: str = "operation"
+    exceptions: tuple, config: Optional[RetryConfig] = None, operation_name: str = "operation"
 ):
     """Decorator to retry operations on specific exceptions."""
 
@@ -297,9 +300,9 @@ def retry_on_exception(
                     )
 
                     if config.jitter:
-                        import random
+                        import secrets
 
-                        delay *= 0.5 + random.random() * 0.5
+                        delay *= 0.5 + secrets.randbelow(100) / 100.0
 
                     logger.warning(
                         f"Operation {operation_name} failed, retrying in {delay:.2f}s",
@@ -363,10 +366,9 @@ class CircuitBreaker:
 
     def _should_attempt_reset(self) -> bool:
         """Check if we should attempt to reset the circuit breaker."""
-        return (
-            self.last_failure_time
-            and (time.time() - self.last_failure_time) >= self.recovery_timeout
-        )
+        if not self.last_failure_time:
+            return False
+        return (time.time() - self.last_failure_time) >= self.recovery_timeout
 
     def _on_success(self):
         """Handle successful call."""

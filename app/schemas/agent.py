@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, ConfigDict, HttpUrl
 
 
 class AgentAuthScheme(BaseModel):
@@ -81,8 +81,8 @@ class AgentCard(BaseModel):
     # Location
     location: Dict[str, Any] = Field(..., description="Agent location information")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "it-agent-v2",
                 "name": "IT Support Agent",
@@ -136,6 +136,7 @@ class AgentCard(BaseModel):
                 },
             }
         }
+    )
 
 
 class AgentCreate(BaseModel):
@@ -178,20 +179,12 @@ class AgentResponse(BaseModel):
 
 
 class AgentSearchRequest(BaseModel):
-    """Schema for agent search requests."""
+    """Schema for agent search requests (aligned with POST /agents/search)."""
 
-    query: Optional[str] = Field(None, description="Search query")
-    filters: Optional[Dict[str, Any]] = Field(None, description="Search filters")
-    semantic: bool = Field(False, description="Use semantic search")
-    vector: Optional[List[float]] = Field(
-        None, description="Search vector for semantic search"
-    )
-    similarity_threshold: float = Field(
-        0.7, ge=0.0, le=1.0, description="Similarity threshold"
-    )
-    top: int = Field(20, ge=1, le=100, description="Maximum number of results")
-    page: int = Field(1, ge=1, description="Page number")
-    per_page: int = Field(20, ge=1, le=100, description="Items per page")
+    q: Optional[str] = Field(None, description="Search query")
+    filters: Dict[str, Any] = Field(default_factory=dict, description="Search filters")
+    top: int = Field(20, ge=1, le=100, description="Max results to return")
+    skip: int = Field(0, ge=0, description="Number of results to skip (offset)")
 
 
 class AgentSearchResponse(BaseModel):
@@ -203,3 +196,26 @@ class AgentSearchResponse(BaseModel):
     total_count: int = Field(..., description="Total number of results")
     search_metadata: Dict[str, Any] = Field(..., description="Search metadata")
     pagination: Dict[str, Any] = Field(..., description="Pagination information")
+
+
+class PublishResponse(BaseModel):
+    """Response for successful publish operation."""
+
+    agentId: str = Field(..., description="Agent ID")
+    version: str = Field(..., description="Version identifier")
+    protocolVersion: str = Field(..., description="A2A protocol version")
+    public: bool = Field(..., description="Whether the version is public")
+    signatureValid: bool = Field(..., description="Card signature validation result")
+
+
+class AgentInfoResponse(BaseModel):
+    """Lightweight agent info used by GET /agents/{id}."""
+
+    agentId: str = Field(...)
+    name: str = Field(...)
+    description: Optional[str] = Field(None)
+    publisherId: str = Field(...)
+    version: str = Field(...)
+    protocolVersion: str = Field(...)
+    capabilities: Dict[str, Any] = Field(default_factory=dict)
+    skills: List[Dict[str, Any]] = Field(default_factory=list)

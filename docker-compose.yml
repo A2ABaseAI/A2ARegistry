@@ -9,7 +9,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/a2a_registry
       - REDIS_URL=redis://redis:6379/0
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_URL=http://opensearch:9200
       - SECRET_KEY=${SECRET_KEY:-$(openssl rand -hex 32)}
     depends_on:
       - db
@@ -19,19 +19,7 @@ services:
       - ./app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  # A2A Agent Registry Frontend
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    command: npm run dev
+  # Frontend removed in core-only build
 
   # PostgreSQL Database
   db:
@@ -53,17 +41,17 @@ services:
     volumes:
       - redis_data:/data
 
-  # Elasticsearch
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+  # OpenSearch
+  opensearch:
+    image: opensearchproject/opensearch:2.14.0
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - plugins.security.disabled=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
     volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
+      - elasticsearch_data:/usr/share/opensearch/data
 
 volumes:
   postgres_data:

@@ -7,12 +7,17 @@ from ..schemas.agent import (
     AgentCard,
     AgentTeeDetails,
 )
-from .agent import Agent
+from .tenant import Tenant, OAuthClient
+from .agent_core import AgentRecord, AgentVersion, Entitlement
 from .base import Base
 
 __all__ = [
     "Base",
-    "Agent",
+    "Tenant",
+    "OAuthClient",
+    "AgentRecord",
+    "AgentVersion",
+    "Entitlement",
     "AgentCard",
     "AgentCapabilities",
     "AgentAuthScheme",

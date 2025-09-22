@@ -1,221 +1,355 @@
-"""Agent service for managing agents and agent cards."""
+"""Agent service layer for database operations."""
 
-import uuid
-from typing import List, Optional
+import hashlib
+import json
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional, Tuple
 
-from sqlalchemy import and_, or_
-from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
 
-from ..models.agent import Agent
-from ..schemas.agent import AgentCreate, AgentSearchRequest, AgentUpdate
+from ..core.logging import get_logger
+from ..models.agent_core import AgentRecord, AgentVersion
+from ..schemas.agent_card_spec import AgentCardSpec
+from ..database import get_db, SessionLocal
+from .search_index import SearchIndex
+
+
+def _get_db_session():
+    """Get a database session. Can be overridden in tests."""
+    from ..database import SessionLocal
+    return SessionLocal()
+
+logger = get_logger(__name__)
+
+
+def _canonical_json(data: Dict[str, Any]) -> str:
+    """Generate canonical JSON representation."""
+    return json.dumps(data, sort_keys=True, separators=(",", ":"))
 
 
 class AgentService:
-    """Service for agent management operations."""
+    """Service for agent-related database operations."""
 
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self):
+        """Initialize with database session."""
+        # Create a new session using the factory function
+        self.db = _get_db_session()
 
-    def create_agent(
-        self, agent_data: AgentCreate, owner_id: Optional[str] = None
-    ) -> Agent:
-        """Create a new agent."""
-        agent_card = agent_data.agent_card
+    def create_or_update_agent_record(
+        self,
+        card_data: Dict[str, Any],
+        card_hash: str,
+        tenant_id: str,
+        publisher_id: str,
+        agent_key: str,
+        version: str
+    ) -> AgentRecord:
+        """
+        Create or update agent record in database.
 
-        # Extract data from agent card
-        agent = Agent(
-            id=str(uuid.uuid4()),
-            name=agent_card.name,
-            version=agent_card.version,
-            description=agent_card.description,
-            provider=agent_card.provider,
-            agent_card=agent_card.dict(),
-            is_public=agent_data.is_public,
-            owner_id=owner_id,
-            location_url=agent_card.location.get("url"),
-            location_type=agent_card.location.get("type", "agent_card"),
-            tags=agent_card.tags,
-            capabilities=agent_card.capabilities.dict(),
-            auth_schemes=[scheme.dict() for scheme in agent_card.auth_schemes],
-            tee_details=(
-                agent_card.tee_details.dict() if agent_card.tee_details else None
-            ),
-        )
+        Args:
+            card_data: Parsed card data
+            card_hash: Computed card hash
+            tenant_id: Tenant identifier
+            publisher_id: Publisher identifier
+            agent_key: Agent key
+            version: Agent version
 
-        self.db.add(agent)
-        self.db.commit()
-        self.db.refresh(agent)
-        return agent
+        Returns:
+            AgentRecord instance
 
-    def get_agent(self, agent_id: str) -> Optional[Agent]:
-        """Get an agent by ID."""
-        return self.db.query(Agent).filter(Agent.id == agent_id).first()
+        Raises:
+            HTTPException: For database errors
+        """
+        try:
+            # Find existing record
+            rec = (
+                self.db.query(AgentRecord)
+                .filter(
+                    AgentRecord.tenant_id == tenant_id,
+                    AgentRecord.publisher_id == publisher_id,
+                    AgentRecord.agent_key == agent_key,
+                )
+                .first()
+            )
 
-    def get_agent_by_name(self, name: str) -> Optional[Agent]:
-        """Get an agent by name."""
-        return self.db.query(Agent).filter(Agent.name == name).first()
+            if rec is None:
+                # Create new record
+                rec = AgentRecord(  # type: ignore
+                    id=card_hash[:24],
+                    tenant_id=tenant_id,
+                    publisher_id=publisher_id,
+                    agent_key=agent_key,
+                    latest_version=version,
+                )
+                self.db.add(rec)
+                self.db.flush()
+                logger.debug(f"Created new agent record: {rec.id}")
+            else:
+                # Update existing record
+                rec.latest_version = version  # type: ignore
+                logger.debug(f"Updated existing agent record: {rec.id}")
 
-    def update_agent(self, agent_id: str, agent_data: AgentUpdate) -> Optional[Agent]:
-        """Update an existing agent."""
-        agent = self.get_agent(agent_id)
-        if not agent:
+            return rec
+
+        except Exception as exc:
+            logger.error(f"Failed to create/update agent record: {exc}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to persist agent record"
+            ) from exc
+
+    def create_agent_version(
+        self,
+        rec: AgentRecord,
+        card_data: Dict[str, Any],
+        card_hash: str,
+        card_url: Optional[str],
+        version: str,
+        public: bool
+    ) -> AgentVersion:
+        """
+        Create agent version record with idempotency check.
+
+        Args:
+            rec: Agent record
+            card_data: Parsed card data
+            card_hash: Computed card hash
+            card_url: Card URL (if applicable)
+            version: Agent version
+            public: Whether agent is public
+
+        Returns:
+            AgentVersion instance
+
+        Raises:
+            HTTPException: For database errors
+        """
+        try:
+            # Check for existing version (idempotency)
+            existing = (
+                self.db.query(AgentVersion)
+                .filter(AgentVersion.agent_id == rec.id, AgentVersion.version == version)
+                .first()
+            )
+
+            if existing:
+                logger.debug(f"Found existing agent version: {existing.id}")
+                return existing
+
+            # Create new version
+            card = AgentCardSpec.model_validate(card_data)
+            av = AgentVersion(  # type: ignore
+                id=f"{rec.id}:{version}",
+                agent_id=rec.id,
+                version=version,
+                protocol_version=card.protocolVersion,
+                card_json=card_data,
+                card_hash=card_hash,
+                card_url=card_url,
+                jwks_url=str(card.jwks_uri) if card.jwks_uri else None,
+                signature_valid=False,
+                public=public,
+            )
+            self.db.add(av)
+            logger.debug(f"Created new agent version: {av.id}")
+            return av
+
+        except Exception as exc:
+            logger.error(f"Failed to create agent version: {exc}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to persist agent version"
+            ) from exc
+
+    def publish_agent(
+        self,
+        card_data: Dict[str, Any],
+        card_url: Optional[str],
+        public: bool,
+        tenant_id: str
+    ) -> Dict[str, Any]:
+        """
+        Publish an agent with full database operations.
+
+        Args:
+            card_data: Parsed card data
+            card_url: Card URL (if applicable)
+            public: Whether agent is public
+            tenant_id: Tenant identifier
+
+        Returns:
+            Dict with agent metadata
+
+        Raises:
+            HTTPException: For database errors
+        """
+        try:
+            # Validate card data
+            card = AgentCardSpec.model_validate(card_data)
+
+            # Compute hash and version
+            canonical = _canonical_json(card_data)
+            card_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+            version = card.version or datetime.now(timezone.utc).isoformat()
+
+            # Extract metadata
+            publisher_id = card.url.host if hasattr(card.url, "host") else "publisher"
+            agent_key = card.name.lower().replace(" ", "-")
+
+            logger.debug(f"Publishing agent: {card.name} v{version} for tenant {tenant_id}")
+
+            # Database operations (transactional)
+            try:
+                # Create or update agent record
+                rec = self.create_or_update_agent_record(
+                    card_data, card_hash, tenant_id, publisher_id, agent_key, version
+                )
+
+                # Create agent version
+                av = self.create_agent_version(
+                    rec, card_data, card_hash, card_url, version, public
+                )
+
+                # Commit transaction
+                self.db.commit()
+                logger.info(f"Successfully published agent: {rec.id} v{version}")
+
+            except Exception as exc:
+                self.db.rollback()
+                logger.error(f"Database transaction failed: {exc}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to persist agent"
+                ) from exc
+
+            # Index in search engine (non-critical)
+            self._index_agent_version(av, rec, card_data, tenant_id, publisher_id, version, public)
+
+            # Return success response
+            return {
+                "agentId": rec.id,
+                "version": version,
+                "protocolVersion": card.protocolVersion,
+                "public": av.public,
+                "signatureValid": av.signature_valid,
+            }
+
+        except HTTPException:
+            # Re-raise HTTP exceptions as-is
+            raise
+        except Exception as exc:
+            logger.error(f"Unexpected error publishing agent: {exc}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error"
+            ) from exc
+
+    def _index_agent_version(
+        self,
+        av: AgentVersion,
+        rec: AgentRecord,
+        card_data: Dict[str, Any],
+        tenant_id: str,
+        publisher_id: str,
+        version: str,
+        public: bool
+    ) -> None:
+        """
+        Index agent version in search engine (non-critical operation).
+
+        Args:
+            av: Agent version record
+            rec: Agent record
+            card_data: Parsed card data
+            tenant_id: Tenant identifier
+            publisher_id: Publisher identifier
+            version: Agent version
+            public: Whether agent is public
+        """
+        try:
+            card = AgentCardSpec.model_validate(card_data)
+            SearchIndex().ensure_index()
+            SearchIndex().index_version(
+                doc_id=str(av.id),
+                body={
+                    "tenantId": tenant_id,
+                    "agentId": rec.id,
+                    "version": version,
+                    "protocolVersion": card.protocolVersion,
+                    "name": card.name,
+                    "description": card.description,
+                    "publisherId": publisher_id,
+                    "capabilities": card.capabilities,
+                    "skills": [s.model_dump() for s in card.skills],
+                    "public": public,
+                },
+            )
+            logger.debug(f"Successfully indexed agent version: {av.id}")
+        except Exception as e:
+            logger.warning(f"Failed to index agent {rec.id}: {e}")
+            # Non-critical operation, don't fail the request
+
+    def get_agent_by_id(
+        self, agent_id: str, tenant_id: str
+    ) -> Optional[Tuple[AgentRecord, AgentVersion]]:
+        """
+        Get agent by ID.
+
+        Args:
+            agent_id: Agent identifier
+            tenant_id: Tenant identifier
+
+        Returns:
+            Tuple of (AgentRecord, AgentVersion) or None if not found
+        """
+        try:
+            from .registry_service import RegistryService
+            registry_service = RegistryService(db_session=self.db)
+            return registry_service.get_latest(tenant_id, agent_id)
+        except Exception as exc:
+            logger.error(f"Failed to get agent {agent_id}: {exc}")
             return None
 
-        if agent_data.agent_card:
-            agent_card = agent_data.agent_card
-            agent.name = agent_card.name
-            agent.version = agent_card.version
-            agent.description = agent_card.description
-            agent.provider = agent_card.provider
-            agent.agent_card = agent_card.dict()
-            agent.location_url = agent_card.location.get("url")
-            agent.location_type = agent_card.location.get("type", "agent_card")
-            agent.tags = agent_card.tags
-            agent.capabilities = agent_card.capabilities.dict()
-            agent.auth_schemes = [scheme.dict() for scheme in agent_card.auth_schemes]
-            agent.tee_details = (
-                agent_card.tee_details.dict() if agent_card.tee_details else None
+    def get_agent_card_data(self, agent_id: str, tenant_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get agent card data.
+
+        Args:
+            agent_id: Agent identifier
+            tenant_id: Tenant identifier
+
+        Returns:
+            Card data dict or None if not found
+        """
+        try:
+            result = self.get_agent_by_id(agent_id, tenant_id)
+            if result:
+                _, agent_version = result
+                return agent_version.card_json
+            return None
+        except Exception as exc:
+            logger.error(f"Failed to get card data for agent {agent_id}: {exc}")
+            return None
+
+    def check_agent_access(self, agent_id: str, tenant_id: str, client_id: str) -> bool:
+        """
+        Check if client has access to agent.
+
+        Args:
+            agent_id: Agent identifier
+            tenant_id: Tenant identifier
+            client_id: Client identifier
+
+        Returns:
+            True if access granted, False otherwise
+        """
+        try:
+            from .registry_service import RegistryService
+            registry_service = RegistryService(db_session=self.db)
+            return registry_service.is_entitled(
+                tenant_id, client_id, agent_id
             )
-
-        if agent_data.is_public is not None:
-            agent.is_public = agent_data.is_public
-
-        if agent_data.is_active is not None:
-            agent.is_active = agent_data.is_active
-
-        self.db.commit()
-        self.db.refresh(agent)
-        return agent
-
-    def delete_agent(self, agent_id: str) -> bool:
-        """Delete an agent."""
-        agent = self.get_agent(agent_id)
-        if not agent:
+        except Exception as exc:
+            logger.error(f"Failed to check access for agent {agent_id}: {exc}")
             return False
-
-        self.db.delete(agent)
-        self.db.commit()
-        return True
-
-    def list_agents(
-        self,
-        owner_id: Optional[str] = None,
-        is_public: Optional[bool] = None,
-        is_active: Optional[bool] = None,
-        provider: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        limit: int = 100,
-        offset: int = 0,
-    ) -> List[Agent]:
-        """List agents with optional filters."""
-        query = self.db.query(Agent)
-
-        if owner_id:
-            query = query.filter(Agent.owner_id == owner_id)
-
-        if is_public is not None:
-            query = query.filter(Agent.is_public == is_public)
-
-        if is_active is not None:
-            query = query.filter(Agent.is_active == is_active)
-
-        if provider:
-            query = query.filter(Agent.provider == provider)
-
-        if tags:
-            # Filter by tags (PostgreSQL array contains)
-            for tag in tags:
-                query = query.filter(Agent.tags.contains([tag]))
-
-        return query.offset(offset).limit(limit).all()
-
-    def get_entitled_agents(self, client_id: str) -> List[Agent]:
-        """Get agents that a client is entitled to access."""
-        query = (
-            self.db.query(Agent)
-            .join(ClientEntitlement)
-            .filter(
-                and_(
-                    ClientEntitlement.client_id == client_id,
-                    ClientEntitlement.is_active.is_(True),
-                    Agent.is_active.is_(True),
-                )
-            )
-        )
-        return query.all()
-
-    def get_public_agents(self) -> List[Agent]:
-        """Get all public agents."""
-        return (
-            self.db.query(Agent)
-            .filter(and_(Agent.is_public.is_(True), Agent.is_active.is_(True)))
-            .all()
-        )
-
-    def search_agents(
-        self, search_request: AgentSearchRequest, client_id: Optional[str] = None
-    ) -> List[Agent]:
-        """Search agents with various criteria."""
-        query = self.db.query(Agent).filter(Agent.is_active.is_(True))
-
-        # Apply client entitlements if client_id provided
-        if client_id:
-            query = query.join(ClientEntitlement).filter(
-                and_(
-                    ClientEntitlement.client_id == client_id,
-                    ClientEntitlement.is_active.is_(True),
-                )
-            )
-        elif (
-            not search_request.semantic
-        ):  # Only public agents for non-authenticated search
-            query = query.filter(Agent.is_public.is_(True))
-
-        # Text search
-        if search_request.query:
-            search_term = f"%{search_request.query}%"
-            query = query.filter(
-                or_(
-                    Agent.name.ilike(search_term),
-                    Agent.description.ilike(search_term),
-                    Agent.provider.ilike(search_term),
-                )
-            )
-
-        # Apply filters
-        if search_request.filters:
-            if "provider" in search_request.filters:
-                query = query.filter(
-                    Agent.provider == search_request.filters["provider"]
-                )
-
-            if "tags" in search_request.filters:
-                tags = search_request.filters["tags"]
-                if isinstance(tags, list):
-                    for tag in tags:
-                        query = query.filter(Agent.tags.contains([tag]))
-
-            if "capabilities" in search_request.filters:
-                capabilities = search_request.filters["capabilities"]
-                if isinstance(capabilities, dict):
-                    for key, value in capabilities.items():
-                        query = query.filter(
-                            Agent.capabilities[key].astext == str(value)
-                        )
-
-        # Apply pagination
-        offset = (search_request.page - 1) * search_request.per_page
-        return query.offset(offset).limit(search_request.per_page).all()
-
-    def get_agent_count(self, client_id: Optional[str] = None) -> int:
-        """Get total count of agents."""
-        query = self.db.query(Agent)
-
-        if owner_id:
-            query = query.filter(Agent.owner_id == owner_id)
-
-        return query.count()
-
-    def get_agent_by_location(self, location_url: str) -> Optional[Agent]:
-        """Get agent by location URL."""
-        return self.db.query(Agent).filter(Agent.location_url == location_url).first()

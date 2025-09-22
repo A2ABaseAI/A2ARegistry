@@ -12,9 +12,9 @@ from app.models.client import Client
 from app.models.agent import Agent
 from app.models.client import ClientEntitlement
 from app.auth import get_password_hash
-from app.services.agent_service import AgentService
-from app.services.client_service import ClientService
-from app.services.search_service import SearchService
+from app.services.registry_service import RegistryService
+from app.services.search_index import SearchIndex
+from app.models.agent_core import AgentRecord, AgentVersion
 from app.schemas.agent import AgentCreate
 
 
@@ -63,7 +63,7 @@ def create_sample_data():
         db.commit()
 
         # Create sample agents
-        agent_service = AgentService(db)
+        registry_service = RegistryService(db)
 
         # IT Support Agent
         it_agent_data = {
@@ -255,11 +255,43 @@ def create_sample_data():
         db.commit()
 
         # Index agents in search
-        search_service = SearchService(db)
-        search_service.create_index()
-        search_service.index_agent(it_agent)
-        search_service.index_agent(benefits_agent)
-        search_service.index_agent(customer_agent)
+        # Ensure OpenSearch index exists
+        try:
+            SearchIndex().ensure_index()
+        except Exception:
+            pass
+
+        # Seed a minimal tenant and an example agent
+        from app.database import SessionLocal
+        db = SessionLocal()
+        try:
+            tenant_id = "default"
+            rec = AgentRecord(
+                id="sample-agent",
+                tenant_id=tenant_id,
+                publisher_id="example.com",
+                agent_key="sample-agent",
+                latest_version="v1",
+            )
+            db.add(rec)
+            av = AgentVersion(
+                id=f"{rec.id}:v1",
+                agent_id=rec.id,
+                version="v1",
+                protocol_version="0.3.0",
+                card_json={
+                    "name": "Sample Agent",
+                    "description": "Example agent",
+                    "capabilities": {"streaming": True},
+                    "skills": [],
+                },
+                card_hash="seed",
+                public=True,
+            )
+            db.add(av)
+            db.commit()
+        finally:
+            db.close()
 
         print("✅ Sample data created successfully!")
         print(f"📊 Created {len([admin_client, user_client])} clients")

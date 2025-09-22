@@ -1,19 +1,19 @@
 """Core production utilities."""
 
-from .caching import AgentCache, CacheManager, CacheWarmer, ClientCache, PeerCache
+from .caching import AgentCache, CacheManager, CacheWarmer
 from .exceptions import (
     A2ARegistryException,
     AccessDeniedError,
     AgentNotFoundError,
     CacheError,
     CircuitBreaker,
-    ClientNotFoundError,
+    # ClientNotFoundError (removed: no client module)
     DatabaseError,
     ExternalServiceError,
-    FederationError,
+    # FederationError (removed: no peering)
     RateLimitExceededError,
     RetryConfig,
-    SearchServiceError,
+    # SearchServiceError (deprecated export)
     ValidationError,
     handle_a2a_exception,
     handle_generic_exception,
@@ -22,13 +22,8 @@ from .exceptions import (
 from .logging import RequestLoggingMiddleware, get_logger, setup_logging
 from .monitoring import HealthChecker, MetricsCollector, MetricsMiddleware
 from .security import (
-    APIKeyManager,
-    CSPMiddleware,
-    InputValidator,
     RateLimitMiddleware,
     RequestSizeLimitMiddleware,
-    SecurityAuditLogger,
-    SecurityHeadersMiddleware,
 )
 
 __all__ = [
@@ -38,26 +33,16 @@ __all__ = [
     "MetricsMiddleware",
     "HealthChecker",
     "MetricsCollector",
-    "SecurityHeadersMiddleware",
     "RateLimitMiddleware",
-    "InputValidator",
-    "APIKeyManager",
-    "CSPMiddleware",
     "RequestSizeLimitMiddleware",
-    "SecurityAuditLogger",
     "CacheManager",
     "AgentCache",
-    "ClientCache",
-    "PeerCache",
     "CacheWarmer",
     "A2ARegistryException",
     "AgentNotFoundError",
-    "ClientNotFoundError",
     "AccessDeniedError",
     "ValidationError",
     "RateLimitExceededError",
-    "SearchServiceError",
-    "FederationError",
     "DatabaseError",
     "CacheError",
     "ExternalServiceError",

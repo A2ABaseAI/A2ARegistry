@@ -7,13 +7,13 @@ import time
 from typing import Any, Dict
 
 from fastapi import Request
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
 
 
-class ProductionFormatter(jsonlogger.JsonFormatter):
+class ProductionFormatter(JsonFormatter):
     """Custom JSON formatter for production logs."""
 
     def add_fields(
@@ -40,6 +40,25 @@ class ProductionFormatter(jsonlogger.JsonFormatter):
 
 def setup_logging() -> None:
     """Set up production logging configuration."""
+
+    # Skip logging setup in test environment
+    import os
+    if os.getenv("TESTING") == "true":
+        return
+
+    # Create log directory if it doesn't exist
+    log_dir = "/var/log/a2a-registry"
+    if not os.path.exists(log_dir):
+        try:
+            os.makedirs(log_dir, exist_ok=True)
+        except PermissionError:
+            # If we can't create the directory, fall back to console-only logging
+            log_level = "DEBUG" if settings.debug else "INFO"
+            logging.basicConfig(
+                level=log_level,
+                format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
+            return
 
     # Determine log level based on environment
     log_level = "DEBUG" if settings.debug else "INFO"
@@ -101,7 +120,7 @@ def setup_logging() -> None:
                 "handlers": ["console", "file"],
                 "propagate": False,
             },
-            "elasticsearch": {
+            "search": {
                 "level": "WARNING",
                 "handlers": ["console", "file"],
                 "propagate": False,

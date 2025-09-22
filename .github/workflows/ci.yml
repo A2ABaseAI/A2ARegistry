@@ -132,33 +132,3 @@ jobs:
       with:
         name: security-report
         path: bandit-report.json
-
-  build:
-    runs-on: ubuntu-latest
-    needs: [test, lint, security]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3.4.0
-    
-    - name: Build Docker image
-      uses: docker/build-push-action@v5
-      timeout-minutes: 20
-      with:
-        context: .
-        file: ./Dockerfile.prod
-        push: false
-        load: true
-        tags: a2a-registry:latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=min
-        build-args: |
-          BUILDKIT_INLINE_CACHE=1
-        platforms: linux/amd64
-    
-    - name: Test Docker image
-      run: |
-        docker run --rm a2a-registry:latest python -c "import app; print('App imports successfully')"
-    

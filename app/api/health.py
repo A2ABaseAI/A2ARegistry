@@ -1,17 +1,13 @@
 """Health check and monitoring endpoints."""
 
 from typing import Any, Dict
+from datetime import datetime, timezone
 
-import redis
-from elasticsearch import Elasticsearch
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import text
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException, status
 
 from ..config import settings
 from ..core.logging import get_logger
 from ..core.monitoring import HealthChecker, get_metrics_response
-from ..database import get_db
 
 router = APIRouter(prefix="/health", tags=["health"])
 logger = get_logger(__name__)
@@ -24,58 +20,34 @@ async def health_check():
         "status": "healthy",
         "service": "a2a-registry",
         "version": settings.app_version,
-        "timestamp": "2025-01-16T10:00:00Z",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
 @router.get("/ready", response_model=Dict[str, Any])
-async def readiness_check(db: Session = Depends(get_db)):
+async def readiness_check():
     """Readiness check - verifies all dependencies are available."""
+    
+    # Initialize health checker (manages its own connections)
+    health_checker = HealthChecker()
 
-    health_status = {
-        "status": "ready",
+    # Perform health checks
+    health_status = await health_checker.check_all()
+    
+    # Add service metadata
+    health_status.update({
         "service": "a2a-registry",
         "version": settings.app_version,
-        "checks": {},
-    }
+    })
 
-    all_healthy = True
-
-    # Check database
-    try:
-        db.execute(text("SELECT 1"))
-        health_status["checks"]["database"] = {"status": "healthy"}
-    except Exception as e:
-        health_status["checks"]["database"] = {"status": "unhealthy", "error": str(e)}
-        all_healthy = False
-
-    # Check Redis
-    try:
-        redis_client = redis.from_url(settings.redis_url)
-        redis_client.ping()
-        health_status["checks"]["redis"] = {"status": "healthy"}
-    except Exception as e:
-        health_status["checks"]["redis"] = {"status": "unhealthy", "error": str(e)}
-        all_healthy = False
-
-    # Check Elasticsearch
-    try:
-        es_client = Elasticsearch([settings.elasticsearch_url])
-        es_client.ping()
-        health_status["checks"]["elasticsearch"] = {"status": "healthy"}
-    except Exception as e:
-        health_status["checks"]["elasticsearch"] = {
-            "status": "unhealthy",
-            "error": str(e),
-        }
-        all_healthy = False
-
-    if not all_healthy:
+    # Check if all components are healthy
+    if health_status["status"] != "healthy":
         health_status["status"] = "not_ready"
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=health_status
         )
 
+    health_status["status"] = "ready"
     return health_status
 
 
@@ -91,17 +63,11 @@ async def liveness_check():
 
 
 @router.get("/detailed", response_model=Dict[str, Any])
-async def detailed_health_check(db: Session = Depends(get_db)):
+async def detailed_health_check():
     """Detailed health check with comprehensive system status."""
 
-    # Initialize health checker
-    redis_client = redis.from_url(settings.redis_url)
-    es_client = Elasticsearch([settings.elasticsearch_url])
-    health_checker = HealthChecker(
-        db_session_factory=lambda: db,
-        redis_client=redis_client,
-        elasticsearch_client=es_client,
-    )
+    # Initialize health checker (manages its own connections)
+    health_checker = HealthChecker()
 
     # Perform comprehensive health checks
     health_status = await health_checker.check_all()
@@ -109,16 +75,15 @@ async def detailed_health_check(db: Session = Depends(get_db)):
     # Add additional application-specific checks
     try:
         # Check agent count
-        from ..services.agent_service import AgentService
+        from ..services.registry_service import RegistryService
 
-        agent_service = AgentService(db)
-        agent_count = agent_service.get_agent_count()
+        registry_service = RegistryService()
+        agents, _ = registry_service.list_public(tenant_id="default", top=1, skip=0)
+        agent_count = len(agents)
         health_status["metrics"] = {
             "total_agents": agent_count,
-            "active_agents": len(
-                agent_service.list_agents(is_active=True, limit=10000)
-            ),
-            "public_agents": len(agent_service.get_public_agents()),
+            "active_agents": agent_count,
+            "public_agents": agent_count,
         }
     except Exception as e:
         health_status["metrics"] = {"error": str(e)}
@@ -142,7 +107,7 @@ async def prometheus_metrics():
 
 
 @router.get("/status", response_model=Dict[str, Any])
-async def status_check(db: Session = Depends(get_db)):
+async def status_check():
     """Status check with business logic validation."""
 
     status_info = {
@@ -150,19 +115,35 @@ async def status_check(db: Session = Depends(get_db)):
         "service": "a2a-registry",
         "version": settings.app_version,
         "features": {
-            "federation": settings.enable_federation,
+            "federation": False,  # Federation not implemented yet
             "search": True,
             "authentication": True,
         },
     }
 
+    # Check system health using HealthChecker
+    try:
+        health_checker = HealthChecker()
+        health_status = await health_checker.check_all()
+        
+        # If any component is unhealthy, mark as degraded
+        if health_status["status"] != "healthy":
+            status_info["status"] = "degraded"
+            status_info["health_issues"] = health_status["components"]
+
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        status_info["status"] = "degraded"
+        status_info["health_issues"] = {"error": str(e)}
+
     # Check if core functionality is working
     try:
-        from ..services.agent_service import AgentService
-        agent_service = AgentService(db)
+        from ..services.registry_service import RegistryService
+        registry_service = RegistryService()
 
         # Verify we can perform basic operations
-        agent_count = agent_service.get_agent_count()
+        agents, _ = registry_service.list_public(tenant_id="default", top=1, skip=0)
+        agent_count = len(agents)
 
         status_info["operational_metrics"] = {
             "agents_registered": agent_count,

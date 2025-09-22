@@ -1,66 +1,208 @@
-"""Production security utilities and middleware."""
+"""Security utilities for authentication and authorization."""
 
+import hashlib
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-import redis
-from fastapi import Request, status
+import jwt
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
+from fastapi import Depends, HTTPException, Request, Response, status
+from fastapi.security import HTTPBearer
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
 
-from app.core.logging import get_logger
+from ..config import settings
+from ..core.logging import get_logger
 
 logger = get_logger(__name__)
+security = HTTPBearer(auto_error=False)
 
 
-# Security headers middleware
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add security headers to all responses."""
+def hash_password(password: str) -> str:
+    """Hash a password using PBKDF2."""
+    salt = secrets.token_bytes(32)
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    key = kdf.derive(password.encode())
+    return f"{salt.hex()}:{key.hex()}"
 
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
 
-        # Security headers
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = (
-            "max-age=31536000; includeSubDomains"
+def verify_password(password: str, hashed_password: str) -> bool:
+    """Verify a password against its hash."""
+    try:
+        salt_hex, key_hex = hashed_password.split(":")
+        salt = bytes.fromhex(salt_hex)
+        key = bytes.fromhex(key_hex)
+        
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
         )
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        kdf.verify(password.encode(), key)
+        return True
+    except Exception:
+        return False
 
-        return response
+
+def create_access_token(
+    user_id: str,
+    username: str,
+    email: str,
+    roles: List[str],
+    tenant_id: str,
+    expires_delta: Optional[timedelta] = None
+) -> str:
+    """Create a JWT access token."""
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    
+    # Create token payload
+    payload = {
+        "iss": settings.token_issuer or "a2a-registry",
+        "aud": settings.token_audience or "a2a-registry",
+        "sub": user_id,
+        "iat": int(datetime.now(timezone.utc).timestamp()),
+        "exp": int(expire.timestamp()),
+        "nbf": int(datetime.now(timezone.utc).timestamp()),
+        
+        # A2A Registry specific claims
+        "user_id": user_id,
+        "username": username,
+        "email": email,
+        "client_id": user_id,
+        "roles": roles,
+        "tenant": tenant_id,
+    }
+    
+    # Create token with HS256 (simpler for internal use)
+    token = jwt.encode(
+        payload,
+        settings.secret_key,
+        algorithm=settings.algorithm
+    )
+    
+    return token
 
 
-# Rate limiting
+def verify_access_token(token: str) -> Dict[str, Any]:
+    """Verify and decode a JWT access token."""
+    try:
+        payload = jwt.decode(
+            token,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+            audience=settings.token_audience or "a2a-registry",
+            issuer=settings.token_issuer or "a2a-registry",
+            options={
+                "verify_exp": True,
+                "verify_aud": bool(settings.token_audience),
+                "verify_iss": bool(settings.token_issuer)
+            }
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired"
+        )
+    except jwt.InvalidAudienceError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token audience"
+        )
+    except jwt.InvalidIssuerError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token issuer"
+        )
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        ) from e
+
+
+def require_oauth(credentials: Optional[HTTPBearer] = None) -> Dict[str, Any]:
+    """Require OAuth authentication."""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing bearer token"
+        )
+    return verify_access_token(credentials.credentials)
+
+
+def extract_context(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract context from JWT payload."""
+    roles = payload.get(settings.role_claim, [])
+    tenant = payload.get(settings.tenant_claim)
+    client_id = (
+        payload.get(settings.client_id_claim)
+        or payload.get("client_id")
+        or payload.get("sub")
+        or payload.get("user_id")
+    )
+    return {"roles": roles, "tenant": tenant, "client_id": client_id}
+
+
+def require_roles(*required_roles: str):
+    """Require specific roles for access."""
+    def _dep(payload: Dict[str, Any] = Depends(require_oauth)) -> Dict[str, Any]:
+        ctx = extract_context(payload)
+        roles = set(ctx.get("roles") or [])
+        if not roles.intersection(required_roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions"
+            )
+        return ctx
+    return _dep
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Rate limiting middleware."""
 
-    def __init__(self, app, redis_client: redis.Redis):
+    def __init__(self, app, redis_client: Optional[Any] = None):
         super().__init__(app)
         self.redis_client = redis_client
-        self.default_limit = 100  # requests per minute
+        # Default limits (req/min) - tighten/write-heavy endpoints
+        self.default_limit = 200
         self.limit_by_endpoint = {
-            "/agents/search": 20,
-            "/oauth/token": 10,
-            "/peers/sync-all": 5,
+            "/agents/search": 120,
+            "/agents/publish": 30,
+            "/.well-known/agents/index.json": 300,
+            "/auth/login": 10,  # Stricter limit for login
+            "/auth/register": 5,  # Very strict limit for registration
         }
 
     async def dispatch(self, request: Request, call_next):
-        # Get client identifier
-        client_id = self._get_client_id(request)
+        # Get client identifier (tenant-aware) for fair limiting
+        client_id, tenant = self._get_client_and_tenant(request)
 
         # Get rate limit for endpoint
         limit = self.limit_by_endpoint.get(request.url.path, self.default_limit)
 
         # Check rate limit
-        if not await self._check_rate_limit(client_id, request.url.path, limit):
+        if not await self._check_rate_limit(
+            tenant or "default", client_id, request.url.path, limit, request
+        ):
             logger.warning(
                 "Rate limit exceeded",
                 extra={
                     "client_id": client_id,
+                    "tenant": tenant,
                     "endpoint": request.url.path,
                     "limit": limit,
                 },
@@ -75,35 +217,48 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
 
-    def _get_client_id(self, request: Request) -> str:
-        """Get client identifier for rate limiting."""
-        # Try to get client ID from token
-        auth_header = request.headers.get("authorization")
-        if auth_header and auth_header.startswith("Bearer "):
+    def _get_client_and_tenant(self, request: Request) -> tuple[str, Optional[str]]:
+        """Extract client ID and tenant from request."""
+        # Try to get from Authorization header
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
             try:
-                from app.auth import verify_token
-
-                token = auth_header.split(" ")[1]
-                payload = verify_token(token)
-                if payload:
-                    return payload.get("sub", "anonymous")
+                token = auth_header[7:]
+                payload = verify_access_token(token)
+                ctx = extract_context(payload)
+                return ctx.get("client_id", "anonymous"), ctx.get("tenant")
             except Exception:
                 pass
-
+        
         # Fallback to IP address
-        return request.client.host if request.client else "unknown"
+        client_ip = request.client.host if request.client else "unknown"
+        return client_ip, None
 
-    async def _check_rate_limit(
-        self, client_id: str, endpoint: str, limit: int
-    ) -> bool:
-        """Check if client is within rate limit."""
-        key = f"rate_limit:{client_id}:{endpoint}"
+    async def _check_rate_limit(self, tenant: str, client_id: str, endpoint: str, limit: int, request: Request) -> bool:
+        """Check if client is within rate limit (per-tenant, per-endpoint)."""
+        # Use the Redis client passed to the middleware constructor
+        redis_client = self.redis_client
+        if not redis_client:
+            return True  # Allow request if Redis is not available
+        
+        # Check if Redis client is actually connected
+        try:
+            redis_client.ping()
+        except Exception:
+            return True  # Allow request if Redis is not connected
+        
+        key = f"rl:{tenant}:{client_id}:{endpoint}"
 
         try:
-            # Use sliding window counter
-            current = self.redis_client.incr(key)
+            # Fixed window counter (1 minute)
+            pipe = redis_client.pipeline()
+            pipe.incr(key)
+            pipe.expire(key, 60)
+            results = pipe.execute()
+            current = results[0]  # First result is the incremented value
             if current == 1:
-                self.redis_client.expire(key, 60)  # 1 minute window
+                # TTL already set above; keep branch for clarity
+                pass
 
             return current <= limit
         except Exception as e:
@@ -111,160 +266,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return True  # Allow request if Redis is down
 
 
-# Input validation and sanitization
-class InputValidator:
-    """Input validation utilities."""
-
-    @staticmethod
-    def validate_agent_card(agent_card: Dict[str, Any]) -> List[str]:
-        """Validate agent card data."""
-        errors = []
-
-        # Required fields
-        required_fields = [
-            "id",
-            "name",
-            "version",
-            "description",
-            "capabilities",
-            "provider",
-        ]
-        for field in required_fields:
-            if not agent_card.get(field):
-                errors.append(f"Missing required field: {field}")
-
-        # Validate capabilities
-        capabilities = agent_card.get("capabilities", {})
-        if not capabilities.get("a2a_version"):
-            errors.append("Missing a2a_version in capabilities")
-
-        if not capabilities.get("supported_protocols"):
-            errors.append("Missing supported_protocols in capabilities")
-
-        # Validate auth schemes
-        auth_schemes = agent_card.get("auth_schemes", [])
-        if not auth_schemes:
-            errors.append("At least one auth_scheme is required")
-
-        for scheme in auth_schemes:
-            if not scheme.get("type"):
-                errors.append("Auth scheme missing type")
-
-        # Validate location
-        location = agent_card.get("location", {})
-        if not location.get("url"):
-            errors.append("Missing location URL")
-
-        return errors
-
-    @staticmethod
-    def sanitize_string(value: str, max_length: int = 1000) -> str:
-        """Sanitize string input."""
-        if not isinstance(value, str):
-            return str(value)
-
-        # Remove null bytes and control characters
-        sanitized = "".join(char for char in value if ord(char) >= 32)
-
-        # Truncate if too long
-        if len(sanitized) > max_length:
-            sanitized = sanitized[:max_length]
-
-        return sanitized.strip()
-
-    @staticmethod
-    def validate_url(url: str) -> bool:
-        """Validate URL format."""
-        import re
-
-        url_pattern = re.compile(
-            r"^https?://"  # http:// or https://
-            r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|"  # domain...
-            r"localhost|"  # localhost...
-            r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # ...or ip
-            r"(?::\d+)?"  # optional port
-            r"(?:/?|[/?]\S+)$",
-            re.IGNORECASE,
-        )
-        return url_pattern.match(url) is not None
-
-
-# API key management
-class APIKeyManager:
-    """Manage API keys for external integrations."""
-
-    def __init__(self, redis_client: redis.Redis):
-        self.redis_client = redis_client
-
-    def generate_api_key(self, client_id: str, scopes: List[str]) -> str:
-        """Generate a new API key."""
-        key = f"ak_{secrets.token_urlsafe(32)}"
-
-        # Store key metadata
-        key_data = {
-            "client_id": client_id,
-            "scopes": scopes,
-            "created_at": datetime.utcnow().isoformat(),
-            "last_used": None,
-        }
-
-        self.redis_client.hset(f"api_key:{key}", mapping=key_data)
-        self.redis_client.expire(f"api_key:{key}", 365 * 24 * 3600)  # 1 year
-
-        return key
-
-    def validate_api_key(self, key: str) -> Optional[Dict[str, Any]]:
-        """Validate an API key."""
-        key_data = self.redis_client.hgetall(f"api_key:{key}")
-        if not key_data:
-            return None
-
-        # Update last used timestamp
-        self.redis_client.hset(
-            f"api_key:{key}", "last_used", datetime.utcnow().isoformat()
-        )
-
-        return {
-            "client_id": key_data.get("client_id"),
-            "scopes": (
-                key_data.get("scopes", "").split(",") if key_data.get("scopes") else []
-            ),
-            "created_at": key_data.get("created_at"),
-            "last_used": key_data.get("last_used"),
-        }
-
-    def revoke_api_key(self, key: str) -> bool:
-        """Revoke an API key."""
-        return bool(self.redis_client.delete(f"api_key:{key}"))
-
-
-# Content Security Policy
-class CSPMiddleware(BaseHTTPMiddleware):
-    """Content Security Policy middleware."""
-
-    def __init__(self, app, policy: str = None):
-        super().__init__(app)
-        self.policy = policy or (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: https:; "
-            "font-src 'self'; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none'; "
-            "base-uri 'self'; "
-            "form-action 'self'"
-        )
-
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        response.headers["Content-Security-Policy"] = self.policy
-        return response
-
-
-# Request size limiting
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
-    """Limit request body size."""
+    """Request size limiting middleware."""
 
     def __init__(self, app, max_size: int = 10 * 1024 * 1024):  # 10MB default
         super().__init__(app)
@@ -274,54 +277,10 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
         content_length = request.headers.get("content-length")
         if content_length and int(content_length) > self.max_size:
             return Response(
-                content='{"error": "Request body too large"}',
+                content='{"error": "Request too large"}',
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 media_type="application/json",
             )
 
-        return await call_next(request)
-
-
-# Security audit logging
-class SecurityAuditLogger:
-    """Log security-related events."""
-
-    def __init__(self):
-        self.logger = get_logger("security")
-
-    def log_auth_attempt(self, client_id: str, success: bool, ip_address: str = None):
-        """Log authentication attempt."""
-        self.logger.info(
-            "Authentication attempt",
-            extra={
-                "client_id": client_id,
-                "success": success,
-                "ip_address": ip_address,
-                "event_type": "auth_attempt",
-            },
-        )
-
-    def log_rate_limit_exceeded(
-        self, client_id: str, endpoint: str, ip_address: str = None
-    ):
-        """Log rate limit exceeded."""
-        self.logger.warning(
-            "Rate limit exceeded",
-            extra={
-                "client_id": client_id,
-                "endpoint": endpoint,
-                "ip_address": ip_address,
-                "event_type": "rate_limit_exceeded",
-            },
-        )
-
-    def log_suspicious_activity(self, activity: str, details: Dict[str, Any]):
-        """Log suspicious activity."""
-        self.logger.warning(
-            "Suspicious activity detected",
-            extra={
-                "activity": activity,
-                "details": details,
-                "event_type": "suspicious_activity",
-            },
-        )
+        response = await call_next(request)
+        return response
