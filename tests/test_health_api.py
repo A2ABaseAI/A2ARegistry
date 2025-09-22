@@ -1,10 +1,12 @@
 """Tests for app/api/health.py - Health check endpoints."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 
 from app.main import app
+
 from .base_test import BaseTest
 
 
@@ -44,8 +46,9 @@ class TestHealthAPI(BaseTest):
     def test_health_detailed_endpoint(self, client):
         """Test detailed health check endpoint."""
         # Mock the HealthChecker
-        with patch('app.api.health.HealthChecker') as mock_health_checker:
+        with patch("app.api.health.HealthChecker") as mock_health_checker:
             mock_checker_instance = MagicMock()
+
             # Create an async mock that returns the health data
             async def mock_check_all():
                 return {
@@ -53,9 +56,10 @@ class TestHealthAPI(BaseTest):
                     "checks": {
                         "database": {"status": "healthy"},
                         "redis": {"status": "healthy"},
-                        "opensearch": {"status": "healthy"}
-                    }
+                        "opensearch": {"status": "healthy"},
+                    },
                 }
+
             mock_checker_instance.check_all = mock_check_all
             mock_health_checker.return_value = mock_checker_instance
 
@@ -103,8 +107,9 @@ class TestHealthAPI(BaseTest):
 
     def test_health_detailed_structure(self, client):
         """Test that detailed health check has correct structure."""
-        with patch('app.api.health.HealthChecker') as mock_health_checker:
+        with patch("app.api.health.HealthChecker") as mock_health_checker:
             mock_checker_instance = MagicMock()
+
             # Create an async mock that returns the health data
             async def mock_check_all():
                 return {
@@ -112,11 +117,12 @@ class TestHealthAPI(BaseTest):
                     "checks": {
                         "database": {"status": "healthy", "details": "Connected"},
                         "redis": {"status": "healthy", "details": "Connected"},
-                        "opensearch": {"status": "healthy", "details": "Connected"}
+                        "opensearch": {"status": "healthy", "details": "Connected"},
                     },
                     "timestamp": "2023-01-01T00:00:00Z",
-                    "version": "1.0.0"
+                    "version": "1.0.0",
                 }
+
             mock_checker_instance.check_all = mock_check_all
             mock_health_checker.return_value = mock_checker_instance
 
@@ -162,8 +168,9 @@ class TestHealthAPI(BaseTest):
 
     def test_health_detailed_checks(self, client):
         """Test individual health checks in detailed endpoint."""
-        with patch('app.api.health.HealthChecker') as mock_health_checker:
+        with patch("app.api.health.HealthChecker") as mock_health_checker:
             mock_checker_instance = MagicMock()
+
             # Create an async mock that returns the health data
             async def mock_check_all():
                 return {
@@ -171,9 +178,10 @@ class TestHealthAPI(BaseTest):
                     "checks": {
                         "database": {"status": "healthy", "response_time_ms": 10},
                         "redis": {"status": "healthy", "response_time_ms": 5},
-                        "opensearch": {"status": "healthy", "response_time_ms": 15}
-                    }
+                        "opensearch": {"status": "healthy", "response_time_ms": 15},
+                    },
                 }
+
             mock_checker_instance.check_all = mock_check_all
             mock_health_checker.return_value = mock_checker_instance
 

@@ -23,6 +23,4 @@ class OAuthClient(Base):
     display_name = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "client_id", name="uq_oauth_clients_tenant_client"),
-    )
+    __table_args__ = (UniqueConstraint("tenant_id", "client_id", name="uq_oauth_clients_tenant_client"),)

@@ -1,6 +1,7 @@
 """Agent, versions, and entitlements for the registry."""
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Column,
     DateTime,
@@ -9,7 +10,6 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy import JSON
 from sqlalchemy.sql import func
 
 from .base import Base
@@ -25,18 +25,14 @@ class AgentRecord(Base):
     latest_version = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "publisher_id", "agent_key", name="uq_agents_pub_key"),
-    )
+    __table_args__ = (UniqueConstraint("tenant_id", "publisher_id", "agent_key", name="uq_agents_pub_key"),)
 
 
 class AgentVersion(Base):
     __tablename__ = "agent_versions"
 
     id = Column(String, primary_key=True, index=True)
-    agent_id = Column(
-        String, ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    agent_id = Column(String, ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
     version = Column(String, nullable=False)
     protocol_version = Column(String, nullable=False)
     card_json = Column(JSON, nullable=False)
@@ -47,9 +43,7 @@ class AgentVersion(Base):
     public = Column(Boolean, server_default="true", index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("agent_id", "version", name="uq_agent_versions_unique"),
-    )
+    __table_args__ = (UniqueConstraint("agent_id", "version", name="uq_agent_versions_unique"),)
 
 
 class Entitlement(Base):
@@ -62,6 +56,4 @@ class Entitlement(Base):
     scope = Column(String, nullable=False)  # view | use | admin
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "client_id", "agent_id", "scope", name="uq_entitlements"),
-    )
+    __table_args__ = (UniqueConstraint("tenant_id", "client_id", "agent_id", "scope", name="uq_entitlements"),)

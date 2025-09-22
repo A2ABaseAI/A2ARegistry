@@ -1,9 +1,8 @@
 """Tests for app/models/ - Database models."""
 
-import pytest
-
 
 from app.models.agent_core import AgentRecord, AgentVersion, Entitlement
+
 from .base_test import BaseTest
 
 
@@ -42,9 +41,7 @@ class TestModels(BaseTest):
         assert agent_version.signature_valid is True
 
         # Verify it was saved to database
-        saved_version = db_session.query(AgentVersion).filter_by(
-            id="version-test-agent-123"
-        ).first()
+        saved_version = db_session.query(AgentVersion).filter_by(id="version-test-agent-123").first()
         assert saved_version is not None
         assert saved_version.id == agent_version.id
 
@@ -63,9 +60,7 @@ class TestModels(BaseTest):
         assert entitlement.scope == "view"
 
         # Verify it was saved to database
-        saved_entitlement = db_session.query(Entitlement).filter_by(
-            id="entitlement-test-agent-123"
-        ).first()
+        saved_entitlement = db_session.query(Entitlement).filter_by(id="entitlement-test-agent-123").first()
         assert saved_entitlement is not None
         assert saved_entitlement.id == entitlement.id
 
@@ -75,11 +70,7 @@ class TestModels(BaseTest):
         agent_record, version1 = self.setup_complete_agent(db_session, "test-agent-123")
 
         self.create_test_agent_version(
-            db_session,
-            "test-agent-123",
-            id="version-2",
-            version="2.0.0",
-            card_json={"name": "Test Agent v2"}
+            db_session, "test-agent-123", id="version-2", version="2.0.0", card_json={"name": "Test Agent v2"}
         )
 
         # Test relationships
@@ -106,19 +97,12 @@ class TestModels(BaseTest):
         complex_card_json = {
             "name": "Test Agent",
             "description": "A test agent",
-            "capabilities": {
-                "a2a_version": "0.3.0",
-                "supported_protocols": ["text"],
-                "text": True
-            },
+            "capabilities": {"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
             "skills": [],
-            "authSchemes": []
+            "authSchemes": [],
         }
 
-        agent_version = self.create_test_agent_version(
-            db_session,
-            card_json=complex_card_json
-        )
+        agent_version = self.create_test_agent_version(db_session, card_json=complex_card_json)
 
         # Verify JSON field is stored and retrieved correctly
         assert agent_version.card_json == complex_card_json
@@ -133,10 +117,7 @@ class TestModels(BaseTest):
         scopes = ["view", "use", "admin"]
         for scope in scopes:
             entitlement = self.create_test_entitlement(
-                db_session,
-                agent_id=f"test-agent-{scope}",
-                id=f"entitlement-{scope}",
-                scope=scope
+                db_session, agent_id=f"test-agent-{scope}", id=f"entitlement-{scope}", scope=scope
             )
             assert entitlement.scope == scope
 
@@ -144,14 +125,11 @@ class TestModels(BaseTest):
         """Test AgentRecord field constraints."""
         # Test required fields - this should succeed with all required fields
         agent_record = AgentRecord(
-            id="test-agent-id",
-            tenant_id="default",
-            publisher_id="test-publisher",
-            agent_key="test-key"
+            id="test-agent-id", tenant_id="default", publisher_id="test-publisher", agent_key="test-key"
         )
         db_session.add(agent_record)
         db_session.commit()
-        
+
         # Verify the record was created
         assert agent_record.id == "test-agent-id"
         assert agent_record.tenant_id == "default"
@@ -169,11 +147,11 @@ class TestModels(BaseTest):
             version="1.0.0",
             protocol_version="0.3.0",
             card_json={},
-            card_hash="test-hash"
+            card_hash="test-hash",
         )
         db_session.add(agent_version)
         db_session.commit()
-        
+
         # Verify the record was created
         assert agent_version.id == "test-agent:1.0.0"
         assert agent_version.agent_id == "test-agent-id"
@@ -189,11 +167,11 @@ class TestModels(BaseTest):
             tenant_id="default",
             client_id="test-client",
             agent_id="test-agent-id",
-            scope="read"
+            scope="read",
         )
         db_session.add(entitlement)
         db_session.commit()
-        
+
         # Verify the record was created
         assert entitlement.id == "test-entitlement-id"
         assert entitlement.tenant_id == "default"

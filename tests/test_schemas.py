@@ -2,14 +2,9 @@
 
 import pytest
 
+from app.schemas.agent import AgentAuthScheme, AgentCapabilities, AgentCard, AgentCreate, AgentResponse
 from app.schemas.agent_card_spec import AgentCardSpec, Skill
-from app.schemas.agent import (
-    AgentCreate,
-    AgentResponse,
-    AgentCard,
-    AgentCapabilities,
-    AgentAuthScheme
-)
+
 from .base_test import BaseTest
 
 
@@ -23,13 +18,9 @@ class TestSchemas(BaseTest):
             name="Test Agent",
             description="A test agent",
             url="https://example.com/.well-known/agent-card.json",
-            capabilities={
-                "a2a_version": "0.3.0",
-                "supported_protocols": ["text"],
-                "text": True
-            },
+            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
             skills=[],
-            authSchemes=[]
+            authSchemes=[],
         )
 
         assert agent_card.protocolVersion == "0.3.0"
@@ -53,47 +44,30 @@ class TestSchemas(BaseTest):
             name="Test Agent",
             description="A test agent",
             url="https://example.com/.well-known/agent-card.json",
-            capabilities={
-                "a2a_version": "0.3.0",
-                "supported_protocols": ["text"],
-                "text": True
-            },
+            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
             skills=[],
             authSchemes=[],
             provider="test-provider",
-            location={
-                "url": "https://example.com/agent",
-                "type": "agent_card"
-            }
+            location={"url": "https://example.com/agent", "type": "agent_card"},
         )
         assert agent_card.protocolVersion == "0.3.0"
 
     def test_skill_schema(self):
         """Test Skill schema."""
-        skill = Skill(
-            id="test-skill",
-            name="test-skill",
-            description="A test skill"
-        )
+        skill = Skill(id="test-skill", name="test-skill", description="A test skill")
         assert skill.id == "test-skill"
         assert skill.name == "test-skill"
         assert skill.description == "A test skill"
 
     def test_capability_schema(self):
         """Test AgentCapabilities schema."""
-        capability = AgentCapabilities(
-            a2a_version="0.3.0",
-            supported_protocols=["text"]
-        )
+        capability = AgentCapabilities(a2a_version="0.3.0", supported_protocols=["text"])
         assert capability.a2a_version == "0.3.0"
         assert "text" in capability.supported_protocols
 
     def test_location_schema(self):
         """Test location as dict in AgentCard."""
-        location = {
-            "url": "https://example.com/agent",
-            "type": "agent_card"
-        }
+        location = {"url": "https://example.com/agent", "type": "agent_card"}
         assert location["url"] == "https://example.com/agent"
         assert location["type"] == "agent_card"
 
@@ -103,7 +77,7 @@ class TestSchemas(BaseTest):
             type="oauth2",
             flow="client_credentials",
             token_url="https://example.com/oauth/token",
-            scopes=["read", "write"]
+            scopes=["read", "write"],
         )
         assert auth_scheme.type == "oauth2"
         assert auth_scheme.flow == "client_credentials"
@@ -116,22 +90,13 @@ class TestSchemas(BaseTest):
             name="Test Agent",
             version="1.0.0",
             description="A test agent",
-            capabilities=AgentCapabilities(
-                a2a_version="0.3.0",
-                supported_protocols=["text"]
-            ),
+            capabilities=AgentCapabilities(a2a_version="0.3.0", supported_protocols=["text"]),
             skills={},
             auth_schemes=[],
             provider="test-provider",
-            location={
-                "url": "https://example.com/agent",
-                "type": "agent_card"
-            }
+            location={"url": "https://example.com/agent", "type": "agent_card"},
         )
-        agent_create = AgentCreate(
-            agent_card=agent_card,
-            is_public=True
-        )
+        agent_create = AgentCreate(agent_card=agent_card, is_public=True)
         assert agent_create.is_public is True
         assert agent_create.agent_card.name == "Test Agent"
 
@@ -146,12 +111,9 @@ class TestSchemas(BaseTest):
             tags=["test", "agent"],
             is_public=True,
             is_active=True,
-            location={
-                "url": "https://example.com/agent",
-                "type": "agent_card"
-            },
+            location={"url": "https://example.com/agent", "type": "agent_card"},
             created_at="2023-01-01T00:00:00Z",
-            updated_at="2023-01-01T00:00:00Z"
+            updated_at="2023-01-01T00:00:00Z",
         )
         assert agent_response.id == "test-agent-123"
         assert agent_response.name == "Test Agent"
@@ -166,18 +128,11 @@ class TestSchemas(BaseTest):
             name="Test Agent",
             description="A test agent",
             url="https://example.com/.well-known/agent-card.json",
-            capabilities={
-                "a2a_version": "0.3.0",
-                "supported_protocols": ["text"],
-                "text": True
-            },
+            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
             skills=[],
             authSchemes=[],
             provider="test-provider",
-            location={
-                "url": "https://example.com/agent",
-                "type": "agent_card"
-            }
+            location={"url": "https://example.com/agent", "type": "agent_card"},
         )
 
         # Test model_dump
@@ -197,18 +152,11 @@ class TestSchemas(BaseTest):
             "name": "Test Agent",
             "description": "A test agent",
             "url": "https://example.com/.well-known/agent-card.json",
-            "capabilities": {
-                "a2a_version": "0.3.0",
-                "supported_protocols": ["text"],
-                "text": True
-            },
+            "capabilities": {"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
             "skills": [],
             "authSchemes": [],
             "provider": "test-provider",
-            "location": {
-                "url": "https://example.com/agent",
-                "type": "agent_card"
-            }
+            "location": {"url": "https://example.com/agent", "type": "agent_card"},
         }
 
         agent_card = AgentCardSpec.model_validate(data)
@@ -218,11 +166,7 @@ class TestSchemas(BaseTest):
     def test_skill_validation(self):
         """Test Skill validation."""
         # Valid skill
-        skill = Skill(
-            id="test-skill",
-            name="test-skill",
-            description="A test skill"
-        )
+        skill = Skill(id="test-skill", name="test-skill", description="A test skill")
         assert skill.name == "test-skill"
 
         # Invalid skill (missing required fields)
@@ -235,18 +179,12 @@ class TestSchemas(BaseTest):
     def test_capabilities_validation(self):
         """Test AgentCapabilities validation."""
         # Valid capabilities
-        capabilities = AgentCapabilities(
-            a2a_version="0.3.0",
-            supported_protocols=["text", "image"]
-        )
+        capabilities = AgentCapabilities(a2a_version="0.3.0", supported_protocols=["text", "image"])
         assert capabilities.a2a_version == "0.3.0"
         assert len(capabilities.supported_protocols) == 2
 
         # Test with empty protocols
-        capabilities_empty = AgentCapabilities(
-            a2a_version="0.3.0",
-            supported_protocols=[]
-        )
+        capabilities_empty = AgentCapabilities(a2a_version="0.3.0", supported_protocols=[])
         assert capabilities_empty.supported_protocols == []
 
     def test_auth_scheme_validation(self):
@@ -256,17 +194,14 @@ class TestSchemas(BaseTest):
             type="oauth2",
             flow="client_credentials",
             token_url="https://example.com/oauth/token",
-            scopes=["read", "write"]
+            scopes=["read", "write"],
         )
         assert auth_scheme.type == "oauth2"
         assert len(auth_scheme.scopes) == 2
 
         # Test with empty scopes
         auth_scheme_empty = AgentAuthScheme(
-            type="oauth2",
-            flow="client_credentials",
-            token_url="https://example.com/oauth/token",
-            scopes=[]
+            type="oauth2", flow="client_credentials", token_url="https://example.com/oauth/token", scopes=[]
         )
         assert auth_scheme_empty.scopes == []
 
@@ -282,12 +217,9 @@ class TestSchemas(BaseTest):
             tags=["test"],
             is_public=True,
             is_active=True,
-            location={
-                "url": "https://example.com/agent",
-                "type": "agent_card"
-            },
+            location={"url": "https://example.com/agent", "type": "agent_card"},
             created_at="2023-01-01T00:00:00Z",
-            updated_at="2023-01-01T00:00:00Z"
+            updated_at="2023-01-01T00:00:00Z",
         )
         assert agent_response.id == "test-agent-123"
         assert agent_response.is_public is True
@@ -302,12 +234,9 @@ class TestSchemas(BaseTest):
             tags=[],
             is_public=True,
             is_active=True,
-            location={
-                "url": "https://example.com/agent",
-                "type": "agent_card"
-            },
+            location={"url": "https://example.com/agent", "type": "agent_card"},
             created_at="2023-01-01T00:00:00Z",
-            updated_at="2023-01-01T00:00:00Z"
+            updated_at="2023-01-01T00:00:00Z",
         )
         assert agent_response_empty_tags.tags == []
 
@@ -318,13 +247,9 @@ class TestSchemas(BaseTest):
             name="Test Agent",
             description="A test agent",
             url="https://example.com/.well-known/agent-card.json",
-            capabilities={
-                "a2a_version": "0.3.0",
-                "supported_protocols": ["text"],
-                "text": True
-            },
+            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
             skills=[],
-            authSchemes=[]
+            authSchemes=[],
         )
 
         # Check field types
@@ -343,18 +268,11 @@ class TestSchemas(BaseTest):
             name="Test Agent",
             description="A test agent",
             url="https://example.com/.well-known/agent-card.json",
-            capabilities={
-                "a2a_version": "0.3.0",
-                "supported_protocols": ["text"],
-                "text": True
-            },
+            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
             skills=[],
             authSchemes=[],
             provider="test-provider",
-            location={
-                "url": "https://example.com/agent",
-                "type": "agent_card"
-            }
+            location={"url": "https://example.com/agent", "type": "agent_card"},
         )
 
         # Optional fields should have default values or be None

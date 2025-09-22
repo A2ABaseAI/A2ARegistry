@@ -47,18 +47,14 @@ class TestWellKnownAPI(BaseTest):
         for i in range(5):
             self.setup_complete_agent(db_session, f"agent-{i}")
 
-        response = client.get(
-            "/.well-known/agents/index.json?top=2&skip=0"
-        )
+        response = client.get("/.well-known/agents/index.json?top=2&skip=0")
         assert response.status_code == 200
 
         data = response.json()
         assert len(data["agents"]) == 2
         assert data["count"] == 2
 
-        response = client.get(
-            "/.well-known/agents/index.json?top=2&skip=2"
-        )
+        response = client.get("/.well-known/agents/index.json?top=2&skip=2")
         assert response.status_code == 200
 
         data = response.json()
@@ -69,9 +65,7 @@ class TestWellKnownAPI(BaseTest):
         """Test well-known agent card endpoint."""
         agent_record, agent_version = self.setup_complete_agent(db_session, "test-agent-123")
 
-        response = client.get(
-            f"/.well-known/agents/{agent_record.id}/card"
-        )
+        response = client.get(f"/.well-known/agents/{agent_record.id}/card")
         assert response.status_code == 200
 
         data = response.json()
@@ -86,13 +80,9 @@ class TestWellKnownAPI(BaseTest):
 
     def test_well_known_agent_card_public(self, client, db_session, mock_auth):
         """Test accessing public agent card via well-known endpoint."""
-        agent_record, agent_version = self.setup_complete_agent(
-            db_session, "public-agent", public=True
-        )
+        agent_record, agent_version = self.setup_complete_agent(db_session, "public-agent", public=True)
 
-        response = client.get(
-            f"/.well-known/agents/{agent_record.id}/card"
-        )
+        response = client.get(f"/.well-known/agents/{agent_record.id}/card")
         assert response.status_code == 200
 
         data = response.json()
@@ -100,26 +90,18 @@ class TestWellKnownAPI(BaseTest):
 
     def test_well_known_agent_card_private_access_denied(self, client, db_session, mock_auth):
         """Test accessing private agent card without entitlement."""
-        agent_record, agent_version = self.setup_complete_agent(
-            db_session, "private-agent", public=False
-        )
+        agent_record, agent_version = self.setup_complete_agent(db_session, "private-agent", public=False)
 
-        response = client.get(
-            f"/.well-known/agents/{agent_record.id}/card"
-        )
+        response = client.get(f"/.well-known/agents/{agent_record.id}/card")
         assert response.status_code == 403
 
     def test_well_known_agent_card_private_with_entitlement(self, client, db_session, mock_auth):
         """Test accessing private agent card with entitlement."""
-        agent_record, agent_version = self.setup_complete_agent(
-            db_session, "private-agent", public=False
-        )
+        agent_record, agent_version = self.setup_complete_agent(db_session, "private-agent", public=False)
 
         self.create_test_entitlement(db_session, "private-agent", client_id="test-client")
 
-        response = client.get(
-            f"/.well-known/agents/{agent_record.id}/card"
-        )
+        response = client.get(f"/.well-known/agents/{agent_record.id}/card")
         assert response.status_code == 200
 
         data = response.json()
@@ -180,9 +162,7 @@ class TestWellKnownAPI(BaseTest):
         for i in range(5):
             self.setup_complete_agent(db_session, f"agent-{i}")
 
-        response = client.get(
-            "/.well-known/agents/index.json?top=2&skip=0"
-        )
+        response = client.get("/.well-known/agents/index.json?top=2&skip=0")
         assert response.status_code == 200
 
         data = response.json()
@@ -195,9 +175,7 @@ class TestWellKnownAPI(BaseTest):
         """Test well-known agent card response structure."""
         agent_record, agent_version = self.setup_complete_agent(db_session, "structure-test-agent")
 
-        response = client.get(
-            f"/.well-known/agents/{agent_record.id}/card"
-        )
+        response = client.get(f"/.well-known/agents/{agent_record.id}/card")
         assert response.status_code == 200
 
         data = response.json()
@@ -222,9 +200,7 @@ class TestWellKnownAPI(BaseTest):
         response = client.get("/.well-known/agents/public-agent/card")
         assert response.status_code == 200
 
-    def test_well_known_agent_card_authentication_required_for_private(
-        self, client, db_session, mock_auth
-    ):
+    def test_well_known_agent_card_authentication_required_for_private(self, client, db_session, mock_auth):
         """Test that authentication is required for private agent cards."""
         # Create private agent
         self.setup_complete_agent(db_session, "private-agent", public=False)

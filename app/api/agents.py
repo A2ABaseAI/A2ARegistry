@@ -1,17 +1,21 @@
 """Agent API endpoints."""
+
 from typing import Any, Dict
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from ..auth_jwks import require_oauth, extract_context, require_roles
-from ..services.registry_service import RegistryService
+from pydantic import BaseModel, Field, HttpUrl
+
+from ..auth_jwks import extract_context, require_oauth, require_roles
+from ..core.caching import AgentCache, CacheManager
+from ..core.logging import get_logger
 from ..services.agent_service import AgentService
 from ..services.card_service import CardService
-from ..core.logging import get_logger
-from ..core.caching import AgentCache, CacheManager
-from pydantic import BaseModel, Field, HttpUrl
+from ..services.registry_service import RegistryService
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/agents", tags=["agents"])
+
 
 class PublishByUrl(BaseModel):
     cardUrl: HttpUrl
@@ -22,11 +26,9 @@ class PublishByCard(BaseModel):
     public: bool = Field(default=True)
     card: Dict[str, Any]
 
+
 @router.get("/public")
-def public_agents(
-    top: int = Query(20, ge=1, le=100),
-    skip: int = Query(0, ge=0)
-) -> Dict[str, Any]:
+def public_agents(top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0)) -> Dict[str, Any]:
     """
     Get public agents with caching and fallback mechanisms.
 
@@ -61,10 +63,7 @@ def public_agents(
         safe_items = []
         for item in items:
             try:
-                safe_items.append({
-                    "id": item.get("agentId", "unknown"),
-                    "name": item.get("name", "unknown")
-                })
+                safe_items.append({"id": item.get("agentId", "unknown"), "name": item.get("name", "unknown")})
             except Exception as e:
                 logger.warning(f"Failed to process agent item: {e}")
                 # Skip malformed items but continue processing
@@ -95,9 +94,7 @@ def public_agents(
 
 @router.get("/entitled")
 async def get_entitled_agents(
-    top: int = Query(20, ge=1, le=100),
-    skip: int = Query(0, ge=0),
-    payload=Depends(require_oauth)
+    top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0), payload=Depends(require_oauth)
 ):
     """
     Get entitled agents for the authenticated client with error handling.
@@ -154,10 +151,7 @@ async def get_entitled_agents(
 
 
 @router.get("/{agent_id}")
-async def get_agent(
-    agent_id: str,
-    payload=Depends(require_oauth)
-):
+async def get_agent(agent_id: str, payload=Depends(require_oauth)):
     """
     Get latest agent version by ID with entitlement enforcement and error handling.
 
@@ -174,10 +168,7 @@ async def get_agent(
         # Validate agent_id
         if not agent_id or not isinstance(agent_id, str):
             logger.warning(f"Invalid agent_id provided: {agent_id}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid agent ID"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid agent ID")
 
         # Use service layer for database operations
         agent_service = AgentService()
@@ -185,42 +176,33 @@ async def get_agent(
 
         if not row:
             logger.info(f"Agent {agent_id} not found for tenant {tenant}")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Agent not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
 
         rec, ver = row
 
         # Validate retrieved data
         if not rec or not ver:
             logger.error(f"Invalid data structure returned for agent {agent_id}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Invalid agent data"
-            )
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invalid agent data")
 
         # Check entitlement for private agents
         if not ver.public:
             if not client_id:
                 logger.warning(f"Client ID missing for private agent {agent_id}")
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied: authentication required"
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: authentication required"
                 )
 
             try:
                 if not agent_service.check_agent_access(agent_id, tenant, client_id):
                     logger.info(f"Client {client_id} not entitled to private agent {agent_id}")
                     raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Access denied: insufficient permissions"
+                        status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: insufficient permissions"
                     )
             except Exception as e:
                 logger.error(f"Entitlement check failed for agent {agent_id}: {e}")
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Unable to verify access permissions"
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to verify access permissions"
                 )
 
         # Build response with safe data extraction
@@ -243,8 +225,7 @@ async def get_agent(
         except Exception as e:
             logger.error(f"Failed to build response for agent {agent_id}: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Unable to process agent data"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to process agent data"
             )
 
     except HTTPException:
@@ -252,17 +233,11 @@ async def get_agent(
         raise
     except Exception as e:
         logger.error(f"Unexpected error retrieving agent {agent_id}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
 @router.get("/{agent_id}/card")
-async def get_agent_card(
-    agent_id: str,
-    payload=Depends(require_oauth)
-):
+async def get_agent_card(agent_id: str, payload=Depends(require_oauth)):
     """
     Get an agent's card data with comprehensive error handling.
 
@@ -272,10 +247,7 @@ async def get_agent_card(
         # Validate agent_id
         if not agent_id or not isinstance(agent_id, str):
             logger.warning(f"Invalid agent_id provided for card: {agent_id}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid agent ID"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid agent ID")
 
         logger.debug(f"Getting card for agent {agent_id}")
 
@@ -285,20 +257,14 @@ async def get_agent_card(
 
         if not result:
             logger.info(f"Agent {agent_id} not found for card retrieval")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Agent not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
 
         agent_record, agent_version = result
 
         # Validate retrieved data
         if not agent_record or not agent_version:
             logger.error(f"Invalid data structure returned for agent {agent_id} card")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Invalid agent data"
-            )
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invalid agent data")
 
         # Check if agent is public or if client has access
         if not agent_version.public:
@@ -309,8 +275,7 @@ async def get_agent_card(
                 client_id = ctx.get("client_id")
 
                 logger.debug(
-                    f"Checking entitlement for private agent {agent_id}, "
-                    f"tenant={tenant}, client_id={client_id}"
+                    f"Checking entitlement for private agent {agent_id}, " f"tenant={tenant}, client_id={client_id}"
                 )
 
                 entitled = False
@@ -322,15 +287,12 @@ async def get_agent_card(
                         logger.error(f"Entitlement check failed for agent {agent_id}: {e}")
                         raise HTTPException(
                             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Unable to verify access permissions"
+                            detail="Unable to verify access permissions",
                         )
 
                 if not entitled:
                     logger.info(f"Client {client_id} not entitled to private agent {agent_id} card")
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Access denied"
-                    )
+                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
             except HTTPException:
                 # Re-raise HTTP exceptions as-is
@@ -338,8 +300,7 @@ async def get_agent_card(
             except Exception as e:
                 logger.error(f"Failed to check entitlement for agent {agent_id}: {e}")
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Unable to verify access permissions"
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to verify access permissions"
                 )
 
         # Return card data with validation
@@ -347,17 +308,13 @@ async def get_agent_card(
             card_json = agent_version.card_json
             if card_json is None:
                 logger.warning(f"Agent {agent_id} has no card data")
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Agent card data not available"
-                )
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent card data not available")
 
             # Validate that card_json is a dictionary
             if not isinstance(card_json, dict):
                 logger.error(f"Invalid card data type for agent {agent_id}: {type(card_json)}")
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Invalid card data format"
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invalid card data format"
                 )
 
             logger.debug(f"Successfully retrieved card for agent {agent_id}")
@@ -368,27 +325,18 @@ async def get_agent_card(
             raise
         except Exception as e:
             logger.error(f"Failed to process card data for agent {agent_id}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Unable to process card data"
-            )
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to process card data")
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
         logger.error(f"Unexpected error retrieving card for agent {agent_id}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
 @router.post("/publish", status_code=status.HTTP_201_CREATED)
-def publish_agent(
-    body: Dict[str, Any],
-    ctx=Depends(require_roles("Administrator", "CatalogManager"))
-):
+def publish_agent(body: Dict[str, Any], ctx=Depends(require_roles("Administrator", "CatalogManager"))):
     """
     Publish an agent with comprehensive error handling.
 
@@ -416,7 +364,4 @@ def publish_agent(
         raise
     except Exception as exc:
         logger.error(f"Unexpected error publishing agent: {exc}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error") from exc

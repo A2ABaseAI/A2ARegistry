@@ -1,14 +1,13 @@
 """Security utilities for authentication and authorization."""
 
-import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import jwt
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.backends import default_backend
 from fastapi import Depends, HTTPException, Request, Response, status
 from fastapi.security import HTTPBearer
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -23,13 +22,7 @@ security = HTTPBearer(auto_error=False)
 def hash_password(password: str) -> str:
     """Hash a password using PBKDF2."""
     salt = secrets.token_bytes(32)
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=100000,
-        backend=default_backend()
-    )
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
     key = kdf.derive(password.encode())
     return f"{salt.hex()}:{key.hex()}"
 
@@ -40,14 +33,8 @@ def verify_password(password: str, hashed_password: str) -> bool:
         salt_hex, key_hex = hashed_password.split(":")
         salt = bytes.fromhex(salt_hex)
         key = bytes.fromhex(key_hex)
-        
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=100000,
-            backend=default_backend()
-        )
+
+        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
         kdf.verify(password.encode(), key)
         return True
     except Exception:
@@ -55,19 +42,14 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(
-    user_id: str,
-    username: str,
-    email: str,
-    roles: List[str],
-    tenant_id: str,
-    expires_delta: Optional[timedelta] = None
+    user_id: str, username: str, email: str, roles: List[str], tenant_id: str, expires_delta: Optional[timedelta] = None
 ) -> str:
     """Create a JWT access token."""
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
-    
+
     # Create token payload
     payload = {
         "iss": settings.token_issuer or "a2a-registry",
@@ -76,7 +58,6 @@ def create_access_token(
         "iat": int(datetime.now(timezone.utc).timestamp()),
         "exp": int(expire.timestamp()),
         "nbf": int(datetime.now(timezone.utc).timestamp()),
-        
         # A2A Registry specific claims
         "user_id": user_id,
         "username": username,
@@ -85,14 +66,10 @@ def create_access_token(
         "roles": roles,
         "tenant": tenant_id,
     }
-    
+
     # Create token with HS256 (simpler for internal use)
-    token = jwt.encode(
-        payload,
-        settings.secret_key,
-        algorithm=settings.algorithm
-    )
-    
+    token = jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
     return token
 
 
@@ -108,39 +85,24 @@ def verify_access_token(token: str) -> Dict[str, Any]:
             options={
                 "verify_exp": True,
                 "verify_aud": bool(settings.token_audience),
-                "verify_iss": bool(settings.token_issuer)
-            }
+                "verify_iss": bool(settings.token_issuer),
+            },
         )
         return payload
     except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
     except jwt.InvalidAudienceError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token audience"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token audience")
     except jwt.InvalidIssuerError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token issuer"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token issuer")
     except jwt.InvalidTokenError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        ) from e
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from e
 
 
 def require_oauth(credentials: Optional[HTTPBearer] = None) -> Dict[str, Any]:
     """Require OAuth authentication."""
     if not credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing bearer token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     return verify_access_token(credentials.credentials)
 
 
@@ -159,15 +121,14 @@ def extract_context(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def require_roles(*required_roles: str):
     """Require specific roles for access."""
+
     def _dep(payload: Dict[str, Any] = Depends(require_oauth)) -> Dict[str, Any]:
         ctx = extract_context(payload)
         roles = set(ctx.get("roles") or [])
         if not roles.intersection(required_roles):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions"
-            )
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
         return ctx
+
     return _dep
 
 
@@ -195,9 +156,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         limit = self.limit_by_endpoint.get(request.url.path, self.default_limit)
 
         # Check rate limit
-        if not await self._check_rate_limit(
-            tenant or "default", client_id, request.url.path, limit, request
-        ):
+        if not await self._check_rate_limit(tenant or "default", client_id, request.url.path, limit, request):
             logger.warning(
                 "Rate limit exceeded",
                 extra={
@@ -229,7 +188,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 return ctx.get("client_id", "anonymous"), ctx.get("tenant")
             except Exception:
                 pass
-        
+
         # Fallback to IP address
         client_ip = request.client.host if request.client else "unknown"
         return client_ip, None
@@ -240,13 +199,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         redis_client = self.redis_client
         if not redis_client:
             return True  # Allow request if Redis is not available
-        
+
         # Check if Redis client is actually connected
         try:
             redis_client.ping()
         except Exception:
             return True  # Allow request if Redis is not connected
-        
+
         key = f"rl:{tenant}:{client_id}:{endpoint}"
 
         try:

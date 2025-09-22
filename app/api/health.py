@@ -1,7 +1,7 @@
 """Health check and monitoring endpoints."""
 
-from typing import Any, Dict
 from datetime import datetime, timezone
+from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -27,25 +27,25 @@ async def health_check():
 @router.get("/ready", response_model=Dict[str, Any])
 async def readiness_check():
     """Readiness check - verifies all dependencies are available."""
-    
+
     # Initialize health checker (manages its own connections)
     health_checker = HealthChecker()
 
     # Perform health checks
     health_status = await health_checker.check_all()
-    
+
     # Add service metadata
-    health_status.update({
-        "service": "a2a-registry",
-        "version": settings.app_version,
-    })
+    health_status.update(
+        {
+            "service": "a2a-registry",
+            "version": settings.app_version,
+        }
+    )
 
     # Check if all components are healthy
     if health_status["status"] != "healthy":
         health_status["status"] = "not_ready"
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=health_status
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=health_status)
 
     health_status["status"] = "ready"
     return health_status
@@ -125,7 +125,7 @@ async def status_check():
     try:
         health_checker = HealthChecker()
         health_status = await health_checker.check_all()
-        
+
         # If any component is unhealthy, mark as degraded
         if health_status["status"] != "healthy":
             status_info["status"] = "degraded"
@@ -139,6 +139,7 @@ async def status_check():
     # Check if core functionality is working
     try:
         from ..services.registry_service import RegistryService
+
         registry_service = RegistryService()
 
         # Verify we can perform basic operations

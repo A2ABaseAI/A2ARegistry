@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from ..auth_jwks import require_oauth, extract_context
+from ..auth_jwks import extract_context, require_oauth
 from ..core.caching import CacheManager
 from ..core.logging import get_logger
 from ..services.registry_service import RegistryService
@@ -27,44 +27,34 @@ class SearchBody(BaseModel):
 
 
 @router.post("/search")
-def search_agents(
-    body: SearchBody, payload=Depends(require_oauth)
-) -> Dict[str, Any]:
+def search_agents(body: SearchBody, payload=Depends(require_oauth)) -> Dict[str, Any]:
     """
     Search for agents with caching and fallback mechanisms.
-    
+
     Production-ready endpoint with comprehensive error handling,
     caching, and graceful degradation.
     """
-    default_response = {
-        "items": [],
-        "count": 0,
-        "error": "Search service temporarily unavailable"
-    }
+    default_response = {"items": [], "count": 0, "error": "Search service temporarily unavailable"}
 
     try:
         # Extract tenant context
         ctx = extract_context(payload)
         tenant = ctx.get("tenant") or "default"
-        
+
         logger.debug(f"Search request from tenant: {tenant}, query: {body.q}")
 
         # Validate input parameters
         if body.top < 1 or body.top > 100:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="top parameter must be between 1 and 100"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="top parameter must be between 1 and 100"
             )
-        
+
         if body.skip < 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="skip parameter must be non-negative"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="skip parameter must be non-negative")
 
         # Generate cache key
         cache_key = _generate_cache_key(tenant, body)
-        
+
         # Try cache first
         try:
             cache = CacheManager()
@@ -111,8 +101,7 @@ def search_agents(
     except Exception as e:
         logger.error(f"Unexpected error in search endpoint: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error during search"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error during search"
         )
 
 
@@ -120,15 +109,8 @@ def _generate_cache_key(tenant: str, body: SearchBody) -> str:
     """Generate a cache key for the search request."""
     try:
         # Create a deterministic hash of the search parameters
-        search_data = {
-            "q": body.q,
-            "filters": body.filters or {},
-            "top": body.top,
-            "skip": body.skip
-        }
-        key_hash = hashlib.sha256(
-            json.dumps(search_data, sort_keys=True).encode()
-        ).hexdigest()
+        search_data = {"q": body.q, "filters": body.filters or {}, "top": body.top, "skip": body.skip}
+        key_hash = hashlib.sha256(json.dumps(search_data, sort_keys=True).encode()).hexdigest()
         return f"agents:search:{tenant}:{key_hash}"
     except Exception as e:
         logger.warning(f"Failed to generate cache key: {e}")

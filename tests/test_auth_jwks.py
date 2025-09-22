@@ -1,14 +1,14 @@
 """Tests for app/auth_jwks.py - JWT authentication and authorization."""
 
-from app.database import get_db
-from app.auth_jwks import require_oauth
+from unittest.mock import patch
 
 import pytest
-from unittest.mock import patch
 from fastapi.testclient import TestClient
 
+from app.auth_jwks import extract_context, require_oauth
+from app.database import get_db
 from app.main import app
-from app.auth_jwks import extract_context
+
 from .base_test import BaseTest
 
 
@@ -18,6 +18,7 @@ class TestAuthJWKS(BaseTest):
     @pytest.fixture
     def client(self, db_session, mock_redis, mock_opensearch):
         """Create a test client with mocked dependencies."""
+
         def get_test_db():
             try:
                 yield db_session
@@ -37,7 +38,7 @@ class TestAuthJWKS(BaseTest):
             "sub": "test-client",
             "client_id": "test-client",
             "tenant": "default",
-            "roles": ["Administrator", "User"]
+            "roles": ["Administrator", "User"],
         }
 
         context = extract_context(payload)
@@ -47,9 +48,7 @@ class TestAuthJWKS(BaseTest):
 
     def test_extract_context_minimal_payload(self):
         """Test context extraction with minimal payload."""
-        payload = {
-            "sub": "test-client"
-        }
+        payload = {"sub": "test-client"}
 
         context = extract_context(payload)
         assert context["client_id"] == "test-client"
@@ -58,9 +57,7 @@ class TestAuthJWKS(BaseTest):
 
     def test_extract_context_missing_fields(self):
         """Test context extraction with missing fields."""
-        payload = {
-            "sub": "test-client"
-        }
+        payload = {"sub": "test-client"}
 
         context = extract_context(payload)
         assert context["client_id"] == "test-client"  # Uses sub as fallback
@@ -73,7 +70,7 @@ class TestAuthJWKS(BaseTest):
             "sub": "test-client",
             "custom_client_id": "custom-client",
             "custom_tenant": "custom-tenant",
-            "custom_roles": ["CustomRole"]
+            "custom_roles": ["CustomRole"],
         }
 
         # This would require custom claim configuration
@@ -92,14 +89,14 @@ class TestAuthJWKS(BaseTest):
             "sub": "test-client",
             "client_id": "test-client",
             "tenant": "default",
-            "roles": ["Administrator"]
+            "roles": ["Administrator"],
         }
 
         # Create the dependency function
         role_dep = require_roles("Administrator")
 
         # Mock the require_oauth dependency to return our mock payload
-        with patch('app.auth_jwks.require_oauth', return_value=mock_payload):
+        with patch("app.auth_jwks.require_oauth", return_value=mock_payload):
             # Call the dependency function
             result = role_dep(mock_payload)
 
@@ -110,7 +107,7 @@ class TestAuthJWKS(BaseTest):
 
         # Test with multiple roles - user has one of the required roles
         role_dep_multi = require_roles("Administrator", "CatalogManager")
-        with patch('app.auth_jwks.require_oauth', return_value=mock_payload):
+        with patch("app.auth_jwks.require_oauth", return_value=mock_payload):
             result = role_dep_multi(mock_payload)
             assert result["roles"] == ["Administrator"]
 
@@ -119,31 +116,32 @@ class TestAuthJWKS(BaseTest):
             "sub": "test-client",
             "client_id": "test-client",
             "tenant": "default",
-            "roles": ["CatalogManager"]
+            "roles": ["CatalogManager"],
         }
 
-        with patch('app.auth_jwks.require_oauth', return_value=mock_payload_catalog):
+        with patch("app.auth_jwks.require_oauth", return_value=mock_payload_catalog):
             result = role_dep_multi(mock_payload_catalog)
             assert result["roles"] == ["CatalogManager"]
 
     def test_require_roles_insufficient_permissions(self):
         """Test require_roles with insufficient permissions."""
-        from app.auth_jwks import require_roles
         from fastapi import HTTPException
+
+        from app.auth_jwks import require_roles
 
         # Mock payload with insufficient role
         mock_payload = {
             "sub": "test-client",
             "client_id": "test-client",
             "tenant": "default",
-            "roles": ["User"]  # Not Administrator
+            "roles": ["User"],  # Not Administrator
         }
 
         # Create the dependency function requiring Administrator role
         role_dep = require_roles("Administrator")
 
         # Mock the require_oauth dependency to return our mock payload
-        with patch('app.auth_jwks.require_oauth', return_value=mock_payload):
+        with patch("app.auth_jwks.require_oauth", return_value=mock_payload):
             # This should raise HTTPException with 403 status
             with pytest.raises(HTTPException) as exc_info:
                 role_dep(mock_payload)
@@ -153,28 +151,18 @@ class TestAuthJWKS(BaseTest):
             assert "Insufficient role" in str(exc_info.value.detail)
 
         # Test with empty roles
-        mock_payload_no_roles = {
-            "sub": "test-client",
-            "client_id": "test-client",
-            "tenant": "default",
-            "roles": []
-        }
+        mock_payload_no_roles = {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": []}
 
-        with patch('app.auth_jwks.require_oauth', return_value=mock_payload_no_roles):
+        with patch("app.auth_jwks.require_oauth", return_value=mock_payload_no_roles):
             with pytest.raises(HTTPException) as exc_info:
                 role_dep(mock_payload_no_roles)
 
             assert exc_info.value.status_code == 403
 
         # Test with None roles
-        mock_payload_none_roles = {
-            "sub": "test-client",
-            "client_id": "test-client",
-            "tenant": "default",
-            "roles": None
-        }
+        mock_payload_none_roles = {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": None}
 
-        with patch('app.auth_jwks.require_oauth', return_value=mock_payload_none_roles):
+        with patch("app.auth_jwks.require_oauth", return_value=mock_payload_none_roles):
             with pytest.raises(HTTPException) as exc_info:
                 role_dep(mock_payload_none_roles)
 
@@ -188,13 +176,9 @@ class TestAuthJWKS(BaseTest):
 
     def test_authentication_success(self, client, db_session):
         """Test successful authentication."""
+
         def mock_require_oauth():
-            return {
-                "sub": "test-client",
-                "client_id": "test-client",
-                "tenant": "default",
-                "roles": ["Administrator"]
-            }
+            return {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": ["Administrator"]}
 
         # Override the auth dependency
         app.dependency_overrides[require_oauth] = mock_require_oauth
@@ -208,13 +192,9 @@ class TestAuthJWKS(BaseTest):
 
     def test_role_based_access_control(self, client, db_session, mock_services_db):
         """Test role-based access control."""
+
         def mock_require_oauth():
-            return {
-                "sub": "test-client",
-                "client_id": "test-client",
-                "tenant": "default",
-                "roles": ["Administrator"]
-            }
+            return {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": ["Administrator"]}
 
         app.dependency_overrides[require_oauth] = mock_require_oauth
 
@@ -228,13 +208,9 @@ class TestAuthJWKS(BaseTest):
 
     def test_tenant_isolation(self, client, db_session, mock_services_db):
         """Test that authentication works with different tenants."""
+
         def mock_require_oauth():
-            return {
-                "sub": "test-client",
-                "client_id": "test-client",
-                "tenant": "tenant-1",
-                "roles": ["Administrator"]
-            }
+            return {"sub": "test-client", "client_id": "test-client", "tenant": "tenant-1", "roles": ["Administrator"]}
 
         app.dependency_overrides[require_oauth] = mock_require_oauth
 
@@ -306,12 +282,7 @@ class TestAuthJWKS(BaseTest):
 
     def test_context_structure(self):
         """Test that extracted context has correct structure."""
-        payload = {
-            "sub": "test-client",
-            "client_id": "test-client",
-            "tenant": "default",
-            "roles": ["Administrator"]
-        }
+        payload = {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": ["Administrator"]}
 
         context = extract_context(payload)
 

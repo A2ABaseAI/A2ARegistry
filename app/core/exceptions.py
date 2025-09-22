@@ -96,9 +96,7 @@ class FederationError(A2ARegistryException):
 
     def __init__(self, peer_id: str, operation: str, reason: str):
         super().__init__(
-            message=(
-                f"Federation error with peer {peer_id} during {operation}: {reason}"
-            ),
+            message=(f"Federation error with peer {peer_id} during {operation}: {reason}"),
             error_code="FEDERATION_ERROR",
             details={"peer_id": peer_id, "operation": operation, "reason": reason},
         )
@@ -131,9 +129,7 @@ class ExternalServiceError(A2ARegistryException):
 
     def __init__(self, service: str, operation: str, reason: str):
         super().__init__(
-            message=(
-                f"External service error with {service} during {operation}: {reason}"
-            ),
+            message=(f"External service error with {service} during {operation}: {reason}"),
             error_code="EXTERNAL_SERVICE_ERROR",
             details={"service": service, "operation": operation, "reason": reason},
         )
@@ -178,9 +174,7 @@ class ErrorResponse:
 
 
 # Exception handlers
-def handle_a2a_exception(
-    exc: A2ARegistryException, request_id: Optional[str] = None
-) -> HTTPException:
+def handle_a2a_exception(exc: A2ARegistryException, request_id: Optional[str] = None) -> HTTPException:
     """Convert A2A exception to HTTP exception."""
 
     # Log the exception
@@ -207,9 +201,7 @@ def handle_a2a_exception(
         "EXTERNAL_SERVICE_ERROR": status.HTTP_502_BAD_GATEWAY,
     }
 
-    http_status = status_mapping.get(
-        exc.error_code or "UNKNOWN_ERROR", status.HTTP_500_INTERNAL_SERVER_ERROR
-    )
+    http_status = status_mapping.get(exc.error_code or "UNKNOWN_ERROR", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     error_response = ErrorResponse(
         error=exc.message,
@@ -263,9 +255,7 @@ class RetryConfig:
         self.jitter = jitter
 
 
-def retry_on_exception(
-    exceptions: tuple, config: Optional[RetryConfig] = None, operation_name: str = "operation"
-):
+def retry_on_exception(exceptions: tuple, config: Optional[RetryConfig] = None, operation_name: str = "operation"):
     """Decorator to retry operations on specific exceptions."""
 
     if config is None:
@@ -283,8 +273,7 @@ def retry_on_exception(
 
                     if attempt == config.max_attempts - 1:
                         logger.error(
-                            f"Operation {operation_name} failed after "
-                            f"{config.max_attempts} attempts",
+                            f"Operation {operation_name} failed after " f"{config.max_attempts} attempts",
                             extra={
                                 "operation": operation_name,
                                 "attempts": config.max_attempts,

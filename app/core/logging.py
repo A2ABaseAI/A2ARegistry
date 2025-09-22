@@ -43,6 +43,7 @@ def setup_logging() -> None:
 
     # Skip logging setup in test environment
     import os
+
     if os.getenv("TESTING") == "true":
         return
 
@@ -54,10 +55,7 @@ def setup_logging() -> None:
         except PermissionError:
             # If we can't create the directory, fall back to console-only logging
             log_level = "DEBUG" if settings.debug else "INFO"
-            logging.basicConfig(
-                level=log_level,
-                format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
+            logging.basicConfig(level=log_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             return
 
     # Determine log level based on environment
@@ -71,9 +69,7 @@ def setup_logging() -> None:
                 "()": ProductionFormatter,
                 "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
             },
-            "simple": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            },
+            "simple": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
         },
         "handlers": {
             "console": {

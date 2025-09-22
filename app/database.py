@@ -5,8 +5,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from .config import settings
-from .models.base import Base
 from .core.logging import get_logger
+from .models.base import Base
 
 logger = get_logger(__name__)
 
@@ -14,9 +14,7 @@ logger = get_logger(__name__)
 engine = create_engine(
     settings.database_url,
     poolclass=StaticPool,
-    connect_args=(
-        {"check_same_thread": False} if "sqlite" in settings.database_url else {}
-    ),
+    connect_args=({"check_same_thread": False} if "sqlite" in settings.database_url else {}),
     echo=settings.debug,
 )
 

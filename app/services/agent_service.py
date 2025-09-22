@@ -10,14 +10,15 @@ from fastapi import HTTPException, status
 from ..core.logging import get_logger
 from ..models.agent_core import AgentRecord, AgentVersion
 from ..schemas.agent_card_spec import AgentCardSpec
-from ..database import get_db, SessionLocal
 from .search_index import SearchIndex
 
 
 def _get_db_session():
     """Get a database session. Can be overridden in tests."""
     from ..database import SessionLocal
+
     return SessionLocal()
+
 
 logger = get_logger(__name__)
 
@@ -36,13 +37,7 @@ class AgentService:
         self.db = _get_db_session()
 
     def create_or_update_agent_record(
-        self,
-        card_data: Dict[str, Any],
-        card_hash: str,
-        tenant_id: str,
-        publisher_id: str,
-        agent_key: str,
-        version: str
+        self, card_data: Dict[str, Any], card_hash: str, tenant_id: str, publisher_id: str, agent_key: str, version: str
     ) -> AgentRecord:
         """
         Create or update agent record in database.
@@ -95,8 +90,7 @@ class AgentService:
         except Exception as exc:
             logger.error(f"Failed to create/update agent record: {exc}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to persist agent record"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent record"
             ) from exc
 
     def create_agent_version(
@@ -106,7 +100,7 @@ class AgentService:
         card_hash: str,
         card_url: Optional[str],
         version: str,
-        public: bool
+        public: bool,
     ) -> AgentVersion:
         """
         Create agent version record with idempotency check.
@@ -158,16 +152,11 @@ class AgentService:
         except Exception as exc:
             logger.error(f"Failed to create agent version: {exc}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to persist agent version"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent version"
             ) from exc
 
     def publish_agent(
-        self,
-        card_data: Dict[str, Any],
-        card_url: Optional[str],
-        public: bool,
-        tenant_id: str
+        self, card_data: Dict[str, Any], card_url: Optional[str], public: bool, tenant_id: str
     ) -> Dict[str, Any]:
         """
         Publish an agent with full database operations.
@@ -207,9 +196,7 @@ class AgentService:
                 )
 
                 # Create agent version
-                av = self.create_agent_version(
-                    rec, card_data, card_hash, card_url, version, public
-                )
+                av = self.create_agent_version(rec, card_data, card_hash, card_url, version, public)
 
                 # Commit transaction
                 self.db.commit()
@@ -219,8 +206,7 @@ class AgentService:
                 self.db.rollback()
                 logger.error(f"Database transaction failed: {exc}")
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to persist agent"
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent"
                 ) from exc
 
             # Index in search engine (non-critical)
@@ -241,8 +227,7 @@ class AgentService:
         except Exception as exc:
             logger.error(f"Unexpected error publishing agent: {exc}", exc_info=True)
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Internal server error"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
             ) from exc
 
     def _index_agent_version(
@@ -253,7 +238,7 @@ class AgentService:
         tenant_id: str,
         publisher_id: str,
         version: str,
-        public: bool
+        public: bool,
     ) -> None:
         """
         Index agent version in search engine (non-critical operation).
@@ -290,9 +275,7 @@ class AgentService:
             logger.warning(f"Failed to index agent {rec.id}: {e}")
             # Non-critical operation, don't fail the request
 
-    def get_agent_by_id(
-        self, agent_id: str, tenant_id: str
-    ) -> Optional[Tuple[AgentRecord, AgentVersion]]:
+    def get_agent_by_id(self, agent_id: str, tenant_id: str) -> Optional[Tuple[AgentRecord, AgentVersion]]:
         """
         Get agent by ID.
 
@@ -305,6 +288,7 @@ class AgentService:
         """
         try:
             from .registry_service import RegistryService
+
             registry_service = RegistryService(db_session=self.db)
             return registry_service.get_latest(tenant_id, agent_id)
         except Exception as exc:
@@ -346,10 +330,9 @@ class AgentService:
         """
         try:
             from .registry_service import RegistryService
+
             registry_service = RegistryService(db_session=self.db)
-            return registry_service.is_entitled(
-                tenant_id, client_id, agent_id
-            )
+            return registry_service.is_entitled(tenant_id, client_id, agent_id)
         except Exception as exc:
             logger.error(f"Failed to check access for agent {agent_id}: {exc}")
             return False

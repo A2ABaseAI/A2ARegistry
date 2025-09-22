@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, HttpUrl, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class Skill(BaseModel):
@@ -53,9 +53,7 @@ class AgentCardSpec(BaseModel):
                         "description": "Create a checkout session",
                     }
                 ],
-                "authSchemes": [
-                    {"type": "oauth2", "flow": "client_credentials"}
-                ],
+                "authSchemes": [{"type": "oauth2", "flow": "client_credentials"}],
             }
         }
     )

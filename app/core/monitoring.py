@@ -27,17 +27,11 @@ REQUEST_DURATION = Histogram(
     ["method", "endpoint"],
 )
 
-ACTIVE_CONNECTIONS = Gauge(
-    "a2a_registry_active_connections", "Number of active connections"
-)
+ACTIVE_CONNECTIONS = Gauge("a2a_registry_active_connections", "Number of active connections")
 
-AGENT_COUNT = Gauge(
-    "a2a_registry_agents_total", "Total number of registered agents", ["status"]
-)
+AGENT_COUNT = Gauge("a2a_registry_agents_total", "Total number of registered agents", ["status"])
 
-CLIENT_COUNT = Gauge(
-    "a2a_registry_clients_total", "Total number of registered clients", ["status"]
-)
+CLIENT_COUNT = Gauge("a2a_registry_clients_total", "Total number of registered clients", ["status"])
 
 SEARCH_QUERIES = Counter(
     "a2a_registry_search_queries_total",
@@ -45,9 +39,7 @@ SEARCH_QUERIES = Counter(
     ["query_type"],
 )
 
-SEARCH_DURATION = Histogram(
-    "a2a_registry_search_duration_seconds", "Search duration in seconds", ["query_type"]
-)
+SEARCH_DURATION = Histogram("a2a_registry_search_duration_seconds", "Search duration in seconds", ["query_type"])
 
 PEER_SYNCS = Counter(
     "a2a_registry_peer_syncs_total",
@@ -55,9 +47,7 @@ PEER_SYNCS = Counter(
     ["peer_id", "status"],
 )
 
-DATABASE_CONNECTIONS = Gauge(
-    "a2a_registry_database_connections_active", "Number of active database connections"
-)
+DATABASE_CONNECTIONS = Gauge("a2a_registry_database_connections_active", "Number of active database connections")
 
 ELASTICSEARCH_CONNECTIONS = Gauge(
     "a2a_registry_opensearch_connections_active",
@@ -81,13 +71,9 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         duration = time.time() - start_time
 
         # Record metrics
-        REQUEST_COUNT.labels(
-            method=request.method, endpoint=endpoint, status_code=response.status_code
-        ).inc()
+        REQUEST_COUNT.labels(method=request.method, endpoint=endpoint, status_code=response.status_code).inc()
 
-        REQUEST_DURATION.labels(method=request.method, endpoint=endpoint).observe(
-            duration
-        )
+        REQUEST_DURATION.labels(method=request.method, endpoint=endpoint).observe(duration)
 
         return response
 
@@ -114,11 +100,12 @@ class HealthChecker:
 
     def __init__(self):
         # Import here to avoid circular imports
-        from ..config import settings
-        from ..database import SessionLocal
         import redis
         from opensearchpy import OpenSearch
-        
+
+        from ..config import settings
+        from ..database import SessionLocal
+
         self.settings = settings
         self.db_session_factory = SessionLocal
         self.redis_client = redis.from_url(settings.redis_url)
@@ -162,10 +149,7 @@ class HealthChecker:
 
         overall_status = (
             "healthy"
-            if all(
-                health["status"] == "healthy"
-                for health in [db_health, redis_health, es_health]
-            )
+            if all(health["status"] == "healthy" for health in [db_health, redis_health, es_health])
             else "unhealthy"
         )
 

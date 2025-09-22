@@ -37,10 +37,7 @@ class CardService:
         """
         # Enforce HTTPS for security
         if not card_url.startswith("https://"):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="cardUrl must use HTTPS"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="cardUrl must use HTTPS")
 
         try:
             logger.debug(f"Fetching card from URL: {card_url}")
@@ -55,15 +52,13 @@ class CardService:
             ctype = resp.headers.get("content-type", "")
             if "application/json" not in ctype:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="cardUrl must return application/json"
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="cardUrl must return application/json"
                 )
 
             # Limit payload size to 256KB
             if resp.content and len(resp.content) > 256 * 1024:
                 raise HTTPException(
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail="Card exceeds size limit"
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Card exceeds size limit"
                 )
 
             card_data = resp.json()
@@ -75,10 +70,7 @@ class CardService:
             raise
         except Exception as exc:
             logger.error(f"Failed to fetch card from URL {card_url}: {exc}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to fetch cardUrl"
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to fetch cardUrl") from exc
 
     @staticmethod
     def parse_and_validate_card(body: Dict[str, Any]) -> Tuple[Dict[str, Any], Optional[str], str]:
@@ -97,11 +89,13 @@ class CardService:
         try:
             if "cardUrl" in body:
                 from ..api.agents import PublishByUrl
+
                 url_model = PublishByUrl(**body)
                 card_data = CardService.fetch_card_from_url(str(url_model.cardUrl))
                 card_url = str(url_model.cardUrl)
             else:
                 from ..api.agents import PublishByCard
+
                 card_model = PublishByCard(**body)
                 card_data = card_model.card
                 card_url = None
@@ -111,10 +105,7 @@ class CardService:
                 card = AgentCardSpec.model_validate(card_data)
             except Exception as exc:
                 logger.error(f"Invalid agent card spec: {exc}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid agent card"
-                ) from exc
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid agent card") from exc
 
             # Compute canonical JSON and hash
             canonical = _canonical_json(card_data)
@@ -127,10 +118,7 @@ class CardService:
             raise
         except Exception as exc:
             logger.error(f"Failed to parse card data: {exc}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid card data"
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid card data") from exc
 
     @staticmethod
     def validate_card_data(card_data: Dict[str, Any]) -> AgentCardSpec:
@@ -150,7 +138,4 @@ class CardService:
             return AgentCardSpec.model_validate(card_data)
         except Exception as exc:
             logger.error(f"Invalid agent card spec: {exc}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid agent card"
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid agent card") from exc

@@ -3,11 +3,10 @@
 from contextlib import asynccontextmanager
 
 import redis
-from opensearchpy import OpenSearch
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, ORJSONResponse
+from opensearchpy import OpenSearch
 
 from .api import agents, auth, health, well_known
 from .api.search import router as search_router
@@ -17,9 +16,9 @@ from .core import (
     RateLimitMiddleware,
     RequestLoggingMiddleware,
     RequestSizeLimitMiddleware,
+    get_logger,
     handle_generic_exception,
     setup_logging,
-    get_logger,
 )
 from .core.otel import setup_tracing
 from .database import create_tables
@@ -65,9 +64,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    description=(
-        "A2A Agent Registry - Centralized agent discovery and management system"
-    ),
+    description=("A2A Agent Registry - Centralized agent discovery and management system"),
     lifespan=lifespan,
     default_response_class=ORJSONResponse,
 )
@@ -104,9 +101,7 @@ async def root():
     return {
         "name": settings.app_name,
         "version": settings.app_version,
-        "description": (
-            "A2A Agent Registry - Centralized agent discovery and management"
-        ),
+        "description": ("A2A Agent Registry - Centralized agent discovery and management"),
         "endpoints": {
             "agents": "/agents",
             "well_known": "/.well-known",

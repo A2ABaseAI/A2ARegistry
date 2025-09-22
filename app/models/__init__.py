@@ -7,9 +7,9 @@ from ..schemas.agent import (
     AgentCard,
     AgentTeeDetails,
 )
-from .tenant import Tenant, OAuthClient
 from .agent_core import AgentRecord, AgentVersion, Entitlement
 from .base import Base
+from .tenant import OAuthClient, Tenant
 
 __all__ = [
     "Base",

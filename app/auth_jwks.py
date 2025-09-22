@@ -11,7 +11,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .config import settings
 
-
 security = HTTPBearer(auto_error=False)
 
 
@@ -37,9 +36,7 @@ def verify_access_token(token: str) -> Dict[str, Any]:
         unverified = jwt.decode(token, options={"verify_signature": False})
         key = _get_key(header, unverified)
         if not key:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token key"
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token key")
 
         # Build public key
         public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
@@ -50,35 +47,25 @@ def verify_access_token(token: str) -> Dict[str, Any]:
             algorithms=[header.get("alg", "RS256")],
             audience=settings.token_audience,
             issuer=settings.token_issuer,
-            options={
-                k: v for k, v in {"verify_aud": bool(settings.token_audience)}.items()
-            },
+            options={k: v for k, v in {"verify_aud": bool(settings.token_audience)}.items()},
         )
         return payload
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
 
 
 def require_oauth(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> Dict[str, Any]:
     if not credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     return verify_access_token(credentials.credentials)
 
 
 def extract_context(payload: Dict[str, Any]) -> Dict[str, Any]:
     roles = payload.get(settings.role_claim, [])
     tenant = payload.get(settings.tenant_claim)
-    client_id = (
-        payload.get(settings.client_id_claim)
-        or payload.get("client_id")
-        or payload.get("sub")
-    )
+    client_id = payload.get(settings.client_id_claim) or payload.get("client_id") or payload.get("sub")
     return {"roles": roles, "tenant": tenant, "client_id": client_id}
 
 

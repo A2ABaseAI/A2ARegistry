@@ -1,7 +1,7 @@
 """Tests for app/services/registry_service.py - Registry service functionality."""
 
-
 from app.services.registry_service import RegistryService
+
 from .base_test import BaseTest
 
 

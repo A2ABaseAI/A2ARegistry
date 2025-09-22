@@ -1,8 +1,8 @@
 """Redis caching utilities for production."""
 
-import orjson
 from typing import Any, Dict, Optional
 
+import orjson
 import redis
 
 from app.config import settings
@@ -101,9 +101,7 @@ class AgentCache:
         """Get cached search results."""
         return self.cache.get(f"search:{query_hash}")
 
-    def set_agent_search_results(
-        self, query_hash: str, results: Dict, ttl: int = 300
-    ) -> bool:
+    def set_agent_search_results(self, query_hash: str, results: Dict, ttl: int = 300) -> bool:
         """Cache search results."""
         return self.cache.set(f"search:{query_hash}", results, ttl)
 
@@ -111,9 +109,7 @@ class AgentCache:
         """Get cached entitled agents for client."""
         return self.cache.get(f"entitled:{client_id}")
 
-    def set_entitled_agents(
-        self, client_id: str, agents: list, ttl: int = 1800
-    ) -> bool:
+    def set_entitled_agents(self, client_id: str, agents: list, ttl: int = 1800) -> bool:
         """Cache entitled agents for client."""
         return self.cache.set(f"entitled:{client_id}", agents, ttl)
 
@@ -144,9 +140,7 @@ class ClientCache:
         """Get client by OAuth ID from cache."""
         return self.cache.get(f"client_oauth:{oauth_client_id}")
 
-    def set_client_by_oauth_id(
-        self, oauth_client_id: str, client_data: Dict, ttl: int = 3600
-    ) -> bool:
+    def set_client_by_oauth_id(self, oauth_client_id: str, client_data: Dict, ttl: int = 3600) -> bool:
         """Cache client by OAuth ID."""
         return self.cache.set(f"client_oauth:{oauth_client_id}", client_data, ttl)
 
@@ -263,8 +257,6 @@ class CacheWarmer:
         clients = client_service.list_clients(limit=1000)
         for client in clients:
             self.client_cache.set_client(client.id, client.to_client_response())
-            self.client_cache.set_client_by_oauth_id(
-                client.client_id, client.to_client_response()
-            )
+            self.client_cache.set_client_by_oauth_id(client.client_id, client.to_client_response())
 
         logger.info(f"Warmed client caches: {len(clients)} clients")

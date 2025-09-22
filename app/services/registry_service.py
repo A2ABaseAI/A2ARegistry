@@ -6,12 +6,12 @@ from sqlalchemy import and_, desc
 from sqlalchemy.orm import Session
 
 from ..models.agent_core import AgentRecord, AgentVersion, Entitlement
-from ..database import get_db, SessionLocal
 
 
 def _get_db_session():
     """Get a database session. Can be overridden in tests."""
     from ..database import SessionLocal
+
     return SessionLocal()
 
 
@@ -52,9 +52,7 @@ class RegistryService:
             # Create a new session using the factory function
             self.db = _get_db_session()
 
-    def list_public(
-        self, tenant_id: str, top: int, skip: int
-    ) -> Tuple[List[Dict[str, Any]], int]:
+    def list_public(self, tenant_id: str, top: int, skip: int) -> Tuple[List[Dict[str, Any]], int]:
         q = (
             _latest_visible_versions_query(self.db, tenant_id)
             .filter(AgentVersion.public.is_(True))
@@ -64,14 +62,9 @@ class RegistryService:
         data = [_to_item(r, v) for r, v in items]
         return data, len(data)
 
-    def list_entitled(
-        self, tenant_id: str, client_id: str, top: int, skip: int
-    ) -> Tuple[List[Dict[str, Any]], int]:
+    def list_entitled(self, tenant_id: str, client_id: str, top: int, skip: int) -> Tuple[List[Dict[str, Any]], int]:
         # Public
-        q_pub = (
-            _latest_visible_versions_query(self.db, tenant_id)
-            .filter(AgentVersion.public.is_(True))
-        )
+        q_pub = _latest_visible_versions_query(self.db, tenant_id).filter(AgentVersion.public.is_(True))
 
         # Entitled: exists entitlement for (tenant, client_id, agent_id)
         q_ent = (
@@ -85,22 +78,12 @@ class RegistryService:
             )
         )
 
-        items = (
-            q_pub.union(q_ent)
-            .order_by(desc(AgentVersion.created_at))
-            .offset(skip)
-            .limit(top)
-            .all()
-        )
+        items = q_pub.union(q_ent).order_by(desc(AgentVersion.created_at)).offset(skip).limit(top).all()
         data = [_to_item(r, v) for r, v in items]
         return data, len(data)
 
-    def get_latest(
-        self, tenant_id: str, agent_id: str
-    ) -> Optional[Tuple[AgentRecord, AgentVersion]]:
-        q = _latest_visible_versions_query(self.db, tenant_id).filter(
-            AgentRecord.id == agent_id
-        )
+    def get_latest(self, tenant_id: str, agent_id: str) -> Optional[Tuple[AgentRecord, AgentVersion]]:
+        q = _latest_visible_versions_query(self.db, tenant_id).filter(AgentRecord.id == agent_id)
         row = q.first()
         return row
 

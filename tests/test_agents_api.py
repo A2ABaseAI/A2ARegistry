@@ -61,9 +61,7 @@ class TestAgentsAPI(BaseTest):
         """Test publishing agent with valid data."""
         valid_data = self.get_valid_publish_data()
 
-        response = client.post(
-            "/agents/publish", json=valid_data
-        )
+        response = client.post("/agents/publish", json=valid_data)
         assert response.status_code == 201
 
         data = response.json()
@@ -77,7 +75,7 @@ class TestAgentsAPI(BaseTest):
             "public": True,
             "card": {
                 "name": "Invalid Agent",
-            }
+            },
         }
 
         response = client.post("/agents/publish", json=invalid_data)
@@ -85,14 +83,9 @@ class TestAgentsAPI(BaseTest):
 
     def test_publish_agent_by_url(self, client, db_session, mock_auth):
         """Test publishing agent by URL."""
-        url_data = {
-            "public": True,
-            "cardUrl": "https://example.com/agent-card.json"
-        }
+        url_data = {"public": True, "cardUrl": "https://example.com/agent-card.json"}
 
-        response = client.post(
-            "/agents/publish", json=url_data
-        )
+        response = client.post("/agents/publish", json=url_data)
         assert response.status_code in [400, 500]
 
     def test_agent_info_endpoint(self, client, db_session, mock_auth, mock_services_db):
@@ -128,9 +121,7 @@ class TestAgentsAPI(BaseTest):
 
     def test_agent_card_public(self, client, db_session, mock_auth, mock_services_db):
         """Test accessing public agent card."""
-        agent_record, agent_version = self.setup_complete_agent(
-            db_session, "public-agent", public=True
-        )
+        agent_record, agent_version = self.setup_complete_agent(db_session, "public-agent", public=True)
 
         response = client.get(f"/agents/{agent_record.id}/card")
         assert response.status_code == 200
@@ -140,18 +131,14 @@ class TestAgentsAPI(BaseTest):
 
     def test_agent_card_private_access_denied(self, client, db_session, mock_auth, mock_services_db):
         """Test accessing private agent card without entitlement."""
-        agent_record, agent_version = self.setup_complete_agent(
-            db_session, "private-agent", public=False
-        )
+        agent_record, agent_version = self.setup_complete_agent(db_session, "private-agent", public=False)
 
         response = client.get(f"/agents/{agent_record.id}/card")
         assert response.status_code == 403
 
     def test_agent_card_private_with_entitlement(self, client, db_session, mock_auth, mock_services_db):
         """Test accessing private agent card with entitlement."""
-        agent_record, agent_version = self.setup_complete_agent(
-            db_session, "private-agent", public=False
-        )
+        agent_record, agent_version = self.setup_complete_agent(db_session, "private-agent", public=False)
 
         self.create_test_entitlement(db_session, "private-agent", client_id="test-client")
 
@@ -163,11 +150,7 @@ class TestAgentsAPI(BaseTest):
 
     def test_search_endpoint(self, client, mock_auth):
         """Test search endpoint."""
-        search_data = {
-            "q": "test",
-            "top": 10,
-            "skip": 0
-        }
+        search_data = {"q": "test", "top": 10, "skip": 0}
 
         response = client.post("/agents/search", json=search_data)
         assert response.status_code == 200
@@ -180,9 +163,7 @@ class TestAgentsAPI(BaseTest):
         for i in range(5):
             self.setup_complete_agent(db_session, f"agent-{i}")
 
-        response = client.get(
-            "/agents/public?top=2&skip=0"
-        )
+        response = client.get("/agents/public?top=2&skip=0")
         assert response.status_code == 200
 
         data = response.json()
@@ -210,9 +191,7 @@ class TestAgentsAPI(BaseTest):
         """Test role-based access control for publish endpoint."""
         valid_data = self.get_valid_publish_data()
 
-        response = client.post(
-            "/agents/publish", json=valid_data
-        )
+        response = client.post("/agents/publish", json=valid_data)
         assert response.status_code == 201
 
     def test_agent_card_data_structure(self, client, db_session, mock_auth, mock_services_db):

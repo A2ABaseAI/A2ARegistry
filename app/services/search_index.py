@@ -6,7 +6,6 @@ from opensearchpy import OpenSearch
 
 from ..config import settings
 
-
 INDEX_NAME = getattr(settings, "elasticsearch_index", "a2a_agents")
 
 
@@ -18,9 +17,7 @@ class SearchIndex:
         if self.client.indices.exists(INDEX_NAME):
             return
         mapping = {
-            "settings": {
-                "index": {"number_of_shards": 1, "number_of_replicas": 0}
-            },
+            "settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}},
             "mappings": {
                 "properties": {
                     "tenantId": {"type": "keyword"},
@@ -57,12 +54,14 @@ class SearchIndex:
     ) -> Tuple[List[Dict[str, Any]], int]:
         must: List[Dict[str, Any]] = [{"term": {"tenantId": tenant_id}}]
         if q:
-            must.append({
-                "multi_match": {
-                    "query": q,
-                    "fields": ["name^3", "description^2", "skills.name", "skills.description"],
+            must.append(
+                {
+                    "multi_match": {
+                        "query": q,
+                        "fields": ["name^3", "description^2", "skills.name", "skills.description"],
+                    }
                 }
-            })
+            )
         # Filters
         if "protocolVersion" in filters:
             must.append({"term": {"protocolVersion": filters["protocolVersion"]}})

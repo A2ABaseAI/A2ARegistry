@@ -2,18 +2,14 @@
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class AgentAuthScheme(BaseModel):
     """Agent authentication scheme."""
 
-    type: str = Field(
-        ..., description="Authentication type (apiKey, oauth2, jwt, mTLS)"
-    )
-    location: Optional[str] = Field(
-        None, description="Location of credentials (header, query, body)"
-    )
+    type: str = Field(..., description="Authentication type (apiKey, oauth2, jwt, mTLS)")
+    location: Optional[str] = Field(None, description="Location of credentials (header, query, body)")
     name: Optional[str] = Field(None, description="Parameter name for credentials")
     flow: Optional[str] = Field(None, description="OAuth2 flow type")
     token_url: Optional[HttpUrl] = Field(None, description="OAuth2 token URL")
@@ -24,9 +20,7 @@ class AgentTeeDetails(BaseModel):
     """Trusted Execution Environment details."""
 
     enabled: bool = Field(False, description="Whether TEE is enabled")
-    provider: Optional[str] = Field(
-        None, description="TEE provider (Intel SGX, AMD SEV, etc.)"
-    )
+    provider: Optional[str] = Field(None, description="TEE provider (Intel SGX, AMD SEV, etc.)")
     attestation: Optional[str] = Field(None, description="Attestation requirements")
     version: Optional[str] = Field(None, description="TEE version")
 
@@ -35,18 +29,10 @@ class AgentCapabilities(BaseModel):
     """Agent capabilities and protocol information."""
 
     a2a_version: str = Field(..., description="A2A protocol version")
-    supported_protocols: List[str] = Field(
-        ..., description="Supported protocols (http, grpc, websocket)"
-    )
-    max_concurrent_requests: Optional[int] = Field(
-        None, description="Maximum concurrent requests"
-    )
-    timeout_seconds: Optional[int] = Field(
-        None, description="Default timeout in seconds"
-    )
-    rate_limit_per_minute: Optional[int] = Field(
-        None, description="Rate limit per minute"
-    )
+    supported_protocols: List[str] = Field(..., description="Supported protocols (http, grpc, websocket)")
+    max_concurrent_requests: Optional[int] = Field(None, description="Maximum concurrent requests")
+    timeout_seconds: Optional[int] = Field(None, description="Default timeout in seconds")
+    rate_limit_per_minute: Optional[int] = Field(None, description="Rate limit per minute")
 
 
 class AgentCard(BaseModel):
@@ -60,14 +46,10 @@ class AgentCard(BaseModel):
 
     # Capabilities and protocols
     capabilities: AgentCapabilities = Field(..., description="Agent capabilities")
-    skills: Dict[str, Any] = Field(
-        ..., description="Agent skills and input/output schemas"
-    )
+    skills: Dict[str, Any] = Field(..., description="Agent skills and input/output schemas")
 
     # Authentication
-    auth_schemes: List[AgentAuthScheme] = Field(
-        ..., description="Supported authentication schemes"
-    )
+    auth_schemes: List[AgentAuthScheme] = Field(..., description="Supported authentication schemes")
 
     # Security and execution
     tee_details: Optional[AgentTeeDetails] = Field(None, description="TEE details")
@@ -167,12 +149,8 @@ class AgentResponse(BaseModel):
     is_public: bool = Field(..., description="Public visibility")
     is_active: bool = Field(..., description="Active status")
     location: Dict[str, Any] = Field(..., description="Agent location")
-    capabilities: Optional[AgentCapabilities] = Field(
-        None, description="Agent capabilities"
-    )
-    auth_schemes: Optional[List[AgentAuthScheme]] = Field(
-        None, description="Authentication schemes"
-    )
+    capabilities: Optional[AgentCapabilities] = Field(None, description="Agent capabilities")
+    auth_schemes: Optional[List[AgentAuthScheme]] = Field(None, description="Authentication schemes")
     tee_details: Optional[AgentTeeDetails] = Field(None, description="TEE details")
     created_at: Optional[str] = Field(None, description="Creation timestamp")
     updated_at: Optional[str] = Field(None, description="Last update timestamp")

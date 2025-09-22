@@ -1,9 +1,11 @@
 """Tests for app/services/search_index.py - Search index functionality."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from app.services.search_index import SearchIndex
+
 from .base_test import BaseTest
 
 
@@ -13,15 +15,10 @@ class TestSearchIndexService(BaseTest):
     @pytest.fixture(autouse=True)
     def setup_mocks(self):
         """Set up mocks for external dependencies."""
-        with patch('app.services.search_index.OpenSearch') as mock_opensearch:
+        with patch("app.services.search_index.OpenSearch") as mock_opensearch:
             mock_es_instance = MagicMock()
             mock_es_instance.ping.return_value = True
-            mock_es_instance.search.return_value = {
-                "hits": {
-                    "hits": [],
-                    "total": {"value": 0}
-                }
-            }
+            mock_es_instance.search.return_value = {"hits": {"hits": [], "total": {"value": 0}}}
             mock_es_instance.index.return_value = {"result": "created"}
             mock_es_instance.update.return_value = {"result": "updated"}
             mock_es_instance.delete.return_value = {"result": "deleted"}
@@ -94,7 +91,7 @@ class TestSearchIndexService(BaseTest):
             "protocolVersion": "0.3.0",
             "publisherId": "test-provider",
             "public": True,
-            "capabilities.text": True
+            "capabilities.text": True,
         }
 
         items, total = self.service.search("default", "test", complex_filters, 10, 0)
