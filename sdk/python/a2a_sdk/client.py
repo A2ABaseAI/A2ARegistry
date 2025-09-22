@@ -41,9 +41,7 @@ class A2AClient:
         self._token_expires_at = None
 
         self.session = requests.Session()
-        self.session.headers.update(
-            {"User-Agent": "A2A-Python-SDK/1.0.0", "Content-Type": "application/json"}
-        )
+        self.session.headers.update({"User-Agent": "A2A-Python-SDK/1.0.0", "Content-Type": "application/json"})
 
     def authenticate(self) -> None:
         """
@@ -53,9 +51,7 @@ class A2AClient:
             AuthenticationError: If authentication fails
         """
         if not self.client_id or not self.client_secret:
-            raise AuthenticationError(
-                "Client ID and secret are required for authentication"
-            )
+            raise AuthenticationError("Client ID and secret are required for authentication")
 
         try:
             response = self.session.post(
@@ -73,9 +69,7 @@ class A2AClient:
             token_data = response.json()
             self._access_token = token_data.get("access_token")
             expires_in = token_data.get("expires_in", 3600)
-            self._token_expires_at = (
-                time.time() + expires_in - 60
-            )  # Refresh 1 minute early
+            self._token_expires_at = time.time() + expires_in - 60  # Refresh 1 minute early
 
             if self._access_token:
                 self.session.headers["Authorization"] = f"Bearer {self._access_token}"
@@ -87,9 +81,7 @@ class A2AClient:
 
     def _ensure_authenticated(self) -> None:
         """Ensure we have a valid access token."""
-        if not self._access_token or (
-            self._token_expires_at and time.time() >= self._token_expires_at
-        ):
+        if not self._access_token or (self._token_expires_at and time.time() >= self._token_expires_at):
             self.authenticate()
 
     def _handle_response(self, response: requests.Response) -> Any:
@@ -118,9 +110,7 @@ class A2AClient:
             elif response.status_code == 422:
                 try:
                     error_data = response.json()
-                    raise ValidationError(
-                        f"Validation error: {error_data.get('detail', str(e))}"
-                    )
+                    raise ValidationError(f"Validation error: {error_data.get('detail', str(e))}")
                 except ValueError:
                     raise ValidationError(f"Validation error: {e}")
             else:
@@ -138,16 +128,12 @@ class A2AClient:
             Health status information
         """
         try:
-            response = self.session.get(
-                urljoin(self.registry_url, "/health"), timeout=self.timeout
-            )
+            response = self.session.get(urljoin(self.registry_url, "/health"), timeout=self.timeout)
             return self._handle_response(response)
         except requests.RequestException as e:
             raise A2AError(f"Failed to get health status: {e}")
 
-    def list_agents(
-        self, page: int = 1, limit: int = 20, public_only: bool = True
-    ) -> Dict[str, Any]:
+    def list_agents(self, page: int = 1, limit: int = 20, public_only: bool = True) -> Dict[str, Any]:
         """
         List agents from the registry.
 
@@ -181,9 +167,7 @@ class A2AClient:
             Agent object
         """
         try:
-            response = self.session.get(
-                urljoin(self.registry_url, f"/agents/{agent_id}"), timeout=self.timeout
-            )
+            response = self.session.get(urljoin(self.registry_url, f"/agents/{agent_id}"), timeout=self.timeout)
             agent_data = self._handle_response(response)
             return Agent.from_dict(agent_data)
         except requests.RequestException as e:
@@ -276,9 +260,7 @@ class A2AClient:
         except requests.RequestException as e:
             raise A2AError(f"Failed to publish agent: {e}")
 
-    def update_agent(
-        self, agent_id: str, agent_data: Union[Dict[str, Any], Agent]
-    ) -> Agent:
+    def update_agent(self, agent_id: str, agent_data: Union[Dict[str, Any], Agent]) -> Agent:
         """
         Update an existing agent.
 
@@ -317,9 +299,7 @@ class A2AClient:
         self._ensure_authenticated()
 
         try:
-            response = self.session.delete(
-                urljoin(self.registry_url, f"/agents/{agent_id}"), timeout=self.timeout
-            )
+            response = self.session.delete(urljoin(self.registry_url, f"/agents/{agent_id}"), timeout=self.timeout)
             self._handle_response(response)
         except requests.RequestException as e:
             raise A2AError(f"Failed to delete agent {agent_id}: {e}")
@@ -332,9 +312,7 @@ class A2AClient:
             Registry statistics
         """
         try:
-            response = self.session.get(
-                urljoin(self.registry_url, "/stats"), timeout=self.timeout
-            )
+            response = self.session.get(urljoin(self.registry_url, "/stats"), timeout=self.timeout)
             return self._handle_response(response)
         except requests.RequestException as e:
             raise A2AError(f"Failed to get registry stats: {e}")

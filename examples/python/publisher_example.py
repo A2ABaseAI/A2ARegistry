@@ -68,9 +68,7 @@ def main():
 
         # Update the agent
         published_agent.description = "Updated sample AI chatbot with new features"
-        updated_agent = publisher.update(
-            published_agent.id, published_agent, validate=True
-        )
+        updated_agent = publisher.update(published_agent.id, published_agent, validate=True)
         print(f"✓ Agent updated successfully")
 
         # Clean up

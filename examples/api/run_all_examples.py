@@ -38,7 +38,7 @@ class ExampleRunner:
                 "description": description,
                 "status": "error",
                 "message": f"Script not found: {script_path}",
-                "duration": 0
+                "duration": 0,
             }
 
         start_time = time.time()
@@ -46,10 +46,7 @@ class ExampleRunner:
         try:
             # Run the script
             result = subprocess.run(
-                [sys.executable, script_path],
-                capture_output=True,
-                text=True,
-                timeout=300  # 5 minute timeout
+                [sys.executable, script_path], capture_output=True, text=True, timeout=300  # 5 minute timeout
             )
 
             duration = time.time() - start_time
@@ -62,7 +59,7 @@ class ExampleRunner:
                     "message": "Completed successfully",
                     "duration": duration,
                     "output": result.stdout,
-                    "error": result.stderr
+                    "error": result.stderr,
                 }
             else:
                 return {
@@ -72,7 +69,7 @@ class ExampleRunner:
                     "message": f"Script failed with return code {result.returncode}",
                     "duration": duration,
                     "output": result.stdout,
-                    "error": result.stderr
+                    "error": result.stderr,
                 }
 
         except subprocess.TimeoutExpired:
@@ -82,7 +79,7 @@ class ExampleRunner:
                 "description": description,
                 "status": "timeout",
                 "message": "Script timed out after 5 minutes",
-                "duration": duration
+                "duration": duration,
             }
         except Exception as e:
             duration = time.time() - start_time
@@ -91,7 +88,7 @@ class ExampleRunner:
                 "description": description,
                 "status": "error",
                 "message": f"Unexpected error: {str(e)}",
-                "duration": duration
+                "duration": duration,
             }
 
     def run_all_examples(self):
@@ -104,23 +101,23 @@ class ExampleRunner:
             {
                 "script": "auth_api_examples.py",
                 "description": "Authentication API Examples - User registration, login, and token management",
-                "priority": 1
+                "priority": 1,
             },
             {
                 "script": "agent_api_examples.py",
                 "description": "Agent API Examples - Publishing, retrieving, and managing agents",
-                "priority": 2
+                "priority": 2,
             },
             {
                 "script": "search_api_examples.py",
                 "description": "Search API Examples - Advanced search and filtering capabilities",
-                "priority": 3
+                "priority": 3,
             },
             {
                 "script": "well_known_api_examples.py",
                 "description": "Well-Known API Examples - Standard discovery endpoints",
-                "priority": 4
-            }
+                "priority": 4,
+            },
         ]
 
         # Sort by priority to ensure authentication runs first

@@ -231,15 +231,11 @@ class Agent:
         # Parse datetime strings
         created_at = None
         if data.get("created_at"):
-            created_at = datetime.fromisoformat(
-                data["created_at"].replace("Z", "+00:00")
-            )
+            created_at = datetime.fromisoformat(data["created_at"].replace("Z", "+00:00"))
 
         updated_at = None
         if data.get("updated_at"):
-            updated_at = datetime.fromisoformat(
-                data["updated_at"].replace("Z", "+00:00")
-            )
+            updated_at = datetime.fromisoformat(data["updated_at"].replace("Z", "+00:00"))
 
         return cls(
             id=data.get("id"),
@@ -313,18 +309,14 @@ class AgentBuilder:
     """Builder class for creating Agent objects."""
 
     def __init__(self, name: str, description: str, version: str, provider: str):
-        self._agent = Agent(
-            name=name, description=description, version=version, provider=provider
-        )
+        self._agent = Agent(name=name, description=description, version=version, provider=provider)
 
     def with_tags(self, tags: List[str]) -> "AgentBuilder":
         """Add tags to the agent."""
         self._agent.tags = tags
         return self
 
-    def with_location(
-        self, url: str, location_type: str = "api_endpoint"
-    ) -> "AgentBuilder":
+    def with_location(self, url: str, location_type: str = "api_endpoint") -> "AgentBuilder":
         """Set agent location."""
         self._agent.location_url = url
         self._agent.location_type = location_type

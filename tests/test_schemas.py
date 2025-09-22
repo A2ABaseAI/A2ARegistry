@@ -28,22 +28,17 @@ class TestSchemas(BaseTest):
                 "streaming": True,
                 "pushNotifications": False,
                 "stateTransitionHistory": True,
-                "supportsAuthenticatedExtendedCard": False
+                "supportsAuthenticatedExtendedCard": False,
             },
             "securitySchemes": [
-                {
-                    "type": "apiKey",
-                    "location": "header",
-                    "name": "X-API-Key",
-                    "credentials": "test_credentials"
-                }
+                {"type": "apiKey", "location": "header", "name": "X-API-Key", "credentials": "test_credentials"}
             ],
             "skills": [],
             "interface": {
                 "preferredTransport": "jsonrpc",
                 "defaultInputModes": ["text/plain"],
-                "defaultOutputModes": ["text/plain"]
-            }
+                "defaultOutputModes": ["text/plain"],
+            },
         }
 
     def test_agent_card_spec_valid_data(self):
@@ -57,22 +52,17 @@ class TestSchemas(BaseTest):
                 "streaming": True,
                 "pushNotifications": False,
                 "stateTransitionHistory": True,
-                "supportsAuthenticatedExtendedCard": False
+                "supportsAuthenticatedExtendedCard": False,
             },
             securitySchemes=[
-                {
-                    "type": "apiKey",
-                    "location": "header",
-                    "name": "X-API-Key",
-                    "credentials": "test_credentials"
-                }
+                {"type": "apiKey", "location": "header", "name": "X-API-Key", "credentials": "test_credentials"}
             ],
             skills=[],
             interface={
                 "preferredTransport": "jsonrpc",
                 "defaultInputModes": ["text/plain"],
-                "defaultOutputModes": ["text/plain"]
-            }
+                "defaultOutputModes": ["text/plain"],
+            },
         )
 
         assert agent_card.name == "Test Agent"
@@ -91,10 +81,7 @@ class TestSchemas(BaseTest):
     def test_agent_card_spec_with_provider(self):
         """Test AgentCardSpec with provider information."""
         data = self._get_valid_agent_card_data()
-        data["provider"] = {
-            "organization": "Test Organization",
-            "url": "https://test-org.com"
-        }
+        data["provider"] = {"organization": "Test Organization", "url": "https://test-org.com"}
 
         agent_card = AgentCardSpec.model_validate(data)
         assert agent_card.name == "Test Agent"
@@ -102,12 +89,7 @@ class TestSchemas(BaseTest):
 
     def test_skill_schema(self):
         """Test AgentSkill schema."""
-        skill = AgentSkill(
-            id="test-skill",
-            name="test-skill",
-            description="A test skill",
-            tags=["test", "example"]
-        )
+        skill = AgentSkill(id="test-skill", name="test-skill", description="A test skill", tags=["test", "example"])
         assert skill.id == "test-skill"
         assert skill.name == "test-skill"
         assert skill.tags == ["test", "example"]
@@ -178,10 +160,7 @@ class TestSchemas(BaseTest):
     def test_agent_card_spec_serialization(self):
         """Test AgentCardSpec serialization."""
         data = self._get_valid_agent_card_data()
-        data["provider"] = {
-            "organization": "Test Organization",
-            "url": "https://test-org.com"
-        }
+        data["provider"] = {"organization": "Test Organization", "url": "https://test-org.com"}
 
         agent_card = AgentCardSpec.model_validate(data)
 
@@ -198,10 +177,7 @@ class TestSchemas(BaseTest):
     def test_agent_card_spec_deserialization(self):
         """Test AgentCardSpec deserialization."""
         data = self._get_valid_agent_card_data()
-        data["provider"] = {
-            "organization": "Test Organization",
-            "url": "https://test-org.com"
-        }
+        data["provider"] = {"organization": "Test Organization", "url": "https://test-org.com"}
 
         agent_card = AgentCardSpec.model_validate(data)
         assert agent_card.name == "Test Agent"
@@ -210,12 +186,7 @@ class TestSchemas(BaseTest):
     def test_skill_validation(self):
         """Test AgentSkill validation."""
         # Valid skill
-        skill = AgentSkill(
-            id="test-skill",
-            name="test-skill",
-            description="A test skill",
-            tags=["test", "example"]
-        )
+        skill = AgentSkill(id="test-skill", name="test-skill", description="A test skill", tags=["test", "example"])
         assert skill.name == "test-skill"
 
         # Invalid skill (missing required fields)
@@ -311,10 +282,7 @@ class TestSchemas(BaseTest):
         """Test schema optional fields."""
         # Test with minimal required fields
         data = self._get_valid_agent_card_data()
-        data["provider"] = {
-            "organization": "Test Organization",
-            "url": "https://test-org.com"
-        }
+        data["provider"] = {"organization": "Test Organization", "url": "https://test-org.com"}
 
         agent_card = AgentCardSpec.model_validate(data)
 

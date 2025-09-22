@@ -30,7 +30,7 @@ class A2AAuthClient:
     """Client for interacting with A2A Registry Authentication API."""
 
     def __init__(self, base_url: str = "http://localhost:8000"):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.client = httpx.Client(timeout=30.0)
         self.access_token: Optional[str] = None
         self.refresh_token: Optional[str] = None
@@ -43,12 +43,7 @@ class A2AAuthClient:
         return headers
 
     def register_user(
-        self,
-        username: str,
-        email: str,
-        password: str,
-        full_name: Optional[str] = None,
-        tenant_id: str = "default"
+        self, username: str, email: str, password: str, full_name: Optional[str] = None, tenant_id: str = "default"
     ) -> Dict[str, Any]:
         """Register a new user."""
         url = f"{self.base_url}/auth/register"
@@ -57,15 +52,11 @@ class A2AAuthClient:
             "email": email,
             "password": password,
             "full_name": full_name,
-            "tenant_id": tenant_id
+            "tenant_id": tenant_id,
         }
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers(include_auth=False)
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers(include_auth=False))
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -77,24 +68,13 @@ class A2AAuthClient:
             print(f"Request Error registering user: {e}")
             raise
 
-    def login_user(
-        self,
-        email_or_username: str,
-        password: str
-    ) -> Dict[str, Any]:
+    def login_user(self, email_or_username: str, password: str) -> Dict[str, Any]:
         """Login user and get tokens."""
         url = f"{self.base_url}/auth/login"
-        payload = {
-            "email_or_username": email_or_username,
-            "password": password
-        }
+        payload = {"email_or_username": email_or_username, "password": password}
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers(include_auth=False)
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers(include_auth=False))
             response.raise_for_status()
 
             result = response.json()
@@ -119,16 +99,10 @@ class A2AAuthClient:
             raise ValueError("No refresh token available")
 
         url = f"{self.base_url}/auth/refresh"
-        payload = {
-            "refresh_token": self.refresh_token
-        }
+        payload = {"refresh_token": self.refresh_token}
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers(include_auth=False)
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers(include_auth=False))
             response.raise_for_status()
 
             result = response.json()
@@ -149,10 +123,7 @@ class A2AAuthClient:
         url = f"{self.base_url}/auth/me"
 
         try:
-            response = self.client.get(
-                url,
-                headers=self._get_headers()
-            )
+            response = self.client.get(url, headers=self._get_headers())
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -162,24 +133,13 @@ class A2AAuthClient:
             print(f"Request Error getting user profile: {e}")
             raise
 
-    def change_password(
-        self,
-        current_password: str,
-        new_password: str
-    ) -> Dict[str, Any]:
+    def change_password(self, current_password: str, new_password: str) -> Dict[str, Any]:
         """Change user password."""
         url = f"{self.base_url}/auth/change-password"
-        payload = {
-            "current_password": current_password,
-            "new_password": new_password
-        }
+        payload = {"current_password": current_password, "new_password": new_password}
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers()
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers())
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -194,10 +154,7 @@ class A2AAuthClient:
         url = f"{self.base_url}/auth/logout"
 
         try:
-            response = self.client.post(
-                url,
-                headers=self._get_headers()
-            )
+            response = self.client.post(url, headers=self._get_headers())
             response.raise_for_status()
 
             # Clear tokens
@@ -219,9 +176,9 @@ class A2AAuthClient:
 
 def demonstrate_user_registration(client: A2AAuthClient):
     """Demonstrate user registration."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("USER REGISTRATION EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Register a new user
     print("\n1. Registering a new user...")
@@ -231,7 +188,7 @@ def demonstrate_user_registration(client: A2AAuthClient):
             email="testuser@example.com",
             password="securepassword123",
             full_name="Test User",
-            tenant_id="default"
+            tenant_id="default",
         )
         print("✓ User registered successfully!")
         print(f"  User ID: {user_data.get('id')}")
@@ -248,9 +205,7 @@ def demonstrate_user_registration(client: A2AAuthClient):
     print("\n2. Attempting to register duplicate user...")
     try:
         client.register_user(
-            username="testuser123",  # Same username
-            email="different@example.com",
-            password="password123"
+            username="testuser123", email="different@example.com", password="password123"  # Same username
         )
         print("✗ Unexpectedly registered duplicate user")
     except HTTPError as e:
@@ -264,9 +219,9 @@ def demonstrate_user_registration(client: A2AAuthClient):
 
 def demonstrate_user_login(client: A2AAuthClient, user_data: Optional[Dict[str, Any]]):
     """Demonstrate user login."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("USER LOGIN EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     if not user_data:
         print("ℹ Skipping login examples (no user data)")
@@ -275,17 +230,14 @@ def demonstrate_user_login(client: A2AAuthClient, user_data: Optional[Dict[str, 
     # Example 1: Login with email
     print("\n1. Logging in with email...")
     try:
-        login_result = client.login_user(
-            email_or_username="testuser@example.com",
-            password="securepassword123"
-        )
+        login_result = client.login_user(email_or_username="testuser@example.com", password="securepassword123")
         print("✓ Login successful!")
         print(f"  Access Token: {login_result.get('access_token', '')[:50]}...")
         print(f"  Refresh Token: {login_result.get('refresh_token', '')[:20]}...")
         print(f"  Token Type: {login_result.get('token_type')}")
         print(f"  Expires In: {login_result.get('expires_in')} seconds")
 
-        user_info = login_result.get('user', {})
+        user_info = login_result.get("user", {})
         print(f"  User: {user_info.get('username')} ({user_info.get('email')})")
         print(f"  Roles: {user_info.get('roles')}")
         return login_result
@@ -296,10 +248,7 @@ def demonstrate_user_login(client: A2AAuthClient, user_data: Optional[Dict[str, 
     # Example 2: Login with username
     print("\n2. Logging in with username...")
     try:
-        login_result = client.login_user(
-            email_or_username="testuser123",
-            password="securepassword123"
-        )
+        login_result = client.login_user(email_or_username="testuser123", password="securepassword123")
         print("✓ Login with username successful!")
         print(f"  User: {login_result.get('user', {}).get('username')}")
     except Exception as e:
@@ -308,10 +257,7 @@ def demonstrate_user_login(client: A2AAuthClient, user_data: Optional[Dict[str, 
     # Example 3: Login with wrong password
     print("\n3. Attempting login with wrong password...")
     try:
-        client.login_user(
-            email_or_username="testuser@example.com",
-            password="wrongpassword"
-        )
+        client.login_user(email_or_username="testuser@example.com", password="wrongpassword")
         print("✗ Unexpectedly logged in with wrong password")
     except HTTPError as e:
         if e.response.status_code == 401:
@@ -324,9 +270,9 @@ def demonstrate_user_login(client: A2AAuthClient, user_data: Optional[Dict[str, 
 
 def demonstrate_token_management(client: A2AAuthClient):
     """Demonstrate token management."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TOKEN MANAGEMENT EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Get current user profile
     print("\n1. Getting current user profile...")
@@ -376,17 +322,14 @@ def demonstrate_token_management(client: A2AAuthClient):
 
 def demonstrate_password_management(client: A2AAuthClient):
     """Demonstrate password management."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PASSWORD MANAGEMENT EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Change password
     print("\n1. Changing password...")
     try:
-        result = client.change_password(
-            current_password="securepassword123",
-            new_password="newpassword456"
-        )
+        result = client.change_password(current_password="securepassword123", new_password="newpassword456")
         print("✓ Password changed successfully!")
         print(f"  Message: {result.get('message')}")
 
@@ -399,10 +342,7 @@ def demonstrate_password_management(client: A2AAuthClient):
     # Example 2: Try to change password with wrong current password
     print("\n2. Attempting to change password with wrong current password...")
     try:
-        client.change_password(
-            current_password="wrongpassword",
-            new_password="anotherpassword"
-        )
+        client.change_password(current_password="wrongpassword", new_password="anotherpassword")
         print("✗ Unexpectedly changed password with wrong current password")
     except HTTPError as e:
         if e.response.status_code == 400:
@@ -415,9 +355,9 @@ def demonstrate_password_management(client: A2AAuthClient):
 
 def demonstrate_logout(client: A2AAuthClient):
     """Demonstrate user logout."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("LOGOUT EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Logout user
     print("\n1. Logging out user...")
@@ -445,18 +385,15 @@ def demonstrate_logout(client: A2AAuthClient):
 
 def demonstrate_integration_with_agent_api(client: A2AAuthClient):
     """Demonstrate integration with agent API."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("INTEGRATION WITH AGENT API EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Access entitled agents endpoint
     print("\n1. Accessing entitled agents endpoint...")
     try:
         url = f"{client.base_url}/agents/entitled"
-        response = client.client.get(
-            url,
-            headers=client._get_headers()
-        )
+        response = client.client.get(url, headers=client._get_headers())
         response.raise_for_status()
         result = response.json()
         print("✓ Successfully accessed entitled agents endpoint!")
@@ -525,9 +462,9 @@ def main():
 
             demonstrate_integration_with_agent_api(client)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("AUTHENTICATION EXAMPLES COMPLETED SUCCESSFULLY!")
-        print("="*60)
+        print("=" * 60)
         print("\nNext Steps:")
         print("1. Use the access token for authenticated API calls")
         print("2. Implement token refresh in your application")

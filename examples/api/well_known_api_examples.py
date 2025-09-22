@@ -29,7 +29,7 @@ class A2AWellKnownClient:
     """Client for interacting with A2A Registry Well-Known API."""
 
     def __init__(self, base_url: str = "http://localhost:8000", token: Optional[str] = None):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.token = token
         self.client = httpx.Client(timeout=30.0)
         self.access_token: Optional[str] = None
@@ -46,17 +46,10 @@ class A2AWellKnownClient:
     def authenticate_user(self, username: str, password: str) -> Dict[str, Any]:
         """Authenticate user and get tokens."""
         url = f"{self.base_url}/auth/login"
-        payload = {
-            "email_or_username": username,
-            "password": password
-        }
+        payload = {"email_or_username": username, "password": password}
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers(include_auth=False)
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers(include_auth=False))
             response.raise_for_status()
 
             result = response.json()
@@ -74,12 +67,7 @@ class A2AWellKnownClient:
             raise
 
     def register_user(
-        self,
-        username: str,
-        email: str,
-        password: str,
-        full_name: Optional[str] = None,
-        tenant_id: str = "default"
+        self, username: str, email: str, password: str, full_name: Optional[str] = None, tenant_id: str = "default"
     ) -> Dict[str, Any]:
         """Register a new user."""
         url = f"{self.base_url}/auth/register"
@@ -88,15 +76,11 @@ class A2AWellKnownClient:
             "email": email,
             "password": password,
             "full_name": full_name,
-            "tenant_id": tenant_id
+            "tenant_id": tenant_id,
         }
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers(include_auth=False)
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers(include_auth=False))
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -106,11 +90,7 @@ class A2AWellKnownClient:
             print(f"Request Error registering user: {e}")
             raise
 
-    def get_agents_index(
-        self,
-        top: int = 20,
-        skip: int = 0
-    ) -> Dict[str, Any]:
+    def get_agents_index(self, top: int = 20, skip: int = 0) -> Dict[str, Any]:
         """
         Get the agents index via well-known endpoint.
 
@@ -142,10 +122,7 @@ class A2AWellKnownClient:
         url = f"{self.base_url}/.well-known/agents/{agent_id}/card"
 
         try:
-            response = self.client.get(
-                url,
-                headers=self._get_headers()
-            )
+            response = self.client.get(url, headers=self._get_headers())
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -162,15 +139,15 @@ class A2AWellKnownClient:
 
 def demonstrate_agents_index(client: A2AWellKnownClient):
     """Demonstrate agents index functionality."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("AGENTS INDEX EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Get agents index
     print("\n1. Getting agents index...")
     try:
         result = client.get_agents_index(top=10, skip=0)
-        agents = result.get('agents', [])
+        agents = result.get("agents", [])
         print("✓ Retrieved agents index successfully")
         print(f"  Registry version: {result.get('registry_version', 'Unknown')}")
         print(f"  Registry name: {result.get('registry_name', 'Unknown')}")
@@ -193,18 +170,18 @@ def demonstrate_agents_index(client: A2AWellKnownClient):
     try:
         # First page
         result1 = client.get_agents_index(top=5, skip=0)
-        agents1 = result1.get('agents', [])
+        agents1 = result1.get("agents", [])
         print(f"✓ First page: {len(agents1)} agents")
 
         # Second page
         result2 = client.get_agents_index(top=5, skip=5)
-        agents2 = result2.get('agents', [])
+        agents2 = result2.get("agents", [])
         print(f"✓ Second page: {len(agents2)} agents")
 
         # Check if results are different
         if agents1 and agents2:
-            ids1 = {agent.get('id') for agent in agents1}
-            ids2 = {agent.get('id') for agent in agents2}
+            ids1 = {agent.get("id") for agent in agents1}
+            ids2 = {agent.get("id") for agent in agents2}
             if ids1.isdisjoint(ids2):
                 print("✓ Pagination working correctly (no overlap between pages)")
             else:
@@ -216,7 +193,7 @@ def demonstrate_agents_index(client: A2AWellKnownClient):
     print("\n3. Testing large page size...")
     try:
         result = client.get_agents_index(top=50, skip=0)
-        agents = result.get('agents', [])
+        agents = result.get("agents", [])
         print(f"✓ Large page size: {len(agents)} agents")
     except Exception as e:
         print(f"✗ Failed to test large page size: {e}")
@@ -224,21 +201,21 @@ def demonstrate_agents_index(client: A2AWellKnownClient):
 
 def demonstrate_agent_cards(client: A2AWellKnownClient):
     """Demonstrate agent card functionality."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("AGENT CARD EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # First, get some agent IDs from the index
     print("\n1. Getting agent IDs from index...")
     try:
         index_result = client.get_agents_index(top=10, skip=0)
-        agents = index_result.get('agents', [])
+        agents = index_result.get("agents", [])
 
         if not agents:
             print("ℹ No agents found in index, skipping agent card examples")
             return
 
-        agent_ids = [agent.get('id') for agent in agents if agent.get('id')]
+        agent_ids = [agent.get("id") for agent in agents if agent.get("id")]
         print(f"✓ Found {len(agent_ids)} agent IDs")
 
         # Example 2: Get agent cards
@@ -252,13 +229,13 @@ def demonstrate_agent_cards(client: A2AWellKnownClient):
                 print(f"  Description: {card.get('description', 'No description')}")
                 print(f"  Version: {card.get('version', 'Unknown')}")
 
-                capabilities = card.get('capabilities', {})
+                capabilities = card.get("capabilities", {})
                 if capabilities:
                     print("  Capabilities:")
                     for key, value in capabilities.items():
                         print(f"    {key}: {value}")
 
-                skills = card.get('skills', [])
+                skills = card.get("skills", [])
                 if skills:
                     print(f"  Skills: {len(skills)} skills")
                     for skill in skills[:2]:  # Show first 2 skills
@@ -280,21 +257,21 @@ def demonstrate_agent_cards(client: A2AWellKnownClient):
 
 def demonstrate_public_vs_private_access(client: A2AWellKnownClient):
     """Demonstrate public vs private agent access."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PUBLIC VS PRIVATE ACCESS EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Access without authentication
     print("\n1. Accessing agents without authentication...")
     try:
         # Agents index should be accessible without auth
         index_result = client.get_agents_index(top=10, skip=0)
-        agents = index_result.get('agents', [])
+        agents = index_result.get("agents", [])
         print(f"✓ Agents index accessible without authentication: {len(agents)} agents")
 
         # Try to access agent cards without auth
         if agents:
-            agent_id = agents[0].get('id')
+            agent_id = agents[0].get("id")
             if agent_id:
                 try:
                     client.get_agent_card(agent_id)
@@ -312,12 +289,12 @@ def demonstrate_public_vs_private_access(client: A2AWellKnownClient):
         print("\n2. Accessing agents with authentication...")
         try:
             index_result = client.get_agents_index(top=10, skip=0)
-            agents = index_result.get('agents', [])
+            agents = index_result.get("agents", [])
             print(f"✓ Agents index accessible with authentication: {len(agents)} agents")
 
             # Try to access agent cards with auth
             if agents:
-                agent_id = agents[0].get('id')
+                agent_id = agents[0].get("id")
                 if agent_id:
                     try:
                         client.get_agent_card(agent_id)
@@ -332,9 +309,9 @@ def demonstrate_public_vs_private_access(client: A2AWellKnownClient):
 
 def demonstrate_error_handling(client: A2AWellKnownClient):
     """Demonstrate error handling scenarios."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("ERROR HANDLING EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Invalid pagination parameters
     print("\n1. Invalid pagination parameters...")
@@ -379,9 +356,9 @@ def demonstrate_error_handling(client: A2AWellKnownClient):
 
 def demonstrate_well_known_structure(client: A2AWellKnownClient):
     """Demonstrate well-known endpoint structure and standards compliance."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("WELL-KNOWN STRUCTURE EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Agents index structure
     print("\n1. Agents index structure validation...")
@@ -389,7 +366,7 @@ def demonstrate_well_known_structure(client: A2AWellKnownClient):
         result = client.get_agents_index(top=5, skip=0)
 
         # Check required fields
-        required_fields = ['registry_version', 'registry_name', 'agents', 'count', 'total_count']
+        required_fields = ["registry_version", "registry_name", "agents", "count", "total_count"]
         missing_fields = [field for field in required_fields if field not in result]
 
         if not missing_fields:
@@ -398,10 +375,10 @@ def demonstrate_well_known_structure(client: A2AWellKnownClient):
             print(f"✗ Missing required fields: {missing_fields}")
 
         # Check agents structure
-        agents = result.get('agents', [])
+        agents = result.get("agents", [])
         if agents:
             agent = agents[0]
-            agent_required_fields = ['id', 'name', 'description', 'location']
+            agent_required_fields = ["id", "name", "description", "location"]
             agent_missing_fields = [field for field in agent_required_fields if field not in agent]
 
             if not agent_missing_fields:
@@ -410,8 +387,8 @@ def demonstrate_well_known_structure(client: A2AWellKnownClient):
                 print(f"✗ Agent missing required fields: {agent_missing_fields}")
 
             # Check location structure
-            location = agent.get('location', {})
-            if 'url' in location and 'type' in location:
+            location = agent.get("location", {})
+            if "url" in location and "type" in location:
                 print("✓ Agent location structure is valid")
             else:
                 print("✗ Agent location structure is invalid")
@@ -423,16 +400,16 @@ def demonstrate_well_known_structure(client: A2AWellKnownClient):
     print("\n2. Agent card structure validation...")
     try:
         index_result = client.get_agents_index(top=1, skip=0)
-        agents = index_result.get('agents', [])
+        agents = index_result.get("agents", [])
 
         if agents:
-            agent_id = agents[0].get('id')
+            agent_id = agents[0].get("id")
             if agent_id:
                 try:
                     card = client.get_agent_card(agent_id)
 
                     # Check required fields
-                    card_required_fields = ['protocolVersion', 'name', 'description', 'url']
+                    card_required_fields = ["protocolVersion", "name", "description", "url"]
                     card_missing_fields = [field for field in card_required_fields if field not in card]
 
                     if not card_missing_fields:
@@ -441,14 +418,14 @@ def demonstrate_well_known_structure(client: A2AWellKnownClient):
                         print(f"✗ Agent card missing required fields: {card_missing_fields}")
 
                     # Check capabilities structure
-                    capabilities = card.get('capabilities', {})
+                    capabilities = card.get("capabilities", {})
                     if capabilities:
                         print("✓ Agent card has capabilities section")
                     else:
                         print("ℹ Agent card has no capabilities section")
 
                     # Check skills structure
-                    skills = card.get('skills', [])
+                    skills = card.get("skills", [])
                     if skills:
                         print(f"✓ Agent card has {len(skills)} skills")
                     else:
@@ -468,9 +445,9 @@ def demonstrate_well_known_structure(client: A2AWellKnownClient):
 
 def setup_authentication(client: A2AWellKnownClient) -> bool:
     """Set up authentication for the client."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("AUTHENTICATION SETUP")
-    print("="*60)
+    print("=" * 60)
 
     # Check if we already have a token from environment
     if client.token:
@@ -485,11 +462,7 @@ def setup_authentication(client: A2AWellKnownClient) -> bool:
     print("\n1. Registering user for well-known examples...")
     try:
         user_data = client.register_user(
-            username=username,
-            email=email,
-            password=password,
-            full_name="Well-Known Example User",
-            tenant_id="default"
+            username=username, email=email, password=password, full_name="Well-Known Example User", tenant_id="default"
         )
         print("✓ User registered successfully!")
         print(f"  User ID: {user_data.get('id')}")
@@ -557,9 +530,9 @@ def main():
         demonstrate_error_handling(client)
         demonstrate_well_known_structure(client)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("WELL-KNOWN API EXAMPLES COMPLETED SUCCESSFULLY!")
-        print("="*60)
+        print("=" * 60)
         print("\nNext Steps:")
         print("1. Use the access token for accessing private agents")
         print("2. Implement well-known endpoints in your application")

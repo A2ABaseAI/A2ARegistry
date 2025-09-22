@@ -95,12 +95,7 @@ class BaseTest:
         from app.main import app
 
         def mock_require_oauth():
-            return {
-                "sub": "test-client",
-                "client_id": "test-client",
-                "tenant": "default",
-                "roles": ["Administrator"]
-            }
+            return {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": ["Administrator"]}
 
         # Apply the mock to the app
         app.dependency_overrides[require_oauth] = mock_require_oauth
@@ -152,10 +147,7 @@ class BaseTest:
             patch("app.api.agents.RegistryService", side_effect=mock_registry_service),
             patch("app.api.agents.AgentService", side_effect=mock_agent_service),
             patch("app.api.agents.CardService", side_effect=mock_card_service),
-            patch(
-                "app.api.agents.CardService.parse_and_validate_card",
-                side_effect=mock_parse_and_validate_card
-            ),
+            patch("app.api.agents.CardService.parse_and_validate_card", side_effect=mock_parse_and_validate_card),
             patch("app.api.well_known.RegistryService", side_effect=mock_registry_service),
             patch("app.api.search.RegistryService", side_effect=mock_registry_service),
         ):
@@ -177,9 +169,7 @@ class BaseTest:
         db_session.commit()
         return agent_record
 
-    def create_test_agent_version(
-        self, db_session, agent_id="test-agent-123", public=True, **kwargs
-    ):
+    def create_test_agent_version(self, db_session, agent_id="test-agent-123", public=True, **kwargs):
         """Create a test agent version."""
         defaults = {
             "id": f"version-{agent_id}",
@@ -208,9 +198,7 @@ class BaseTest:
         db_session.commit()
         return agent_version
 
-    def create_test_entitlement(
-        self, db_session, agent_id="test-agent-123", client_id="test-client", **kwargs
-    ):
+    def create_test_entitlement(self, db_session, agent_id="test-agent-123", client_id="test-client", **kwargs):
         """Create a test entitlement."""
         defaults = {
             "id": f"entitlement-{agent_id}",
@@ -243,22 +231,17 @@ class BaseTest:
                 "streaming": True,
                 "pushNotifications": False,
                 "stateTransitionHistory": True,
-                "supportsAuthenticatedExtendedCard": False
+                "supportsAuthenticatedExtendedCard": False,
             },
             "securitySchemes": [
-                {
-                    "type": "apiKey",
-                    "location": "header",
-                    "name": "X-API-Key",
-                    "credentials": "test_credentials"
-                }
+                {"type": "apiKey", "location": "header", "name": "X-API-Key", "credentials": "test_credentials"}
             ],
             "skills": [],
             "interface": {
                 "preferredTransport": "jsonrpc",
                 "defaultInputModes": ["text/plain"],
-                "defaultOutputModes": ["text/plain"]
-            }
+                "defaultOutputModes": ["text/plain"],
+            },
         }
 
     def get_valid_publish_data(self):

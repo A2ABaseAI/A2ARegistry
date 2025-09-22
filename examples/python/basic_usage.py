@@ -30,9 +30,7 @@ def main():
         return
 
     # Create a simple agent
-    capabilities = AgentCapabilities(
-        protocols=["http"], supported_formats=["json"], max_concurrent_requests=5
-    )
+    capabilities = AgentCapabilities(protocols=["http"], supported_formats=["json"], max_concurrent_requests=5)
 
     auth_scheme = AuthScheme(
         type="api_key",
@@ -42,9 +40,7 @@ def main():
     )
 
     agent = (
-        AgentBuilder(
-            "my-test-agent", "A test agent for demonstration", "1.0.0", "my-org"
-        )
+        AgentBuilder("my-test-agent", "A test agent for demonstration", "1.0.0", "my-org")
         .with_tags(["test", "demo", "ai"])
         .with_location("https://my-org.com/api/agent")
         .with_capabilities(capabilities)
@@ -64,9 +60,7 @@ def main():
         print(f"✓ Found {len(agents_response.get('agents', []))} public agents")
 
         # Search for agents
-        search_results = client.search_agents(
-            query="test", filters={"tags": ["demo"]}, page=1, limit=5
-        )
+        search_results = client.search_agents(query="test", filters={"tags": ["demo"]}, page=1, limit=5)
         print(f"✓ Search found {len(search_results.get('agents', []))} matching agents")
 
         # Get agent details

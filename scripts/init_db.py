@@ -122,9 +122,7 @@ def create_sample_data():
             "is_public": True,
         }
 
-        it_agent = agent_service.create_agent(
-            agent_data=AgentCreate(**it_agent_data), client_id=admin_client.id
-        )
+        it_agent = agent_service.create_agent(agent_data=AgentCreate(**it_agent_data), client_id=admin_client.id)
 
         # Benefits Agent
         benefits_agent_data = {
@@ -213,9 +211,7 @@ def create_sample_data():
                         },
                     },
                 },
-                "auth_schemes": [
-                    {"type": "apiKey", "location": "header", "name": "X-API-Key"}
-                ],
+                "auth_schemes": [{"type": "apiKey", "location": "header", "name": "X-API-Key"}],
                 "provider": "Customer Success Team",
                 "tags": ["customer", "support", "service"],
                 "location": {
@@ -263,6 +259,7 @@ def create_sample_data():
 
         # Seed a minimal tenant and an example agent
         from app.database import SessionLocal
+
         db = SessionLocal()
         try:
             tenant_id = "default"

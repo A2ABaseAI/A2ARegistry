@@ -25,12 +25,8 @@ console = Console()
 class A2APublisher:
     """A2A Agent Publisher client."""
 
-    def __init__(
-        self, registry_url: str = None, client_id: str = None, client_secret: str = None
-    ):
-        self.registry_url = registry_url or os.getenv(
-            "A2A_REGISTRY_URL", "http://localhost:8000"
-        )
+    def __init__(self, registry_url: str = None, client_id: str = None, client_secret: str = None):
+        self.registry_url = registry_url or os.getenv("A2A_REGISTRY_URL", "http://localhost:8000")
         self.client_id = client_id or os.getenv("A2A_CLIENT_ID")
         self.client_secret = client_secret or os.getenv("A2A_CLIENT_SECRET")
         self.access_token = None
@@ -38,9 +34,7 @@ class A2APublisher:
     def authenticate(self) -> bool:
         """Authenticate with the A2A registry."""
         if not self.client_id or not self.client_secret:
-            console.print(
-                "[red]Error: Client ID and secret required for authentication[/red]"
-            )
+            console.print("[red]Error: Client ID and secret required for authentication[/red]")
             console.print(
                 "Set A2A_CLIENT_ID and A2A_CLIENT_SECRET environment variables or use --client-id and --client-secret flags"
             )
@@ -65,9 +59,7 @@ class A2APublisher:
                 console.print("[green]✓ Authentication successful[/green]")
                 return True
             else:
-                console.print(
-                    "[red]✗ Authentication failed: No access token received[/red]"
-                )
+                console.print("[red]✗ Authentication failed: No access token received[/red]")
                 return False
 
         except requests.exceptions.RequestException as e:
@@ -122,9 +114,7 @@ class A2APublisher:
             response.raise_for_status()
 
             agent_response = response.json()
-            console.print(
-                f"[green]✓ Agent '{agent_response['name']}' published successfully[/green]"
-            )
+            console.print(f"[green]✓ Agent '{agent_response['name']}' published successfully[/green]")
             console.print(f"  Agent ID: {agent_response['id']}")
             console.print(f"  Version: {agent_response['version']}")
             return True
@@ -134,9 +124,7 @@ class A2APublisher:
             if hasattr(e, "response") and e.response is not None:
                 try:
                     error_data = e.response.json()
-                    console.print(
-                        f"  Error details: {error_data.get('detail', 'Unknown error')}"
-                    )
+                    console.print(f"  Error details: {error_data.get('detail', 'Unknown error')}")
                 except:
                     pass
             return False
@@ -152,18 +140,14 @@ class A2APublisher:
             response.raise_for_status()
 
             agent_response = response.json()
-            console.print(
-                f"[green]✓ Agent '{agent_response['name']}' updated successfully[/green]"
-            )
+            console.print(f"[green]✓ Agent '{agent_response['name']}' updated successfully[/green]")
             return True
 
         except requests.exceptions.RequestException as e:
             console.print(f"[red]✗ Failed to update agent: {e}[/red]")
             return False
 
-    def list_agents(
-        self, page: int = 1, limit: int = 20
-    ) -> Optional[List[Dict[str, Any]]]:
+    def list_agents(self, page: int = 1, limit: int = 20) -> Optional[List[Dict[str, Any]]]:
         """List published agents."""
         try:
             response = requests.get(
@@ -182,9 +166,7 @@ class A2APublisher:
     def delete_agent(self, agent_id: str) -> bool:
         """Delete an agent."""
         try:
-            response = requests.delete(
-                f"{self.registry_url}/agents/{agent_id}", headers=self._get_headers()
-            )
+            response = requests.delete(f"{self.registry_url}/agents/{agent_id}", headers=self._get_headers())
             response.raise_for_status()
 
             console.print(f"[green]✓ Agent {agent_id} deleted successfully[/green]")
@@ -274,9 +256,7 @@ def create_sample_config(output_path: Path):
                 json.dump(sample_config, f, indent=2)
 
         console.print(f"[green]✓ Sample configuration created: {output_path}[/green]")
-        console.print(
-            "Edit this file with your agent details and use 'a2a-publisher publish' to publish it."
-        )
+        console.print("Edit this file with your agent details and use 'a2a-publisher publish' to publish it.")
 
     except Exception as e:
         console.print(f"[red]Error creating sample configuration: {e}[/red]")
@@ -286,9 +266,7 @@ def cmd_init(args):
     """Initialize a new agent configuration."""
     output_path = Path(args.output or "agent.yaml")
 
-    if output_path.exists() and not Confirm.ask(
-        f"File {output_path} already exists. Overwrite?"
-    ):
+    if output_path.exists() and not Confirm.ask(f"File {output_path} already exists. Overwrite?"):
         return
 
     create_sample_config(output_path)
@@ -364,11 +342,7 @@ def cmd_list(args):
 
     for agent in agents:
         table.add_row(
-            (
-                agent.get("id", "N/A")[:8] + "..."
-                if len(agent.get("id", "")) > 8
-                else agent.get("id", "N/A")
-            ),
+            (agent.get("id", "N/A")[:8] + "..." if len(agent.get("id", "")) > 8 else agent.get("id", "N/A")),
             agent.get("name", "N/A"),
             agent.get("version", "N/A"),
             agent.get("provider", "N/A"),
@@ -430,19 +404,13 @@ Environment Variables:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Init command
-    init_parser = subparsers.add_parser(
-        "init", help="Initialize a new agent configuration"
-    )
-    init_parser.add_argument(
-        "-o", "--output", help="Output file path (default: agent.yaml)"
-    )
+    init_parser = subparsers.add_parser("init", help="Initialize a new agent configuration")
+    init_parser.add_argument("-o", "--output", help="Output file path (default: agent.yaml)")
     init_parser.set_defaults(func=cmd_init)
 
     # Publish command
     publish_parser = subparsers.add_parser("publish", help="Publish an agent")
-    publish_parser.add_argument(
-        "config", help="Agent configuration file (JSON or YAML)"
-    )
+    publish_parser.add_argument("config", help="Agent configuration file (JSON or YAML)")
     publish_parser.set_defaults(func=cmd_publish)
 
     # Update command
@@ -453,12 +421,8 @@ Environment Variables:
 
     # List command
     list_parser = subparsers.add_parser("list", help="List published agents")
-    list_parser.add_argument(
-        "--page", type=int, default=1, help="Page number (default: 1)"
-    )
-    list_parser.add_argument(
-        "--limit", type=int, default=20, help="Results per page (default: 20)"
-    )
+    list_parser.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
+    list_parser.add_argument("--limit", type=int, default=20, help="Results per page (default: 20)")
     list_parser.set_defaults(func=cmd_list)
 
     # Delete command

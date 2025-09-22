@@ -31,7 +31,7 @@ class A2ARegistryClient:
     """Client for interacting with A2A Registry API."""
 
     def __init__(self, base_url: str = "http://localhost:8000", token: Optional[str] = None):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.token = token
         self.client = httpx.Client(timeout=30.0)
         self.access_token: Optional[str] = None
@@ -48,17 +48,10 @@ class A2ARegistryClient:
     def authenticate_user(self, username: str, password: str) -> Dict[str, Any]:
         """Authenticate user and get tokens."""
         url = f"{self.base_url}/auth/login"
-        payload = {
-            "email_or_username": username,
-            "password": password
-        }
+        payload = {"email_or_username": username, "password": password}
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers(include_auth=False)
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers(include_auth=False))
             response.raise_for_status()
 
             result = response.json()
@@ -76,12 +69,7 @@ class A2ARegistryClient:
             raise
 
     def register_user(
-        self,
-        username: str,
-        email: str,
-        password: str,
-        full_name: Optional[str] = None,
-        tenant_id: str = "default"
+        self, username: str, email: str, password: str, full_name: Optional[str] = None, tenant_id: str = "default"
     ) -> Dict[str, Any]:
         """Register a new user."""
         url = f"{self.base_url}/auth/register"
@@ -90,15 +78,11 @@ class A2ARegistryClient:
             "email": email,
             "password": password,
             "full_name": full_name,
-            "tenant_id": tenant_id
+            "tenant_id": tenant_id,
         }
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers(include_auth=False)
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers(include_auth=False))
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -111,17 +95,10 @@ class A2ARegistryClient:
     def publish_agent_by_card(self, card_data: Dict[str, Any], public: bool = True) -> Dict[str, Any]:
         """Publish an agent using card data."""
         url = f"{self.base_url}/agents/publish"
-        payload = {
-            "card": card_data,
-            "public": public
-        }
+        payload = {"card": card_data, "public": public}
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers()
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers())
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -136,17 +113,10 @@ class A2ARegistryClient:
     def publish_agent_by_url(self, card_url: str, public: bool = True) -> Dict[str, Any]:
         """Publish an agent using card URL."""
         url = f"{self.base_url}/agents/publish"
-        payload = {
-            "cardUrl": card_url,
-            "public": public
-        }
+        payload = {"cardUrl": card_url, "public": public}
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers()
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers())
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -180,11 +150,7 @@ class A2ARegistryClient:
         params = {"top": top, "skip": skip}
 
         try:
-            response = self.client.get(
-                url,
-                params=params,
-                headers=self._get_headers()
-            )
+            response = self.client.get(url, params=params, headers=self._get_headers())
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -214,10 +180,7 @@ class A2ARegistryClient:
         url = f"{self.base_url}/agents/{agent_id}/card"
 
         try:
-            response = self.client.get(
-                url,
-                headers=self._get_headers()
-            )
+            response = self.client.get(url, headers=self._get_headers())
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -245,27 +208,24 @@ def create_sample_agent_card() -> Dict[str, Any]:
             "supported_protocols": ["text", "json"],
             "text": True,
             "streaming": True,
-            "max_concurrent_requests": 10
+            "max_concurrent_requests": 10,
         },
         "skills": [
             {
                 "name": "text_processing",
                 "description": "Process and analyze text content",
-                "parameters": {
-                    "input_type": "string",
-                    "output_type": "string"
-                }
+                "parameters": {"input_type": "string", "output_type": "string"},
             }
         ],
-        "jwks_uri": "https://example.com/.well-known/jwks.json"
+        "jwks_uri": "https://example.com/.well-known/jwks.json",
     }
 
 
 def demonstrate_agent_publishing(client: A2ARegistryClient):
     """Demonstrate agent publishing functionality."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("AGENT PUBLISHING EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Publish agent by card data
     print("\n1. Publishing agent by card data...")
@@ -277,7 +237,7 @@ def demonstrate_agent_publishing(client: A2ARegistryClient):
         print(f"  Version: {result.get('version')}")
         print(f"  Public: {result.get('public')}")
         print(f"  Signature Valid: {result.get('signatureValid')}")
-        return result.get('agentId')
+        return result.get("agentId")
     except Exception as e:
         print(f"✗ Failed to publish agent by card: {e}")
         return None
@@ -297,15 +257,15 @@ def demonstrate_agent_publishing(client: A2ARegistryClient):
 
 def demonstrate_agent_retrieval(client: A2ARegistryClient, published_agent_id: Optional[str]):
     """Demonstrate agent retrieval functionality."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("AGENT RETRIEVAL EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Get public agents
     print("\n1. Getting public agents...")
     try:
         result = client.get_public_agents(top=10, skip=0)
-        agents = result.get('items', [])
+        agents = result.get("items", [])
         print(f"✓ Retrieved {len(agents)} public agents")
         print(f"  Total count: {result.get('count', 0)}")
         print(f"  Next page: {result.get('next', 'None')}")
@@ -321,7 +281,7 @@ def demonstrate_agent_retrieval(client: A2ARegistryClient, published_agent_id: O
     print("\n2. Getting entitled agents (requires authentication)...")
     try:
         result = client.get_entitled_agents(top=10, skip=0)
-        agents = result.get('items', [])
+        agents = result.get("items", [])
         print(f"✓ Retrieved {len(agents)} entitled agents")
         print(f"  Total count: {result.get('count', 0)}")
 
@@ -362,9 +322,9 @@ def demonstrate_agent_retrieval(client: A2ARegistryClient, published_agent_id: O
 
 def demonstrate_error_handling(client: A2ARegistryClient):
     """Demonstrate error handling scenarios."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("ERROR HANDLING EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Get non-existent agent
     print("\n1. Getting non-existent agent...")
@@ -413,9 +373,9 @@ def demonstrate_error_handling(client: A2ARegistryClient):
 
 def setup_authentication(client: A2ARegistryClient) -> bool:
     """Set up authentication for the client."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("AUTHENTICATION SETUP")
-    print("="*60)
+    print("=" * 60)
 
     # Check if we already have a token from environment
     if client.token:
@@ -430,11 +390,7 @@ def setup_authentication(client: A2ARegistryClient) -> bool:
     print("\n1. Registering user for agent examples...")
     try:
         user_data = client.register_user(
-            username=username,
-            email=email,
-            password=password,
-            full_name="Agent Example User",
-            tenant_id="default"
+            username=username, email=email, password=password, full_name="Agent Example User", tenant_id="default"
         )
         print("✓ User registered successfully!")
         print(f"  User ID: {user_data.get('id')}")
@@ -500,9 +456,9 @@ def main():
         demonstrate_agent_retrieval(client, published_agent_id)
         demonstrate_error_handling(client)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("EXAMPLES COMPLETED SUCCESSFULLY!")
-        print("="*60)
+        print("=" * 60)
         print("\nNext Steps:")
         print("1. Use the access token for authenticated API calls")
         print("2. Implement agent publishing in your application")

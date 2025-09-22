@@ -37,13 +37,7 @@ class AgentService:
         self.db = _get_db_session()
 
     def create_or_update_agent_record(
-        self,
-        card_data: Dict[str, Any],
-        card_hash: str,
-        tenant_id: str,
-        publisher_id: str,
-        agent_key: str,
-        version: str
+        self, card_data: Dict[str, Any], card_hash: str, tenant_id: str, publisher_id: str, agent_key: str, version: str
     ) -> AgentRecord:
         """
         Create or update agent record in database.
@@ -96,8 +90,7 @@ class AgentService:
         except Exception as exc:
             logger.error(f"Failed to create/update agent record: {exc}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to persist agent record"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent record"
             ) from exc
 
     def create_agent_version(
@@ -158,8 +151,7 @@ class AgentService:
         except Exception as exc:
             logger.error(f"Failed to create agent version: {exc}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to persist agent version"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent version"
             ) from exc
 
     def publish_agent(
@@ -213,8 +205,7 @@ class AgentService:
                 self.db.rollback()
                 logger.error(f"Database transaction failed: {exc}")
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to persist agent"
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent"
                 ) from exc
 
             # Index in search engine (non-critical)
@@ -284,9 +275,7 @@ class AgentService:
             logger.warning(f"Failed to index agent {rec.id}: {e}")
             # Non-critical operation, don't fail the request
 
-    def get_agent_by_id(
-        self, agent_id: str, tenant_id: str
-    ) -> Optional[Tuple[AgentRecord, AgentVersion]]:
+    def get_agent_by_id(self, agent_id: str, tenant_id: str) -> Optional[Tuple[AgentRecord, AgentVersion]]:
         """
         Get agent by ID.
 

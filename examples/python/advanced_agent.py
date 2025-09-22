@@ -218,9 +218,7 @@ def main():
         print(f"✓ Retrieved agent card:")
         print(f"  - API Base URL: {agent_card.api_base_url}")
         print(f"  - Endpoints: {list(agent_card.endpoints.keys())}")
-        print(
-            f"  - Max concurrent requests: {agent_card.capabilities.max_concurrent_requests}"
-        )
+        print(f"  - Max concurrent requests: {agent_card.capabilities.max_concurrent_requests}")
 
         # Search for advanced features
         search_results = client.search_agents(
@@ -231,9 +229,7 @@ def main():
             },
             semantic=True,
         )
-        print(
-            f"✓ Semantic search found {len(search_results.get('agents', []))} matching agents"
-        )
+        print(f"✓ Semantic search found {len(search_results.get('agents', []))} matching agents")
 
         # Clean up
         client.delete_agent(published_agent.id)

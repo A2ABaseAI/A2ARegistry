@@ -134,9 +134,7 @@ class AgentPublisher:
 
         return self.client.publish_agent(agent)
 
-    def publish_from_file(
-        self, file_path: Union[str, Path], validate: bool = True
-    ) -> Agent:
+    def publish_from_file(self, file_path: Union[str, Path], validate: bool = True) -> Agent:
         """
         Load and publish an agent from a configuration file.
 
@@ -224,9 +222,7 @@ class AgentPublisher:
                     "confidence": {"type": "number"},
                 },
             },
-            examples=[
-                "Input: {'message': 'Hello'} -> Output: {'response': 'Hi there!', 'confidence': 0.95}"
-            ],
+            examples=["Input: {'message': 'Hello'} -> Output: {'response': 'Hi there!', 'confidence': 0.95}"],
         )
 
         agent_card = AgentCard(
@@ -248,9 +244,7 @@ class AgentPublisher:
         return (
             AgentBuilder(name, description, version, provider)
             .with_tags(["ai", "assistant", "sample"])
-            .with_location(
-                api_url or f"https://{provider}.com/api/agent", "api_endpoint"
-            )
+            .with_location(api_url or f"https://{provider}.com/api/agent", "api_endpoint")
             .with_capabilities(capabilities)
             .with_auth_schemes(auth_schemes)
             .with_tee_details(tee_details)
@@ -261,9 +255,7 @@ class AgentPublisher:
             .build()
         )
 
-    def save_agent_config(
-        self, agent: Agent, file_path: Union[str, Path], format: str = "yaml"
-    ) -> None:
+    def save_agent_config(self, agent: Agent, file_path: Union[str, Path], format: str = "yaml") -> None:
         """
         Save agent configuration to a file.
 

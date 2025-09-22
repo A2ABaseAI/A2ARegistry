@@ -1,7 +1,7 @@
 """core schema
 
 Revision ID: 001_core
-Revises: 
+Revises:
 Create Date: 2025-09-21 00:00:00
 """
 
@@ -84,5 +84,3 @@ def downgrade() -> None:
     op.drop_table("agents")
     op.drop_table("oauth_clients")
     op.drop_table("tenants")
-
-

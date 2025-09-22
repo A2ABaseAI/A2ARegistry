@@ -30,7 +30,7 @@ class A2ASearchClient:
     """Client for interacting with A2A Registry Search API."""
 
     def __init__(self, base_url: str = "http://localhost:8000", token: Optional[str] = None):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.token = token
         self.client = httpx.Client(timeout=30.0)
         self.access_token: Optional[str] = None
@@ -47,17 +47,10 @@ class A2ASearchClient:
     def authenticate_user(self, username: str, password: str) -> Dict[str, Any]:
         """Authenticate user and get tokens."""
         url = f"{self.base_url}/auth/login"
-        payload = {
-            "email_or_username": username,
-            "password": password
-        }
+        payload = {"email_or_username": username, "password": password}
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers(include_auth=False)
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers(include_auth=False))
             response.raise_for_status()
 
             result = response.json()
@@ -75,12 +68,7 @@ class A2ASearchClient:
             raise
 
     def register_user(
-        self,
-        username: str,
-        email: str,
-        password: str,
-        full_name: Optional[str] = None,
-        tenant_id: str = "default"
+        self, username: str, email: str, password: str, full_name: Optional[str] = None, tenant_id: str = "default"
     ) -> Dict[str, Any]:
         """Register a new user."""
         url = f"{self.base_url}/auth/register"
@@ -89,15 +77,11 @@ class A2ASearchClient:
             "email": email,
             "password": password,
             "full_name": full_name,
-            "tenant_id": tenant_id
+            "tenant_id": tenant_id,
         }
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers(include_auth=False)
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers(include_auth=False))
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -108,11 +92,7 @@ class A2ASearchClient:
             raise
 
     def search_agents(
-        self,
-        query: Optional[str] = None,
-        filters: Optional[Dict[str, Any]] = None,
-        top: int = 20,
-        skip: int = 0
+        self, query: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, top: int = 20, skip: int = 0
     ) -> Dict[str, Any]:
         """
         Search for agents with optional filters and pagination.
@@ -124,19 +104,10 @@ class A2ASearchClient:
             skip: Number of results to skip for pagination
         """
         url = f"{self.base_url}/agents/search"
-        payload = {
-            "q": query,
-            "filters": filters or {},
-            "top": top,
-            "skip": skip
-        }
+        payload = {"q": query, "filters": filters or {}, "top": top, "skip": skip}
 
         try:
-            response = self.client.post(
-                url,
-                json=payload,
-                headers=self._get_headers()
-            )
+            response = self.client.post(url, json=payload, headers=self._get_headers())
             response.raise_for_status()
             return response.json()
         except HTTPError as e:
@@ -155,15 +126,15 @@ class A2ASearchClient:
 
 def demonstrate_basic_search(client: A2ASearchClient):
     """Demonstrate basic search functionality."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("BASIC SEARCH EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Simple text search
     print("\n1. Simple text search...")
     try:
         result = client.search_agents(query="test")
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Found {len(items)} agents matching 'test'")
         print(f"  Total count: {result.get('count', 0)}")
 
@@ -178,7 +149,7 @@ def demonstrate_basic_search(client: A2ASearchClient):
     print("\n2. Search with empty query (all agents)...")
     try:
         result = client.search_agents(query="")
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Found {len(items)} agents with empty query")
         print(f"  Total count: {result.get('count', 0)}")
     except Exception as e:
@@ -188,7 +159,7 @@ def demonstrate_basic_search(client: A2ASearchClient):
     print("\n3. Search with None query (all agents)...")
     try:
         result = client.search_agents(query=None)
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Found {len(items)} agents with None query")
         print(f"  Total count: {result.get('count', 0)}")
     except Exception as e:
@@ -197,16 +168,16 @@ def demonstrate_basic_search(client: A2ASearchClient):
 
 def demonstrate_advanced_filtering(client: A2ASearchClient):
     """Demonstrate advanced filtering functionality."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("ADVANCED FILTERING EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Filter by protocol version
     print("\n1. Filter by protocol version...")
     try:
         filters = {"protocolVersion": "0.3.0"}
         result = client.search_agents(query="", filters=filters)
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Found {len(items)} agents with protocol version 0.3.0")
 
         if items:
@@ -221,7 +192,7 @@ def demonstrate_advanced_filtering(client: A2ASearchClient):
     try:
         filters = {"publisherId": "test-publisher"}
         result = client.search_agents(query="", filters=filters)
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Found {len(items)} agents from publisher 'test-publisher'")
 
         if items:
@@ -234,20 +205,17 @@ def demonstrate_advanced_filtering(client: A2ASearchClient):
     # Example 3: Multiple filters
     print("\n3. Multiple filters (protocol version + publisher)...")
     try:
-        filters = {
-            "protocolVersion": "0.3.0",
-            "publisherId": "test-publisher"
-        }
+        filters = {"protocolVersion": "0.3.0", "publisherId": "test-publisher"}
         result = client.search_agents(query="", filters=filters)
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Found {len(items)} agents matching both filters")
 
         if items:
             print("  Sample results:")
             for item in items[:3]:
-                name = item.get('name', 'Unknown')
-                protocol = item.get('protocolVersion', 'Unknown')
-                publisher = item.get('publisherId', 'Unknown')
+                name = item.get("name", "Unknown")
+                protocol = item.get("protocolVersion", "Unknown")
+                publisher = item.get("publisherId", "Unknown")
                 print(f"    - {name} (Protocol: {protocol}, Publisher: {publisher})")
     except Exception as e:
         print(f"✗ Failed to apply multiple filters: {e}")
@@ -255,21 +223,18 @@ def demonstrate_advanced_filtering(client: A2ASearchClient):
     # Example 4: Complex filters with capabilities
     print("\n4. Complex filters with capabilities...")
     try:
-        filters = {
-            "capabilities.text": True,
-            "capabilities.streaming": True
-        }
+        filters = {"capabilities.text": True, "capabilities.streaming": True}
         result = client.search_agents(query="", filters=filters)
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Found {len(items)} agents with text and streaming capabilities")
 
         if items:
             print("  Sample results:")
             for item in items[:3]:
-                capabilities = item.get('capabilities', {})
-                name = item.get('name', 'Unknown')
-                text_cap = capabilities.get('text', False)
-                stream_cap = capabilities.get('streaming', False)
+                capabilities = item.get("capabilities", {})
+                name = item.get("name", "Unknown")
+                text_cap = capabilities.get("text", False)
+                stream_cap = capabilities.get("streaming", False)
                 print(f"    - {name} (Text: {text_cap}, Streaming: {stream_cap})")
     except Exception as e:
         print(f"✗ Failed to filter by capabilities: {e}")
@@ -277,15 +242,15 @@ def demonstrate_advanced_filtering(client: A2ASearchClient):
 
 def demonstrate_pagination(client: A2ASearchClient):
     """Demonstrate pagination functionality."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PAGINATION EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: First page
     print("\n1. First page (top=5, skip=0)...")
     try:
         result = client.search_agents(query="", top=5, skip=0)
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Retrieved {len(items)} agents on first page")
         print(f"  Total count: {result.get('count', 0)}")
 
@@ -301,7 +266,7 @@ def demonstrate_pagination(client: A2ASearchClient):
     print("\n2. Second page (top=5, skip=5)...")
     try:
         result = client.search_agents(query="", top=5, skip=5)
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Retrieved {len(items)} agents on second page")
 
         if items:
@@ -315,7 +280,7 @@ def demonstrate_pagination(client: A2ASearchClient):
     print("\n3. Large page size (top=50)...")
     try:
         result = client.search_agents(query="", top=50, skip=0)
-        items = result.get('items', [])
+        items = result.get("items", [])
         print(f"✓ Retrieved {len(items)} agents with large page size")
     except Exception as e:
         print(f"✗ Failed to get large page: {e}")
@@ -323,34 +288,26 @@ def demonstrate_pagination(client: A2ASearchClient):
 
 def demonstrate_combined_search(client: A2ASearchClient):
     """Demonstrate combined search functionality."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("COMBINED SEARCH EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Text search + filters + pagination
     print("\n1. Text search with filters and pagination...")
     try:
-        filters = {
-            "protocolVersion": "0.3.0",
-            "capabilities.text": True
-        }
-        result = client.search_agents(
-            query="agent",
-            filters=filters,
-            top=10,
-            skip=0
-        )
-        items = result.get('items', [])
+        filters = {"protocolVersion": "0.3.0", "capabilities.text": True}
+        result = client.search_agents(query="agent", filters=filters, top=10, skip=0)
+        items = result.get("items", [])
         print(f"✓ Found {len(items)} agents matching 'agent' with filters")
         print(f"  Total count: {result.get('count', 0)}")
 
         if items:
             print("  Sample results:")
             for item in items[:3]:
-                capabilities = item.get('capabilities', {})
-                name = item.get('name', 'Unknown')
-                protocol = item.get('protocolVersion', 'Unknown')
-                text_cap = capabilities.get('text', False)
+                capabilities = item.get("capabilities", {})
+                name = item.get("name", "Unknown")
+                protocol = item.get("protocolVersion", "Unknown")
+                text_cap = capabilities.get("text", False)
                 print(f"    - {name} (Protocol: {protocol}, Text: {text_cap})")
     except Exception as e:
         print(f"✗ Failed to perform combined search: {e}")
@@ -358,23 +315,16 @@ def demonstrate_combined_search(client: A2ASearchClient):
     # Example 2: Search with skill filters
     print("\n2. Search with skill filters...")
     try:
-        filters = {
-            "skills.name": "text_processing"
-        }
-        result = client.search_agents(
-            query="",
-            filters=filters,
-            top=10,
-            skip=0
-        )
-        items = result.get('items', [])
+        filters = {"skills.name": "text_processing"}
+        result = client.search_agents(query="", filters=filters, top=10, skip=0)
+        items = result.get("items", [])
         print(f"✓ Found {len(items)} agents with 'text_processing' skill")
 
         if items:
             print("  Sample results:")
             for item in items[:3]:
-                skills = item.get('skills', [])
-                skill_names = [skill.get('name', 'Unknown') for skill in skills]
+                skills = item.get("skills", [])
+                skill_names = [skill.get("name", "Unknown") for skill in skills]
                 print(f"    - {item.get('name', 'Unknown')} (Skills: {', '.join(skill_names)})")
     except Exception as e:
         print(f"✗ Failed to search by skills: {e}")
@@ -382,9 +332,9 @@ def demonstrate_combined_search(client: A2ASearchClient):
 
 def demonstrate_error_handling(client: A2ASearchClient):
     """Demonstrate error handling scenarios."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("ERROR HANDLING EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     # Example 1: Invalid pagination parameters
     print("\n1. Invalid pagination parameters...")
@@ -416,10 +366,7 @@ def demonstrate_error_handling(client: A2ASearchClient):
     # Example 3: Invalid filter format
     print("\n3. Invalid filter format...")
     try:
-        filters = {
-            "invalid_field": "invalid_value",
-            "another_invalid": ["list", "value"]
-        }
+        filters = {"invalid_field": "invalid_value", "another_invalid": ["list", "value"]}
         result = client.search_agents(query="", filters=filters)
         print("✓ Search succeeded with invalid filters (may be ignored)")
         print(f"  Results: {len(result.get('items', []))} agents")
@@ -434,9 +381,9 @@ def demonstrate_error_handling(client: A2ASearchClient):
 
 def demonstrate_performance_testing(client: A2ASearchClient):
     """Demonstrate performance testing scenarios."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PERFORMANCE TESTING EXAMPLES")
-    print("="*60)
+    print("=" * 60)
 
     import time
 
@@ -474,7 +421,7 @@ def demonstrate_performance_testing(client: A2ASearchClient):
             start_time = time.time()
             result = client.search_agents(query=query, top=10, skip=0)
             search_time = time.time() - start_time
-            items_count = len(result.get('items', []))
+            items_count = len(result.get("items", []))
             print(f"✓ Query '{query}': {search_time:.3f}s, {items_count} results")
         except Exception as e:
             print(f"✗ Query '{query}' failed: {e}")
@@ -482,9 +429,9 @@ def demonstrate_performance_testing(client: A2ASearchClient):
 
 def setup_authentication(client: A2ASearchClient) -> bool:
     """Set up authentication for the client."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("AUTHENTICATION SETUP")
-    print("="*60)
+    print("=" * 60)
 
     # Check if we already have a token from environment
     if client.token:
@@ -499,11 +446,7 @@ def setup_authentication(client: A2ASearchClient) -> bool:
     print("\n1. Registering user for search examples...")
     try:
         user_data = client.register_user(
-            username=username,
-            email=email,
-            password=password,
-            full_name="Search Example User",
-            tenant_id="default"
+            username=username, email=email, password=password, full_name="Search Example User", tenant_id="default"
         )
         print("✓ User registered successfully!")
         print(f"  User ID: {user_data.get('id')}")
@@ -572,9 +515,9 @@ def main():
         demonstrate_error_handling(client)
         demonstrate_performance_testing(client)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("SEARCH EXAMPLES COMPLETED SUCCESSFULLY!")
-        print("="*60)
+        print("=" * 60)
         print("\nNext Steps:")
         print("1. Use the access token for authenticated searches")
         print("2. Implement advanced search in your application")
