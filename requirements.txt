@@ -22,7 +22,7 @@ aiofiles>=24.1.0
 
 # External services
 redis>=5.0.1
-opensearch-py>=2.5.0,<3.0.0
+opensearch-py>=2.5.0
 
 # Serialization
 orjson>=3.10.0
@@ -48,4 +48,5 @@ safety>=2.3.0
 bandit>=1.7.0
 
 # Additional dependencies for compatibility
-urllib3>=1.26.19,<1.27
+# Updated to Python 3.10+ to resolve urllib3 security vulnerability CVE-2025-50181
+urllib3>=2.5.0

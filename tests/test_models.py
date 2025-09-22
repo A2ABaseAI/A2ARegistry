@@ -1,6 +1,5 @@
 """Tests for app/models/ - Database models."""
 
-
 from app.models.agent_core import AgentRecord, AgentVersion, Entitlement
 
 from .base_test import BaseTest
