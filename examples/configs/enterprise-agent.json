@@ -1,180 +1,117 @@
 {
-  "name": "enterprise-analytics-agent",
-  "description": "Enterprise-grade analytics agent with advanced security and compliance features",
-  "version": "3.2.1",
-  "provider": "enterprise-ai-solutions",
-  "tags": [
-    "enterprise",
-    "analytics", 
-    "business-intelligence",
-    "secure",
-    "compliance",
-    "dashboard",
-    "reporting"
-  ],
-  "is_public": false,
-  "is_active": true,
-  "location_url": "https://secure-api.enterprise-ai.com/v3/analytics-agent",
-  "location_type": "api_endpoint",
-  
-  "capabilities": {
-    "protocols": ["https", "wss", "grpc"],
-    "supported_formats": ["json", "xml", "csv", "parquet"],
-    "max_request_size": 104857600,
-    "max_concurrent_requests": 100,
-    "a2a_version": "1.0"
+  "name": "Enterprise Analytics Agent",
+  "description": "Enterprise-grade analytics agent with advanced security and compliance features for business intelligence and data analysis",
+  "url": "https://secure-api.enterprise-ai.com/v3/analytics-agent",
+  "provider": {
+    "organization": "Enterprise AI Solutions Ltd",
+    "url": "https://enterprise-ai-solutions.com"
   },
-  
-  "auth_schemes": [
+  "version": "3.2.1",
+  "documentationUrl": "https://secure-api.enterprise-ai.com/v3/docs",
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": true,
+    "stateTransitionHistory": true,
+    "supportsAuthenticatedExtendedCard": true
+  },
+  "securitySchemes": [
     {
       "type": "oauth2",
-      "description": "OAuth 2.0 with PKCE for secure authentication",
-      "required": true
+      "flow": "client_credentials",
+      "tokenUrl": "https://enterprise-ai.com/oauth/token",
+      "scopes": ["analytics", "reports", "data", "admin"]
     },
     {
-      "type": "mtls",
-      "description": "Mutual TLS for certificate-based authentication",
-      "required": false
+      "type": "mTLS",
+      "location": "certificate",
+      "credentials": "enterprise_jwt_token_or_certificate"
     },
     {
-      "type": "jwt",
-      "description": "JSON Web Tokens for stateless authentication",
-      "required": false,
-      "header_name": "Authorization"
+      "type": "apiKey",
+      "location": "header",
+      "name": "X-Enterprise-Key"
     }
   ],
-  
-  "tee_details": {
-    "enabled": true,
-    "provider": "Azure Confidential Computing",
-    "attestation": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdHRlc3RhdGlvbi5henVyZS5jb20iLCJhdWQiOiJlbnRlcnByaXNlLWFpLXNvbHV0aW9ucyIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjoxNzAwMDg2NDAwLCJ0ZWUiOiJBenVyZSBDb25maWRlbnRpYWwgQ29tcHV0aW5nIiwiaGFzaCI6ImFiYzEyM2RlZjQ1NmdoaTc4OWprbCJ9"
-  },
-  
-  "agent_card": {
-    "name": "enterprise-analytics-agent",
-    "description": "Enterprise-grade analytics agent with advanced security and compliance features",
-    "version": "3.2.1",
-    "author": "Enterprise AI Solutions Ltd",
-    "api_base_url": "https://secure-api.enterprise-ai.com/v3",
-    
-    "capabilities": {
-      "protocols": ["https", "wss", "grpc"],
-      "supported_formats": ["json", "xml", "csv", "parquet"],
-      "max_request_size": 104857600,
-      "max_concurrent_requests": 100,
-      "a2a_version": "1.0"
-    },
-    
-    "auth_schemes": [
+  "interface": {
+    "preferredTransport": "grpc",
+    "additionalInterfaces": [
       {
-        "type": "oauth2",
-        "description": "OAuth 2.0 with PKCE for secure authentication",
-        "required": true
+        "transport": "jsonrpc",
+        "url": "https://secure-api.enterprise-ai.com/v3/jsonrpc"
       },
       {
-        "type": "mtls", 
-        "description": "Mutual TLS for certificate-based authentication",
-        "required": false
-      },
-      {
-        "type": "jwt",
-        "description": "JSON Web Tokens for stateless authentication", 
-        "required": false,
-        "header_name": "Authorization"
+        "transport": "http",
+        "url": "https://secure-api.enterprise-ai.com/v3/api"
       }
     ],
-    
-    "endpoints": {
-      "analyze": "/analyze",
-      "report": "/report",
-      "dashboard": "/dashboard",
-      "export": "/export",
-      "health": "/health",
-      "metrics": "/metrics",
-      "audit": "/audit",
-      "compliance": "/compliance"
-    },
-    
-    "skills": {
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "data_source": {
-            "type": "object",
-            "properties": {
-              "type": {"type": "string", "enum": ["database", "file", "api", "stream"]},
-              "connection": {"type": "string"},
-              "query": {"type": "string"}
-            },
-            "required": ["type"]
-          },
-          "analysis_type": {
-            "type": "string",
-            "enum": ["descriptive", "diagnostic", "predictive", "prescriptive"]
-          },
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "time_range": {
-                "type": "object",
-                "properties": {
-                  "start": {"type": "string", "format": "date-time"},
-                  "end": {"type": "string", "format": "date-time"}
-                }
-              },
-              "dimensions": {"type": "array", "items": {"type": "string"}},
-              "metrics": {"type": "array", "items": {"type": "string"}},
-              "filters": {"type": "object"}
-            }
-          },
-          "output_format": {
-            "type": "string",
-            "enum": ["json", "csv", "parquet", "dashboard"],
-            "default": "json"
-          }
-        },
-        "required": ["data_source", "analysis_type"]
-      },
-      
-      "output_schema": {
-        "type": "object",
-        "properties": {
-          "analysis_id": {"type": "string"},
-          "results": {
-            "type": "object",
-            "properties": {
-              "summary": {"type": "object"},
-              "data": {"type": "array"},
-              "insights": {"type": "array", "items": {"type": "string"}},
-              "recommendations": {"type": "array", "items": {"type": "string"}}
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "processing_time_ms": {"type": "integer"},
-              "data_points_analyzed": {"type": "integer"},
-              "confidence_score": {"type": "number", "minimum": 0, "maximum": 1},
-              "compliance_status": {"type": "string", "enum": ["compliant", "non-compliant", "pending"]}
-            }
-          },
-          "export_urls": {
-            "type": "object",
-            "properties": {
-              "dashboard": {"type": "string"},
-              "report_pdf": {"type": "string"},
-              "data_csv": {"type": "string"}
-            }
-          }
-        },
-        "required": ["analysis_id", "results", "metadata"]
-      },
-      
+    "defaultInputModes": ["application/json", "multipart/form-data"],
+    "defaultOutputModes": ["application/json", "application/csv", "application/pdf"]
+  },
+  "skills": [
+    {
+      "id": "data_analysis",
+      "name": "Data Analysis",
+      "description": "Perform comprehensive data analysis including descriptive, diagnostic, predictive, and prescriptive analytics",
+      "tags": ["analytics", "data", "business-intelligence", "statistics"],
       "examples": [
-        "Analyze sales data: {'data_source': {'type': 'database', 'query': 'SELECT * FROM sales'}, 'analysis_type': 'descriptive'} -> Comprehensive sales analytics with trends and insights",
-        "Predictive analysis: {'data_source': {'type': 'api'}, 'analysis_type': 'predictive', 'parameters': {'time_range': {'start': '2024-01-01', 'end': '2024-12-31'}}} -> Future trends and forecasts",
-        "Compliance report: {'data_source': {'type': 'database'}, 'analysis_type': 'diagnostic', 'output_format': 'dashboard'} -> GDPR/SOX compliance dashboard"
-      ]
+        "Analyze sales data trends for Q4",
+        "Perform predictive analysis on customer churn",
+        "Generate descriptive statistics for marketing campaigns"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json", "application/csv"]
+    },
+    {
+      "id": "dashboard_generation",
+      "name": "Dashboard Generation",
+      "description": "Create interactive dashboards and visualizations for business metrics",
+      "tags": ["dashboard", "visualization", "reporting", "business-intelligence"],
+      "examples": [
+        "Create executive dashboard for KPIs",
+        "Generate sales performance dashboard",
+        "Build customer analytics visualization"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json", "text/html"]
+    },
+    {
+      "id": "compliance_reporting",
+      "name": "Compliance Reporting",
+      "description": "Generate compliance reports for GDPR, SOX, and other regulatory requirements",
+      "tags": ["compliance", "reporting", "gdpr", "sox", "regulatory"],
+      "examples": [
+        "Generate GDPR compliance report",
+        "Create SOX audit documentation",
+        "Prepare regulatory filing data"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/pdf", "application/json"]
+    },
+    {
+      "id": "predictive_modeling",
+      "name": "Predictive Modeling",
+      "description": "Build and deploy predictive models for forecasting and trend analysis",
+      "tags": ["predictive", "modeling", "forecasting", "machine-learning"],
+      "examples": [
+        "Predict customer lifetime value",
+        "Forecast sales for next quarter",
+        "Model risk assessment for investments"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "data_export",
+      "name": "Data Export",
+      "description": "Export analyzed data in various formats for external systems and reporting",
+      "tags": ["export", "data", "integration", "reporting"],
+      "examples": [
+        "Export analysis results to CSV",
+        "Generate PDF report for stakeholders",
+        "Create API endpoint for data access"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/csv", "application/pdf", "application/json"]
     }
-  }
+  ]
 }

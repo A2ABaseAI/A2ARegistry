@@ -1,0 +1,92 @@
+{
+  "name": "Recipe Agent",
+  "description": "An AI agent that helps users find and create recipes based on available ingredients and dietary preferences",
+  "url": "https://recipe-agent.example.com",
+  "provider": {
+    "organization": "Culinary AI Solutions",
+    "url": "https://culinary-ai.com"
+  },
+  "version": "1.0.0",
+  "documentationUrl": "https://recipe-agent.example.com/docs",
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": false,
+    "stateTransitionHistory": true,
+    "supportsAuthenticatedExtendedCard": false
+  },
+  "securitySchemes": [
+    {
+      "type": "apiKey",
+      "location": "header",
+      "name": "X-API-Key",
+      "credentials": "api_key_for_private_recipes"
+    },
+    {
+      "type": "oauth2",
+      "flow": "client_credentials",
+      "tokenUrl": "https://culinary-ai.com/oauth/token",
+      "scopes": ["read", "write"]
+    }
+  ],
+  "interface": {
+    "preferredTransport": "jsonrpc",
+    "additionalInterfaces": [
+      {
+        "transport": "http",
+        "url": "https://recipe-agent.example.com/api"
+      }
+    ],
+    "defaultInputModes": ["text/plain", "application/json"],
+    "defaultOutputModes": ["text/plain", "application/json"]
+  },
+  "skills": [
+    {
+      "id": "find_recipe",
+      "name": "Find Recipe",
+      "description": "Find recipes based on ingredients and dietary preferences",
+      "tags": ["cooking", "recipe", "food"],
+      "examples": [
+        "I need a recipe for bread",
+        "Find vegetarian pasta recipes",
+        "What can I make with chicken and rice?"
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "create_meal_plan",
+      "name": "Create Meal Plan",
+      "description": "Generate a weekly meal plan based on dietary goals",
+      "tags": ["meal-planning", "nutrition", "diet"],
+      "examples": [
+        "Create a keto meal plan for the week",
+        "Plan meals for a family of 4",
+        "Generate a balanced meal plan"
+      ]
+    },
+    {
+      "id": "nutrition_analysis",
+      "name": "Nutrition Analysis",
+      "description": "Analyze nutritional content of recipes and meals",
+      "tags": ["nutrition", "health", "analysis"],
+      "examples": [
+        "What's the nutritional breakdown of this recipe?",
+        "Is this meal plan balanced?",
+        "Calculate calories for this dish"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "ingredient_substitution",
+      "name": "Ingredient Substitution",
+      "description": "Suggest ingredient substitutions for dietary restrictions or availability",
+      "tags": ["substitution", "dietary", "allergies"],
+      "examples": [
+        "What can I substitute for eggs in this recipe?",
+        "Make this recipe dairy-free",
+        "Replace gluten ingredients"
+      ]
+    }
+  ]
+}

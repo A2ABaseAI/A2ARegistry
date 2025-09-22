@@ -2,8 +2,14 @@
 
 import pytest
 
-from app.schemas.agent import AgentAuthScheme, AgentCapabilities, AgentCard, AgentCreate, AgentResponse
-from app.schemas.agent_card_spec import AgentCardSpec, Skill
+from app.schemas.agent import (
+    AgentAuthScheme,
+    AgentCapabilities,
+    AgentCard,
+    AgentCreate,
+    AgentResponse,
+)
+from app.schemas.agent_card_spec import AgentCardSpec, AgentSkill
 
 from .base_test import BaseTest
 
@@ -11,52 +17,100 @@ from .base_test import BaseTest
 class TestSchemas(BaseTest):
     """Tests for Pydantic schemas and validation."""
 
+    def _get_valid_agent_card_data(self):
+        """Helper to get valid AgentCardSpec data."""
+        return {
+            "name": "Test Agent",
+            "description": "A test agent",
+            "url": "https://example.com/.well-known/agent-card.json",
+            "version": "1.0.0",
+            "capabilities": {
+                "streaming": True,
+                "pushNotifications": False,
+                "stateTransitionHistory": True,
+                "supportsAuthenticatedExtendedCard": False
+            },
+            "securitySchemes": [
+                {
+                    "type": "apiKey",
+                    "location": "header",
+                    "name": "X-API-Key",
+                    "credentials": "test_credentials"
+                }
+            ],
+            "skills": [],
+            "interface": {
+                "preferredTransport": "jsonrpc",
+                "defaultInputModes": ["text/plain"],
+                "defaultOutputModes": ["text/plain"]
+            }
+        }
+
     def test_agent_card_spec_valid_data(self):
         """Test AgentCardSpec with valid data."""
         agent_card = AgentCardSpec(
-            protocolVersion="0.3.0",
             name="Test Agent",
             description="A test agent",
             url="https://example.com/.well-known/agent-card.json",
-            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
+            version="1.0.0",
+            capabilities={
+                "streaming": True,
+                "pushNotifications": False,
+                "stateTransitionHistory": True,
+                "supportsAuthenticatedExtendedCard": False
+            },
+            securitySchemes=[
+                {
+                    "type": "apiKey",
+                    "location": "header",
+                    "name": "X-API-Key",
+                    "credentials": "test_credentials"
+                }
+            ],
             skills=[],
-            authSchemes=[],
+            interface={
+                "preferredTransport": "jsonrpc",
+                "defaultInputModes": ["text/plain"],
+                "defaultOutputModes": ["text/plain"]
+            }
         )
 
-        assert agent_card.protocolVersion == "0.3.0"
         assert agent_card.name == "Test Agent"
         assert agent_card.description == "A test agent"
+        assert agent_card.version == "1.0.0"
+        assert agent_card.capabilities.streaming is True
 
     def test_agent_card_spec_invalid_data(self):
         """Test AgentCardSpec with invalid data."""
         with pytest.raises(Exception):  # Should raise validation error
             AgentCardSpec(
-                protocolVersion="0.3.0",
-                # Missing required fields
+                name="Test Agent",
+                # Missing required fields like version, capabilities, etc.
             )
 
-    def test_agent_card_spec_invalid_protocol_version(self):
-        """Test AgentCardSpec with invalid protocol version."""
-        # The AgentCardSpec doesn't validate protocol version format, so this test should pass
-        # Let's test with a valid protocol version instead
-        agent_card = AgentCardSpec(
-            protocolVersion="0.3.0",
-            name="Test Agent",
-            description="A test agent",
-            url="https://example.com/.well-known/agent-card.json",
-            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
-            skills=[],
-            authSchemes=[],
-            provider="test-provider",
-            location={"url": "https://example.com/agent", "type": "agent_card"},
-        )
-        assert agent_card.protocolVersion == "0.3.0"
+    def test_agent_card_spec_with_provider(self):
+        """Test AgentCardSpec with provider information."""
+        data = self._get_valid_agent_card_data()
+        data["provider"] = {
+            "organization": "Test Organization",
+            "url": "https://test-org.com"
+        }
+
+        agent_card = AgentCardSpec.model_validate(data)
+        assert agent_card.name == "Test Agent"
+        assert agent_card.provider.organization == "Test Organization"
 
     def test_skill_schema(self):
-        """Test Skill schema."""
-        skill = Skill(id="test-skill", name="test-skill", description="A test skill")
+        """Test AgentSkill schema."""
+        skill = AgentSkill(
+            id="test-skill",
+            name="test-skill",
+            description="A test skill",
+            tags=["test", "example"]
+        )
         assert skill.id == "test-skill"
         assert skill.name == "test-skill"
+        assert skill.tags == ["test", "example"]
         assert skill.description == "A test skill"
 
     def test_capability_schema(self):
@@ -123,57 +177,52 @@ class TestSchemas(BaseTest):
 
     def test_agent_card_spec_serialization(self):
         """Test AgentCardSpec serialization."""
-        agent_card = AgentCardSpec(
-            protocolVersion="0.3.0",
-            name="Test Agent",
-            description="A test agent",
-            url="https://example.com/.well-known/agent-card.json",
-            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
-            skills=[],
-            authSchemes=[],
-            provider="test-provider",
-            location={"url": "https://example.com/agent", "type": "agent_card"},
-        )
+        data = self._get_valid_agent_card_data()
+        data["provider"] = {
+            "organization": "Test Organization",
+            "url": "https://test-org.com"
+        }
+
+        agent_card = AgentCardSpec.model_validate(data)
 
         # Test model_dump
-        data = agent_card.model_dump()
-        assert data["protocolVersion"] == "0.3.0"
-        assert data["name"] == "Test Agent"
+        dumped_data = agent_card.model_dump()
+        assert dumped_data["name"] == "Test Agent"
+        assert dumped_data["version"] == "1.0.0"
 
         # Test model_dump_json
         json_data = agent_card.model_dump_json()
         assert "Test Agent" in json_data
-        assert "0.3.0" in json_data
+        assert "1.0.0" in json_data
 
     def test_agent_card_spec_deserialization(self):
         """Test AgentCardSpec deserialization."""
-        data = {
-            "protocolVersion": "0.3.0",
-            "name": "Test Agent",
-            "description": "A test agent",
-            "url": "https://example.com/.well-known/agent-card.json",
-            "capabilities": {"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
-            "skills": [],
-            "authSchemes": [],
-            "provider": "test-provider",
-            "location": {"url": "https://example.com/agent", "type": "agent_card"},
+        data = self._get_valid_agent_card_data()
+        data["provider"] = {
+            "organization": "Test Organization",
+            "url": "https://test-org.com"
         }
 
         agent_card = AgentCardSpec.model_validate(data)
-        assert agent_card.protocolVersion == "0.3.0"
         assert agent_card.name == "Test Agent"
+        assert agent_card.version == "1.0.0"
 
     def test_skill_validation(self):
-        """Test Skill validation."""
+        """Test AgentSkill validation."""
         # Valid skill
-        skill = Skill(id="test-skill", name="test-skill", description="A test skill")
+        skill = AgentSkill(
+            id="test-skill",
+            name="test-skill",
+            description="A test skill",
+            tags=["test", "example"]
+        )
         assert skill.name == "test-skill"
 
         # Invalid skill (missing required fields)
         with pytest.raises(Exception):
-            Skill(
+            AgentSkill(
                 name="test-skill"
-                # Missing required fields
+                # Missing required fields like id, description, tags
             )
 
     def test_capabilities_validation(self):
@@ -201,7 +250,10 @@ class TestSchemas(BaseTest):
 
         # Test with empty scopes
         auth_scheme_empty = AgentAuthScheme(
-            type="oauth2", flow="client_credentials", token_url="https://example.com/oauth/token", scopes=[]
+            type="oauth2",
+            flow="client_credentials",
+            token_url="https://example.com/oauth/token",
+            scopes=[],
         )
         assert auth_scheme_empty.scopes == []
 
@@ -242,39 +294,31 @@ class TestSchemas(BaseTest):
 
     def test_schema_field_types(self):
         """Test that schema fields have correct types."""
-        agent_card = AgentCardSpec(
-            protocolVersion="0.3.0",
-            name="Test Agent",
-            description="A test agent",
-            url="https://example.com/.well-known/agent-card.json",
-            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
-            skills=[],
-            authSchemes=[],
-        )
+        data = self._get_valid_agent_card_data()
+        agent_card = AgentCardSpec.model_validate(data)
 
         # Check field types
-        assert isinstance(agent_card.protocolVersion, str)
         assert isinstance(agent_card.name, str)
         assert isinstance(agent_card.description, str)
-        assert isinstance(agent_card.capabilities, dict)
+        assert isinstance(agent_card.version, str)
+        assert isinstance(agent_card.capabilities.streaming, bool)
+        assert isinstance(agent_card.securitySchemes, list)
+        assert isinstance(agent_card.interface.defaultInputModes, list)
+        assert isinstance(agent_card.interface.defaultOutputModes, list)
         assert isinstance(agent_card.skills, list)
-        assert isinstance(agent_card.authSchemes, list)
 
     def test_schema_optional_fields(self):
         """Test schema optional fields."""
         # Test with minimal required fields
-        agent_card = AgentCardSpec(
-            protocolVersion="0.3.0",
-            name="Test Agent",
-            description="A test agent",
-            url="https://example.com/.well-known/agent-card.json",
-            capabilities={"a2a_version": "0.3.0", "supported_protocols": ["text"], "text": True},
-            skills=[],
-            authSchemes=[],
-            provider="test-provider",
-            location={"url": "https://example.com/agent", "type": "agent_card"},
-        )
+        data = self._get_valid_agent_card_data()
+        data["provider"] = {
+            "organization": "Test Organization",
+            "url": "https://test-org.com"
+        }
+
+        agent_card = AgentCardSpec.model_validate(data)
 
         # Optional fields should have default values or be None
         assert agent_card.skills == []
-        assert agent_card.authSchemes == []
+        assert agent_card.provider is not None
+        assert agent_card.documentationUrl is None

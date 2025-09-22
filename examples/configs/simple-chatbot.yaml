@@ -1,97 +1,72 @@
 # Simple Chatbot Agent Configuration
-# This is a basic example of an A2A agent configuration file
+# This is a basic example of an A2A agent configuration file following the official specification
 
-name: "simple-chatbot"
+name: "Simple Chatbot"
 description: "A simple AI chatbot that can answer questions and have conversations"
+url: "https://api.chatbot-inc.com/v1/agent"
+provider:
+  organization: "Chatbot Inc"
+  url: "https://chatbot-inc.com"
 version: "1.0.0"
-provider: "chatbot-inc"
-tags:
-  - "ai"
-  - "chatbot" 
-  - "conversation"
-  - "nlp"
+documentationUrl: "https://api.chatbot-inc.com/v1/docs"
 
-is_public: true
-is_active: true
-
-location_url: "https://api.chatbot-inc.com/v1/agent"
-location_type: "api_endpoint"
-
-# Agent capabilities
+# Agent capabilities following A2A specification
 capabilities:
-  protocols:
-    - "http"
-    - "websocket"
-  supported_formats:
-    - "json"
-  max_request_size: 1048576  # 1MB
-  max_concurrent_requests: 10
-  a2a_version: "1.0"
+  streaming: true
+  pushNotifications: false
+  stateTransitionHistory: true
 
-# Authentication schemes
-auth_schemes:
-  - type: "api_key"
-    description: "API key authentication"
-    required: true
-    header_name: "X-API-Key"
+# Authentication requirements
+authentication:
+  schemes: ["Bearer", "API-Key"]
+  credentials: "api_key_for_chatbot_access"
 
-# Agent card with detailed metadata
-agent_card:
-  name: "simple-chatbot"
-  description: "A simple AI chatbot that can answer questions and have conversations"
-  version: "1.0.0"
-  author: "Chatbot Inc"
-  api_base_url: "https://api.chatbot-inc.com/v1"
-  
-  capabilities:
-    protocols:
-      - "http"
-      - "websocket"
-    supported_formats:
-      - "json"
-    max_request_size: 1048576
-    max_concurrent_requests: 10
-    a2a_version: "1.0"
-  
-  auth_schemes:
-    - type: "api_key"
-      description: "API key authentication"
-      required: true
-      header_name: "X-API-Key"
-  
-  endpoints:
-    chat: "/chat"
-    status: "/status"
-    capabilities: "/capabilities"
-  
-  skills:
-    input_schema:
-      type: "object"
-      properties:
-        message:
-          type: "string"
-          description: "User message or question"
-        context:
-          type: "object"
-          description: "Optional conversation context"
-      required:
-        - "message"
-    
-    output_schema:
-      type: "object"
-      properties:
-        response:
-          type: "string"
-          description: "Chatbot response"
-        confidence:
-          type: "number"
-          minimum: 0.0
-          maximum: 1.0
-          description: "Response confidence score"
-      required:
-        - "response"
-        - "confidence"
-    
+# Default interaction modes
+defaultInputModes: ["text/plain", "application/json"]
+defaultOutputModes: ["text/plain", "application/json"]
+
+# Skills array following A2A specification
+skills:
+  - id: "general_chat"
+    name: "General Chat"
+    description: "Handle general conversations and answer questions"
+    tags: ["chat", "conversation", "general", "nlp"]
     examples:
-      - "Input: {'message': 'Hello'} -> Output: {'response': 'Hi there! How can I help you?', 'confidence': 0.95}"
-      - "Input: {'message': 'What is AI?'} -> Output: {'response': 'AI is artificial intelligence...', 'confidence': 0.88}"
+      - "Hello, how are you?"
+      - "What is artificial intelligence?"
+      - "Tell me a joke"
+    inputModes: ["text/plain"]
+    outputModes: ["text/plain"]
+
+  - id: "question_answering"
+    name: "Question Answering"
+    description: "Answer specific questions with detailed responses"
+    tags: ["qa", "questions", "answers", "knowledge"]
+    examples:
+      - "What is the capital of France?"
+      - "How does photosynthesis work?"
+      - "Explain quantum computing"
+    inputModes: ["text/plain", "application/json"]
+    outputModes: ["text/plain", "application/json"]
+
+  - id: "conversation_context"
+    name: "Contextual Conversation"
+    description: "Maintain conversation context and provide follow-up responses"
+    tags: ["context", "conversation", "follow-up", "memory"]
+    examples:
+      - "Continue our previous discussion about AI"
+      - "Based on what I told you earlier..."
+      - "Remember when we talked about..."
+    inputModes: ["application/json"]
+    outputModes: ["application/json"]
+
+  - id: "sentiment_analysis"
+    name: "Sentiment Analysis"
+    description: "Analyze the emotional tone and sentiment of user messages"
+    tags: ["sentiment", "emotion", "analysis", "nlp"]
+    examples:
+      - "How does this message sound?"
+      - "Is the user happy or sad?"
+      - "Analyze the emotional tone"
+    inputModes: ["text/plain"]
+    outputModes: ["application/json"]

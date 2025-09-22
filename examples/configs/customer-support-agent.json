@@ -1,0 +1,109 @@
+{
+  "name": "Customer Support Agent",
+  "description": "Intelligent customer support agent that handles inquiries, provides solutions, and escalates complex issues",
+  "url": "https://support-agent.company.com",
+  "provider": {
+    "organization": "Enterprise Solutions Inc",
+    "url": "https://enterprise-solutions.com"
+  },
+  "version": "2.1.0",
+  "documentationUrl": "https://support-agent.company.com/docs",
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": true,
+    "stateTransitionHistory": true,
+    "supportsAuthenticatedExtendedCard": true
+  },
+  "securitySchemes": [
+    {
+      "type": "oauth2",
+      "flow": "client_credentials",
+      "tokenUrl": "https://enterprise-solutions.com/oauth/token",
+      "scopes": ["support", "tickets", "analytics"]
+    },
+    {
+      "type": "jwt",
+      "location": "header",
+      "name": "Authorization",
+      "credentials": "jwt_token_for_authenticated_users"
+    }
+  ],
+  "interface": {
+    "preferredTransport": "jsonrpc",
+    "additionalInterfaces": [
+      {
+        "transport": "http",
+        "url": "https://support-agent.company.com/api"
+      },
+      {
+        "transport": "grpc",
+        "url": "https://support-agent.company.com:443"
+      }
+    ],
+    "defaultInputModes": ["text/plain", "application/json", "multipart/form-data"],
+    "defaultOutputModes": ["text/plain", "application/json"]
+  },
+  "skills": [
+    {
+      "id": "ticket_creation",
+      "name": "Create Support Ticket",
+      "description": "Create and manage customer support tickets",
+      "tags": ["support", "ticket", "customer-service"],
+      "examples": [
+        "I need help with my account",
+        "Create a ticket for billing issue",
+        "Report a bug in the application"
+      ],
+      "inputModes": ["text/plain", "multipart/form-data"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "knowledge_search",
+      "name": "Knowledge Base Search",
+      "description": "Search and retrieve information from the knowledge base",
+      "tags": ["knowledge", "search", "documentation"],
+      "examples": [
+        "How do I reset my password?",
+        "What are the system requirements?",
+        "Find troubleshooting steps for login issues"
+      ]
+    },
+    {
+      "id": "issue_resolution",
+      "name": "Issue Resolution",
+      "description": "Provide step-by-step solutions for common issues",
+      "tags": ["resolution", "troubleshooting", "help"],
+      "examples": [
+        "My app won't start",
+        "Connection timeout errors",
+        "Payment processing failed"
+      ],
+      "inputModes": ["text/plain", "application/json"],
+      "outputModes": ["text/plain", "application/json"]
+    },
+    {
+      "id": "escalation_management",
+      "name": "Escalation Management",
+      "description": "Escalate complex issues to human agents",
+      "tags": ["escalation", "human-agent", "complex-issues"],
+      "examples": [
+        "This issue requires human intervention",
+        "Escalate to senior support",
+        "Transfer to technical team"
+      ]
+    },
+    {
+      "id": "sentiment_analysis",
+      "name": "Sentiment Analysis",
+      "description": "Analyze customer sentiment and emotional state",
+      "tags": ["sentiment", "emotion", "analysis"],
+      "examples": [
+        "Is the customer frustrated?",
+        "Analyze customer satisfaction",
+        "Detect angry customers"
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["application/json"]
+    }
+  ]
+}

@@ -230,3 +230,8 @@ trivy-results.sarif
 # Local development
 local/
 dev/
+bandit-report-examples.json
+bandit-report-full.json
+bandit-report-app.json
+.gitignore
+bandit-report-tests.json

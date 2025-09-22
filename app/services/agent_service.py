@@ -37,7 +37,13 @@ class AgentService:
         self.db = _get_db_session()
 
     def create_or_update_agent_record(
-        self, card_data: Dict[str, Any], card_hash: str, tenant_id: str, publisher_id: str, agent_key: str, version: str
+        self,
+        card_data: Dict[str, Any],
+        card_hash: str,
+        tenant_id: str,
+        publisher_id: str,
+        agent_key: str,
+        version: str
     ) -> AgentRecord:
         """
         Create or update agent record in database.
@@ -90,7 +96,8 @@ class AgentService:
         except Exception as exc:
             logger.error(f"Failed to create/update agent record: {exc}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent record"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to persist agent record"
             ) from exc
 
     def create_agent_version(
@@ -132,16 +139,15 @@ class AgentService:
                 return existing
 
             # Create new version
-            card = AgentCardSpec.model_validate(card_data)
             av = AgentVersion(  # type: ignore
                 id=f"{rec.id}:{version}",
                 agent_id=rec.id,
                 version=version,
-                protocol_version=card.protocolVersion,
+                protocol_version="1.0",  # Default A2A protocol version
                 card_json=card_data,
                 card_hash=card_hash,
                 card_url=card_url,
-                jwks_url=str(card.jwks_uri) if card.jwks_uri else None,
+                jwks_url=None,  # No JWKS URL in new schema
                 signature_valid=False,
                 public=public,
             )
@@ -152,7 +158,8 @@ class AgentService:
         except Exception as exc:
             logger.error(f"Failed to create agent version: {exc}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent version"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to persist agent version"
             ) from exc
 
     def publish_agent(
@@ -206,7 +213,8 @@ class AgentService:
                 self.db.rollback()
                 logger.error(f"Database transaction failed: {exc}")
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent"
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to persist agent"
                 ) from exc
 
             # Index in search engine (non-critical)
@@ -216,7 +224,7 @@ class AgentService:
             return {
                 "agentId": rec.id,
                 "version": version,
-                "protocolVersion": card.protocolVersion,
+                "protocolVersion": "1.0",  # Default A2A protocol version
                 "public": av.public,
                 "signatureValid": av.signature_valid,
             }
@@ -261,12 +269,13 @@ class AgentService:
                     "tenantId": tenant_id,
                     "agentId": rec.id,
                     "version": version,
-                    "protocolVersion": card.protocolVersion,
+                    "protocolVersion": "1.0",  # Default A2A protocol version
                     "name": card.name,
                     "description": card.description,
                     "publisherId": publisher_id,
-                    "capabilities": card.capabilities,
+                    "capabilities": card.capabilities.model_dump(),
                     "skills": [s.model_dump() for s in card.skills],
+                    "interface": card.interface.model_dump(),
                     "public": public,
                 },
             )
@@ -275,7 +284,9 @@ class AgentService:
             logger.warning(f"Failed to index agent {rec.id}: {e}")
             # Non-critical operation, don't fail the request
 
-    def get_agent_by_id(self, agent_id: str, tenant_id: str) -> Optional[Tuple[AgentRecord, AgentVersion]]:
+    def get_agent_by_id(
+        self, agent_id: str, tenant_id: str
+    ) -> Optional[Tuple[AgentRecord, AgentVersion]]:
         """
         Get agent by ID.
 
