@@ -14,6 +14,8 @@ services:
       # Bootstrap API key auth for demo (Bearer). Use only in dev.
       - API_KEYS=["dev-admin-api-key"]
       - API_KEY_DEFAULT_ROLES=["Administrator","User"]
+      - AUTO_CREATE_TABLES=true
+      - AUTO_CREATE_INDEX=true
     depends_on:
       - db
       - redis

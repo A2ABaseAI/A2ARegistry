@@ -21,7 +21,8 @@ from .core import (
     setup_logging,
 )
 from .core.otel import setup_tracing
-from .database import create_tables
+from .database import SessionLocal, create_tables
+from .models.tenant import Tenant
 from .services.search_index import SearchIndex
 
 logger = get_logger(__name__)
@@ -37,6 +38,19 @@ async def lifespan(app: FastAPI):
     # Create database tables (dev-only). Use Alembic in production.
     if settings.auto_create_tables:
         create_tables()
+        # Ensure default tenant exists for dev/demo
+        try:
+            db = SessionLocal()
+            if not db.query(Tenant).filter(Tenant.id == "default").first():
+                db.add(Tenant(id="default", slug="default"))
+                db.commit()
+        except Exception as e:
+            logger.warning(f"Failed to ensure default tenant: {e}")
+        finally:
+            try:
+                db.close()
+            except Exception:
+                pass
 
     # Initialize search index (dev-only). Use infra provisioning in production.
     if settings.auto_create_index:

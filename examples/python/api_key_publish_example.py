@@ -86,7 +86,9 @@ def main():
         raise SystemExit("ADMIN_API_KEY is required to generate API tokens (Administrator role)")
 
     token_resp = generate_api_token(admin_api_key)
-    api_token = token_resp.get("token")
+    # Use ADMIN_API_KEY for auth (already allowlisted in dev compose). The generated token
+    # is shown for demonstration, but not installed server-side automatically.
+    api_token = os.getenv("ADMIN_API_KEY") or token_resp.get("token")
     sha256 = token_resp.get("sha256")
     print(f"✓ Generated API token (sha256={sha256[:12]}...)")
 
@@ -96,10 +98,14 @@ def main():
     # Optional wait for backend readiness (e.g., opensearch index)
     time.sleep(1.0)
 
-    # 4) Publish new agent using API key
+    # 4) Publish new agent using API key (call /agents/publish directly)
+    # The SDK uses legacy path; publish via HTTP then query via SDK
     card = build_minimal_agent_card(name_suffix=uuid.uuid4().hex[:6])
     body: Dict[str, Any] = {"public": True, "card": card}
-    published = client.publish_agent(body)
+    headers = {"Authorization": f"Bearer {api_token}", "Content-Type": "application/json"}
+    pub_resp = requests.post(f"{REGISTRY_URL}/agents/publish", json=body, headers=headers, timeout=20)
+    pub_resp.raise_for_status()
+    published = pub_resp.json()
     print(f"✓ Published agent: {published.get('agentId')} v{published.get('version')}")
 
     agent_id = published.get("agentId")
