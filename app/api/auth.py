@@ -1,12 +1,13 @@
-"""Authentication endpoints for user registration, login, and token management."""
+"""Authentication endpoints for user registration, login, token management, and API key generation."""
 
 import secrets
+import hashlib
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 
 from ..core.logging import get_logger
-from ..core.security import require_oauth
+from ..auth_jwks import require_oauth, require_roles
 from ..schemas.auth import PasswordChange, TokenRefresh, TokenResponse, UserLogin, UserProfile, UserRegistration
 from ..services.auth_service import AuthService
 
@@ -194,3 +195,28 @@ def logout_user(credentials: HTTPBearer = Depends(HTTPBearer())):
     except Exception as e:
         logger.error(f"Logout endpoint error: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Logout failed")
+
+
+@router.post("/api-token")
+def generate_api_token(ctx=Depends(require_roles("Administrator"))):
+    """
+    Generate a secure API token and return its SHA-256 hash.
+
+    Admin-only. The plaintext token is returned once. Store only the hash in
+    configuration under `API_KEY_HASHES` to enable Bearer API key access.
+    """
+    try:
+        token = secrets.token_urlsafe(48)
+        sha256 = hashlib.sha256(token.encode()).hexdigest()
+
+        return {
+            "token": token,
+            "sha256": sha256,
+            "instructions": (
+                "Add the sha256 value to API_KEY_HASHES env setting. Do not store the plaintext token."
+            ),
+        }
+
+    except Exception as e:
+        logger.error(f"API token generation failed: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate API token")
