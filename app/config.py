@@ -30,9 +30,9 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
-    # API Key auth (optional, enables SDK/app access without login)
-    api_key: Optional[str] = None
-    api_key_header: str = "X-API-Key"
+    # API Key auth (Bearer-only). Supports plaintext keys or SHA-256 hashes.
+    api_keys: List[str] = []
+    api_key_hashes: List[str] = []  # sha256 hex of allowed API keys
     api_key_client_id_header: str = "X-Client-Id"
     api_key_tenant_header: str = "X-Tenant-Id"
     api_key_default_roles: List[str] = ["User"]

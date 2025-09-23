@@ -46,9 +46,9 @@ class A2AClient:
 
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "A2A-Python-SDK/1.0.0", "Content-Type": "application/json"})
-        # If API key is provided, set it on the session headers so SDK can be used without OAuth login
+        # If API key is provided, set as Bearer token
         if self._api_key:
-            self.session.headers[self._api_key_header] = self._api_key
+            self.session.headers["Authorization"] = f"Bearer {self._api_key}"
 
     def set_api_key(self, api_key: str, header_name: str = "X-API-Key") -> None:
         """
@@ -60,7 +60,7 @@ class A2AClient:
         """
         self._api_key = api_key
         self._api_key_header = header_name
-        self.session.headers[self._api_key_header] = self._api_key
+        self.session.headers["Authorization"] = f"Bearer {self._api_key}"
 
     def authenticate(self) -> None:
         """

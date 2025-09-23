@@ -3,6 +3,7 @@
 import json
 import secrets
 from functools import lru_cache
+import hashlib
 from typing import Any, Dict, Optional
 
 import httpx
@@ -59,22 +60,25 @@ def require_oauth(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     request: Request = None,
 ) -> Dict[str, Any]:
-    # API Key path (allow SDK/app access without login when configured)
-    if request is not None and settings.api_key:
-        provided_key = request.headers.get(settings.api_key_header)
-        if provided_key and secrets.compare_digest(provided_key, settings.api_key):
-            client_id = request.headers.get(settings.api_key_client_id_header) or "api-key-client"
-            tenant = request.headers.get(settings.api_key_tenant_header) or settings.api_key_default_tenant
+    # Bearer API Key path (strict)
+    if credentials and credentials.scheme.lower() == "bearer":
+        token = credentials.credentials
+        # Check configured plaintext keys
+        if any(secrets.compare_digest(token, k) for k in (settings.api_keys or [])):
+            client_id = (request.headers.get(settings.api_key_client_id_header) if request else None) or "api-key-client"
+            tenant = (request.headers.get(settings.api_key_tenant_header) if request else None) or settings.api_key_default_tenant
             roles = settings.api_key_default_roles or []
-            return {
-                "user_id": client_id,
-                "username": client_id,
-                "email": None,
-                "roles": roles,
-                "tenant": tenant,
-                "client_id": client_id,
-            }
+            return {"user_id": client_id, "username": client_id, "email": None, "roles": roles, "tenant": tenant, "client_id": client_id}
 
+        # Check configured SHA-256 hashes
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        if token_hash in (settings.api_key_hashes or []):
+            client_id = (request.headers.get(settings.api_key_client_id_header) if request else None) or "api-key-client"
+            tenant = (request.headers.get(settings.api_key_tenant_header) if request else None) or settings.api_key_default_tenant
+            roles = settings.api_key_default_roles or []
+            return {"user_id": client_id, "username": client_id, "email": None, "roles": roles, "tenant": tenant, "client_id": client_id}
+
+    # Otherwise treat as JWT Bearer
     if not credentials:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     return verify_access_token(credentials.credentials)
