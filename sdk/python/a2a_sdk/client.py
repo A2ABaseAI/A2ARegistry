@@ -23,6 +23,8 @@ class A2AClient:
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         timeout: int = 30,
+        api_key: Optional[str] = None,
+        api_key_header: str = "X-API-Key",
     ):
         """
         Initialize the A2A client.
@@ -39,9 +41,26 @@ class A2AClient:
         self.timeout = timeout
         self._access_token = None
         self._token_expires_at = None
+        self._api_key = api_key
+        self._api_key_header = api_key_header
 
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "A2A-Python-SDK/1.0.0", "Content-Type": "application/json"})
+        # If API key is provided, set it on the session headers so SDK can be used without OAuth login
+        if self._api_key:
+            self.session.headers[self._api_key_header] = self._api_key
+
+    def set_api_key(self, api_key: str, header_name: str = "X-API-Key") -> None:
+        """
+        Configure API key authentication on the client session.
+
+        Args:
+            api_key: API key value
+            header_name: HTTP header name to send the API key with
+        """
+        self._api_key = api_key
+        self._api_key_header = header_name
+        self.session.headers[self._api_key_header] = self._api_key
 
     def authenticate(self) -> None:
         """
@@ -50,6 +69,10 @@ class A2AClient:
         Raises:
             AuthenticationError: If authentication fails
         """
+        # If API key auth is configured, skip OAuth flow
+        if self._api_key:
+            return
+
         if not self.client_id or not self.client_secret:
             raise AuthenticationError("Client ID and secret are required for authentication")
 
@@ -81,6 +104,10 @@ class A2AClient:
 
     def _ensure_authenticated(self) -> None:
         """Ensure we have a valid access token."""
+        # If API key is configured, no token is required
+        if self._api_key:
+            return
+
         if not self._access_token or (self._token_expires_at and time.time() >= self._token_expires_at):
             self.authenticate()
 

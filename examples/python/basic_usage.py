@@ -19,15 +19,18 @@ def main():
         registry_url="http://localhost:8000",
         client_id=os.getenv("A2A_CLIENT_ID"),
         client_secret=os.getenv("A2A_CLIENT_SECRET"),
+        api_key=os.getenv("A2A_API_KEY"),
     )
 
-    # Authenticate (required for publishing)
-    try:
-        client.authenticate()
-        print("✓ Authentication successful")
-    except Exception as e:
-        print(f"✗ Authentication failed: {e}")
-        return
+    # If API key is provided, the SDK can be used without OAuth login
+    if not os.getenv("A2A_API_KEY"):
+        # Authenticate (required for publishing without API key)
+        try:
+            client.authenticate()
+            print("✓ Authentication successful")
+        except Exception as e:
+            print(f"✗ Authentication failed: {e}")
+            return
 
     # Create a simple agent
     capabilities = AgentCapabilities(protocols=["http"], supported_formats=["json"], max_concurrent_requests=5)
