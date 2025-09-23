@@ -1,6 +1,6 @@
 """Configuration settings for the A2A Agent Registry."""
 
-from typing import Optional
+from typing import Optional, List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     secret_key: str = "your-secret-key-change-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+
+    # API Key auth (optional, enables SDK/app access without login)
+    api_key: Optional[str] = None
+    api_key_header: str = "X-API-Key"
+    api_key_client_id_header: str = "X-Client-Id"
+    api_key_tenant_header: str = "X-Tenant-Id"
+    api_key_default_roles: List[str] = ["User"]
+    api_key_default_tenant: str = "default"
 
     # Auth (JWKS / OAuth2)
     jwks_url: str = "https://auth.example.com/.well-known/jwks.json"

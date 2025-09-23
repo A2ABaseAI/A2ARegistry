@@ -1,12 +1,13 @@
 """JWT (client-credentials) verification via JWKS with role/tenant extraction."""
 
 import json
+import secrets
 from functools import lru_cache
 from typing import Any, Dict, Optional
 
 import httpx
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .config import settings
@@ -56,7 +57,24 @@ def verify_access_token(token: str) -> Dict[str, Any]:
 
 def require_oauth(
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request = None,
 ) -> Dict[str, Any]:
+    # API Key path (allow SDK/app access without login when configured)
+    if request is not None and settings.api_key:
+        provided_key = request.headers.get(settings.api_key_header)
+        if provided_key and secrets.compare_digest(provided_key, settings.api_key):
+            client_id = request.headers.get(settings.api_key_client_id_header) or "api-key-client"
+            tenant = request.headers.get(settings.api_key_tenant_header) or settings.api_key_default_tenant
+            roles = settings.api_key_default_roles or []
+            return {
+                "user_id": client_id,
+                "username": client_id,
+                "email": None,
+                "roles": roles,
+                "tenant": tenant,
+                "client_id": client_id,
+            }
+
     if not credentials:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     return verify_access_token(credentials.credentials)
