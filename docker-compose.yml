@@ -9,12 +9,15 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/a2a_registry
       - REDIS_URL=redis://redis:6379/0
-      - ELASTICSEARCH_URL=http://opensearch:9200
-      - SECRET_KEY=${SECRET_KEY:-$(openssl rand -hex 32)}
+      - OPENSEARCH_URL=http://opensearch:9200
+      - SECRET_KEY=dev-secret-key
+      # Bootstrap API key auth for demo (Bearer). Use only in dev.
+      - API_KEYS=["dev-admin-api-key"]
+      - API_KEY_DEFAULT_ROLES=["Administrator","User"]
     depends_on:
       - db
       - redis
-      - elasticsearch
+      - opensearch
     volumes:
       - ./app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
