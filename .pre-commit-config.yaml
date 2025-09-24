@@ -1,0 +1,90 @@
+# Pre-commit configuration for A2A Registry
+# This file configures pre-commit hooks for code quality
+# Install with: pip install pre-commit && pre-commit install
+
+repos:
+  # Built-in hooks for common issues
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Remove trailing whitespace
+        description: Remove trailing whitespace from files
+      - id: end-of-file-fixer
+        name: Fix end of files
+        description: Ensure files end with a newline
+      - id: check-yaml
+        name: Check YAML syntax
+        description: Check YAML files for syntax errors
+      - id: check-json
+        name: Check JSON syntax
+        description: Check JSON files for syntax errors
+      - id: check-toml
+        name: Check TOML syntax
+        description: Check TOML files for syntax errors
+      - id: check-merge-conflict
+        name: Check for merge conflict markers
+        description: Check for merge conflict markers in files
+      - id: check-added-large-files
+        name: Check for large files
+        description: Prevent large files from being committed
+        args: ['--maxkb=1000']
+
+  # Python code formatting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        name: Black code formatter
+        description: Format Python code with Black
+        language_version: python3
+        args: ['--line-length=160']
+
+  # Python import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort import sorter
+        description: Sort Python imports with isort
+        args: ['--profile', 'black', '--line-length', '160']
+
+  # Python linting
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        name: flake8 linter
+        description: Lint Python code with flake8
+        args: ['--max-line-length=160', '--extend-ignore=E203,W503']
+
+  # Python security checks
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: bandit security linter
+        description: Check Python code for security issues
+        args: ['-r', '.', '-f', 'json', '-o', 'bandit-report.json']
+
+  # Python type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        name: mypy type checker
+        description: Type check Python code with mypy
+        additional_dependencies: [types-requests, types-PyYAML]
+        args: ['--config-file=mypy.ini']
+
+  # Custom hook for running full quality checks
+  - repo: local
+    hooks:
+      - id: a2a-quality-checks
+        name: A2A Registry Quality Checks
+        description: Run comprehensive quality checks
+        entry: make qa
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]

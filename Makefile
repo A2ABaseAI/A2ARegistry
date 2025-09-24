@@ -12,7 +12,7 @@
 #   make publish          # Publish SDK to PyPI
 #   make help             # Show help
 
-.PHONY: help qa lint security type test clean install-deps backend examples example publish build-sdk test-sdk
+.PHONY: help qa lint security type test clean install-deps backend examples example publish build-sdk test-sdk pre-commit-install pre-commit-run pre-commit-update
 
 # Default target
 help:
@@ -36,6 +36,11 @@ help:
 	@echo "  sdk-publish-test Publish to Test PyPI"
 	@echo "  sdk-publish      Publish to PyPI"
 	@echo ""
+	@echo "Pre-commit Hooks:"
+	@echo "  pre-commit-install Install pre-commit hooks"
+	@echo "  pre-commit-run     Run pre-commit on all files"
+	@echo "  pre-commit-update  Update pre-commit hooks"
+	@echo ""
 	@echo "Utilities:"
 	@echo "  install-deps     Install required dependencies"
 	@echo "  clean            Clean up temporary files"
@@ -52,6 +57,8 @@ help:
 install-deps:
 	@echo "Installing quality check dependencies..."
 	pip install flake8 bandit mypy pytest
+	@echo "Installing pre-commit hooks..."
+	pip install pre-commit
 
 # Run all quality checks
 qa: lint security type test
@@ -218,3 +225,17 @@ sdk-publish-test:
 sdk-publish:
 	@echo "🚀 Publishing to PyPI..."
 	@cd sdk/python && source ../../venv/bin/activate && twine upload dist/*
+
+# Pre-commit hook management
+pre-commit-install:
+	@echo "🔧 Installing pre-commit hooks..."
+	@source venv/bin/activate && pre-commit install
+	@echo "✅ Pre-commit hooks installed!"
+
+pre-commit-run:
+	@echo "🔍 Running pre-commit on all files..."
+	@source venv/bin/activate && pre-commit run --all-files
+
+pre-commit-update:
+	@echo "🔄 Updating pre-commit hooks..."
+	@source venv/bin/activate && pre-commit autoupdate
