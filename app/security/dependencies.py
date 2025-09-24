@@ -75,12 +75,7 @@ def extract_context(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     roles = payload.get(settings.role_claim) or payload.get("roles") or []
     tenant = payload.get(settings.tenant_claim) or payload.get("tenant")
-    client_id = (
-        payload.get(settings.client_id_claim)
-        or payload.get("client_id")
-        or payload.get("sub")
-        or payload.get("user_id")
-    )
+    client_id = payload.get(settings.client_id_claim) or payload.get("client_id") or payload.get("sub") or payload.get("user_id")
 
     return {"roles": roles, "tenant": tenant, "client_id": client_id}
 

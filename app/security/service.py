@@ -97,56 +97,28 @@ class SecurityService:
 
     def _initialize_security_policies(self):
         self.security_policies = {
-            "api_key_rotation": {
-                "enabled": True,
-                "rotation_interval_days": 90,
-                "warning_days": 14,
-                "auto_rotate": False
-            },
+            "api_key_rotation": {"enabled": True, "rotation_interval_days": 90, "warning_days": 14, "auto_rotate": False},
             "jwt_validation": {
                 "require_exp": True,
                 "require_iat": True,
                 "require_aud": True,
                 "max_age_minutes": 60,
-                "allowed_algorithms": ["RS256", "ES256", "HS256"]
+                "allowed_algorithms": ["RS256", "ES256", "HS256"],
             },
             "oauth2_settings": {
                 "token_lifetime_minutes": 60,
                 "refresh_token_lifetime_days": 30,
                 "require_pkce": True,
-                "allowed_grant_types": ["client_credentials", "authorization_code"]
+                "allowed_grant_types": ["client_credentials", "authorization_code"],
             },
-            "audit_settings": {
-                "log_all_auth_attempts": True,
-                "log_token_usage": True,
-                "retention_days": 365,
-                "alert_on_anomalies": True
-            }
+            "audit_settings": {"log_all_auth_attempts": True, "log_token_usage": True, "retention_days": 365, "alert_on_anomalies": True},
         }
 
     def _initialize_threat_patterns(self):
         self.threat_patterns = [
-            {
-                "name": "brute_force_detection",
-                "pattern": "multiple_failed_auth",
-                "threshold": 5,
-                "time_window_minutes": 10,
-                "severity": "high"
-            },
-            {
-                "name": "token_abuse_detection",
-                "pattern": "excessive_token_usage",
-                "threshold": 100,
-                "time_window_minutes": 5,
-                "severity": "medium"
-            },
-            {
-                "name": "unusual_access_pattern",
-                "pattern": "access_from_new_location",
-                "threshold": 1,
-                "time_window_minutes": 60,
-                "severity": "low"
-            }
+            {"name": "brute_force_detection", "pattern": "multiple_failed_auth", "threshold": 5, "time_window_minutes": 10, "severity": "high"},
+            {"name": "token_abuse_detection", "pattern": "excessive_token_usage", "threshold": 100, "time_window_minutes": 5, "severity": "medium"},
+            {"name": "unusual_access_pattern", "pattern": "access_from_new_location", "threshold": 1, "time_window_minutes": 60, "severity": "low"},
         ]
 
     def create_api_key(
@@ -321,15 +293,11 @@ class SecurityService:
 
         total_keys = len(self.api_keys)
         active_keys = len([key for key in self.api_keys.values() if key.is_active])
-        expired_keys = len(
-            [key for key in self.api_keys.values() if key.expires_at and now > key.expires_at]
-        )
+        expired_keys = len([key for key in self.api_keys.values() if key.expires_at and now > key.expires_at])
 
         total_events = len(self.security_events)
         recent_events = len([event for event in self.security_events if (now - event.timestamp).days < 7])
-        critical_events = len(
-            [event for event in self.security_events if event.severity in ["critical", "high"]]
-        )
+        critical_events = len([event for event in self.security_events if event.severity in ["critical", "high"]])
 
         return {
             "api_keys": {"total": total_keys, "active": active_keys, "expired": expired_keys},

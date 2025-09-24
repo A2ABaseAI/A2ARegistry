@@ -16,7 +16,7 @@ except FileNotFoundError:
     requirements = [
         "requests>=2.31.0",
         "PyYAML>=6.0",
-        "dataclasses>=0.6; python_version<\"3.7\"",
+        'dataclasses>=0.6; python_version<"3.7"',
     ]
 
 setup(

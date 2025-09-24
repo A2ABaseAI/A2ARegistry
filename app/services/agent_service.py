@@ -38,7 +38,7 @@ class AgentService:
 
     def __del__(self):
         """Clean up database session."""
-        if hasattr(self, 'db') and self.db:
+        if hasattr(self, "db") and self.db:
             self.db.close()
 
     def create_or_update_agent_record(
@@ -94,9 +94,7 @@ class AgentService:
 
         except Exception as exc:
             logger.error(f"Failed to create/update agent record: {exc}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent record"
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent record") from exc
 
     def create_agent_version(
         self,
@@ -126,11 +124,7 @@ class AgentService:
         """
         try:
             # Check for existing version (idempotency)
-            existing = (
-                self.db.query(AgentVersion)
-                .filter(AgentVersion.agent_id == rec.id, AgentVersion.version == version)
-                .first()
-            )
+            existing = self.db.query(AgentVersion).filter(AgentVersion.agent_id == rec.id, AgentVersion.version == version).first()
 
             if existing:
                 logger.debug(f"Found existing agent version: {existing.id}")
@@ -155,13 +149,9 @@ class AgentService:
 
         except Exception as exc:
             logger.error(f"Failed to create agent version: {exc}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent version"
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent version") from exc
 
-    def publish_agent(
-        self, card_data: Dict[str, Any], card_url: Optional[str], public: bool, tenant_id: str
-    ) -> Dict[str, Any]:
+    def publish_agent(self, card_data: Dict[str, Any], card_url: Optional[str], public: bool, tenant_id: str) -> Dict[str, Any]:
         """
         Publish an agent with full database operations.
 
@@ -195,9 +185,7 @@ class AgentService:
             # Database operations (transactional)
             try:
                 # Create or update agent record
-                rec = self.create_or_update_agent_record(
-                    card_data, card_hash, tenant_id, publisher_id, agent_key, version
-                )
+                rec = self.create_or_update_agent_record(card_data, card_hash, tenant_id, publisher_id, agent_key, version)
 
                 # Create agent version
                 av = self.create_agent_version(rec, card_data, card_hash, card_url, version, public)
@@ -209,9 +197,7 @@ class AgentService:
             except Exception as exc:
                 self.db.rollback()
                 logger.error(f"Database transaction failed: {exc}")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent"
-                ) from exc
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist agent") from exc
 
             # Index in search engine (non-critical)
             self._index_agent_version(av, rec, card_data, tenant_id, publisher_id, version, public)
@@ -230,9 +216,7 @@ class AgentService:
             raise
         except Exception as exc:
             logger.error(f"Unexpected error publishing agent: {exc}", exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error") from exc
 
     def _index_agent_version(
         self,

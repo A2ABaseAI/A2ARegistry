@@ -30,9 +30,7 @@ class TestSchemas(BaseTest):
                 "stateTransitionHistory": True,
                 "supportsAuthenticatedExtendedCard": False,
             },
-            "securitySchemes": [
-                {"type": "apiKey", "location": "header", "name": "X-API-Key", "credentials": "test_credentials"}
-            ],
+            "securitySchemes": [{"type": "apiKey", "location": "header", "name": "X-API-Key", "credentials": "test_credentials"}],
             "skills": [],
             "interface": {
                 "preferredTransport": "jsonrpc",
@@ -54,9 +52,7 @@ class TestSchemas(BaseTest):
                 "stateTransitionHistory": True,
                 "supportsAuthenticatedExtendedCard": False,
             },
-            securitySchemes=[
-                {"type": "apiKey", "location": "header", "name": "X-API-Key", "credentials": "test_credentials"}
-            ],
+            securitySchemes=[{"type": "apiKey", "location": "header", "name": "X-API-Key", "credentials": "test_credentials"}],
             skills=[],
             interface={
                 "preferredTransport": "jsonrpc",

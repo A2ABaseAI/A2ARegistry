@@ -22,10 +22,7 @@ def demonstrate_visibility_concepts():
     admin_api_key = os.getenv("ADMIN_API_KEY", "dev-admin-api-key")
 
     # Initialize admin client
-    admin_client = A2AClient(
-        registry_url=registry_url,
-        api_key=admin_api_key
-    )
+    admin_client = A2AClient(registry_url=registry_url, api_key=admin_api_key)
 
     print("🔍 Testing current agent visibility...")
 
@@ -33,14 +30,14 @@ def demonstrate_visibility_concepts():
         # List all agents currently in the registry
         print("\n📋 Listing all agents in registry:")
         agents_response = admin_client.list_agents(page=1, limit=20)
-        all_agents = agents_response.get('items', [])
+        all_agents = agents_response.get("items", [])
 
         print("  Total agents found: {len(all_agents)}")
 
         if all_agents:
             print("  👁️  Visible agents:")
             for i, agent in enumerate(all_agents, 1):
-                agent_id = agent.get('id', 'Unknown')
+                agent_id = agent.get("id", "Unknown")
                 print("    {i}. {agent_name} (ID: {agent_id[:8]}...) - {'Public' if is_public else 'Private'}")
         else:
             print("  No agents found in registry")
@@ -72,8 +69,8 @@ def demonstrate_visibility_concepts():
             print("\n🧪 Testing Agent Access Patterns:")
 
             for agent in all_agents[:3]:  # Test first 3 agents
-                agent_id = agent.get('id')
-                agent_name = agent.get('name', 'Unknown')
+                agent_id = agent.get("id")
+                agent_name = agent.get("name", "Unknown")
 
                 print(f"\n  🔍 Testing access to '{agent_name}':")
 

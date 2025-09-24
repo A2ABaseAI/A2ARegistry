@@ -23,9 +23,7 @@ def create_access_token(
 ) -> str:
     """Create a signed JWT access token."""
 
-    expires = datetime.now(timezone.utc) + (
-        expires_delta if expires_delta else timedelta(minutes=settings.access_token_expire_minutes)
-    )
+    expires = datetime.now(timezone.utc) + (expires_delta if expires_delta else timedelta(minutes=settings.access_token_expire_minutes))
 
     payload: Dict[str, Any] = {
         "iss": settings.token_issuer or "a2a-registry",

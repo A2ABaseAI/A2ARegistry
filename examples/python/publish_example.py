@@ -28,10 +28,7 @@ def create_sample_agent():
         InputSchemaBuilder()
         .add_string_property("query", "The user's question or request", required=True)
         .add_string_property("context", "Additional context for the request", required=False)
-        .add_object_property("user_info", {
-            "user_id": {"type": "string"},
-            "preferences": {"type": "object"}
-        }, "User information and preferences")
+        .add_object_property("user_info", {"user_id": {"type": "string"}, "preferences": {"type": "object"}}, "User information and preferences")
         .add_array_property("documents", {"type": "string"}, "List of document references")
         .build()
     )
@@ -40,11 +37,11 @@ def create_sample_agent():
     output_schema = (
         OutputSchemaBuilder()
         .add_string_property("response", "The agent's response to the user", required=True)
-        .add_object_property("metadata", {
-            "confidence": {"type": "number"},
-            "sources": {"type": "array", "items": {"type": "string"}},
-            "processing_time": {"type": "number"}
-        }, "Response metadata")
+        .add_object_property(
+            "metadata",
+            {"confidence": {"type": "number"}, "sources": {"type": "array", "items": {"type": "string"}}, "processing_time": {"type": "number"}},
+            "Response metadata",
+        )
         .add_array_property("suggestions", {"type": "string"}, "Follow-up suggestions")
         .build()
     )
@@ -61,24 +58,14 @@ def create_sample_agent():
     )
 
     # Create authentication scheme
-    auth_scheme = (
-        AuthSchemeBuilder("api_key")
-        .description("API key authentication for secure access")
-        .required(True)
-        .header_name("X-API-Key")
-        .build()
-    )
+    auth_scheme = AuthSchemeBuilder("api_key").description("API key authentication for secure access").required(True).header_name("X-API-Key").build()
 
     # Create agent skills (single skill with input/output schemas)
     skills = (
         AgentSkillsBuilder()
         .input_schema(input_schema)
         .output_schema(output_schema)
-        .examples([
-            "What is the weather like today?",
-            "Can you summarize this document for me?",
-            "How do I implement authentication in my app?"
-        ])
+        .examples(["What is the weather like today?", "Can you summarize this document for me?", "How do I implement authentication in my app?"])
         .build()
     )
 
@@ -118,18 +105,12 @@ def main():
     print("🔑 Using admin API key for key generation")
 
     # Initialize admin client for API key generation
-    admin_client = A2AClient(
-        registry_url=registry_url,
-        api_key=admin_api_key
-    )
+    admin_client = A2AClient(registry_url=registry_url, api_key=admin_api_key)
 
     try:
         # Generate a write API key for demonstration
         print("\n🔑 Generating write API key for demonstration...")
-        write_key, write_key_info = admin_client.generate_api_key(
-            scopes=["read", "write"],
-            expires_days=1  # Short expiration for demo
-        )
+        write_key, write_key_info = admin_client.generate_api_key(scopes=["read", "write"], expires_days=1)  # Short expiration for demo
         print("✓ Write API key generated: {write_key_info.get('key_id', 'N/A')}")
         print("ℹ️  Note: Generated API keys are not yet integrated with main auth system")
         print("   Using admin API key directly for agent publishing...")
@@ -163,18 +144,18 @@ def main():
         # List agents to show our published agent
         print("\n📋 Listing published agents...")
         agents_response = write_client.list_agents(page=1, limit=10)
-        agents = agents_response.get('agents', [])
+        agents = agents_response.get("agents", [])
         print("✓ Found {len(agents)} agents in registry")
 
         # Show our agent in the list
-        our_agent = next((a for a in agents if a.get('id') == published_agent.id), None)
+        our_agent = next((a for a in agents if a.get("id") == published_agent.id), None)
         if our_agent:
             print("✓ Our agent found in registry: {our_agent.get('name')}")
 
         # Clean up - revoke the generated API key
         print("\n🧹 Cleaning up generated API key...")
         try:
-            admin_client.revoke_api_key(write_key_info.get('key_id'))
+            admin_client.revoke_api_key(write_key_info.get("key_id"))
             print("✓ Revoked write API key: {write_key_info.get('key_id')}")
         except Exception:
             pass
@@ -192,6 +173,7 @@ def main():
         pass
         print("\n❌ Error during agent publishing: {e}")
         import traceback
+
         traceback.print_exc()
 
     finally:

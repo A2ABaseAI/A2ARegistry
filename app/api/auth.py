@@ -188,12 +188,7 @@ def logout_user(current_user: dict = Depends(require_oauth)):
 
 
 @router.post("/oauth/token")
-def oauth_token(
-    grant_type: str = Form("client_credentials"),
-    client_id: str = Form(...),
-    client_secret: str = Form(...),
-    scope: str = Form("read write")
-):
+def oauth_token(grant_type: str = Form("client_credentials"), client_id: str = Form(...), client_secret: str = Form(...), scope: str = Form("read write")):
     """
     OAuth 2.0 Client Credentials flow endpoint.
 
@@ -202,16 +197,10 @@ def oauth_token(
     """
     try:
         if grant_type != "client_credentials":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only client_credentials grant type is supported"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only client_credentials grant type is supported")
 
         if not client_id or not client_secret:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="client_id and client_secret are required"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="client_id and client_secret are required")
 
         # Production implementation: Validate client credentials against database
         from ..security import create_access_token, verify_password
@@ -242,24 +231,13 @@ def oauth_token(
             logger.info(f"OAuth token request - User: {user.username}, Scopes: {scopes}, User Roles: {user_roles}")
 
             # Check if user has sufficient roles for requested scopes
-            if ("write" in scopes
-                    and "CatalogManager" not in user_roles
-                    and "Administrator" not in user_roles):
-                logger.warning(
-                    f"User {user.username} with roles {user_roles} denied write scope"
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Insufficient permissions for write scope"
-                )
+            if "write" in scopes and "CatalogManager" not in user_roles and "Administrator" not in user_roles:
+                logger.warning(f"User {user.username} with roles {user_roles} denied write scope")
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions for write scope")
 
-            if (("admin" in scopes or "all" in scopes)
-                    and "Administrator" not in user_roles):
+            if ("admin" in scopes or "all" in scopes) and "Administrator" not in user_roles:
                 logger.warning(f"User {user.username} with roles {user_roles} denied admin scope")
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Insufficient permissions for admin scope"
-                )
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions for admin scope")
 
             # Create token with actual user data
             access_token = create_access_token(
@@ -267,18 +245,13 @@ def oauth_token(
                 username=str(user.username),
                 email=str(user.email),
                 roles=user_roles,
-                tenant_id=str(user.tenant_id) if user.tenant_id else "default"
+                tenant_id=str(user.tenant_id) if user.tenant_id else "default",
             )
 
         finally:
             db.close()
 
-        return {
-            "access_token": access_token,
-            "token_type": "Bearer",
-            "expires_in": 3600,  # 1 hour
-            "scope": scope
-        }
+        return {"access_token": access_token, "token_type": "Bearer", "expires_in": 3600, "scope": scope}  # 1 hour
 
     except HTTPException:
         raise
@@ -302,9 +275,7 @@ def generate_api_token(ctx=Depends(require_roles("Administrator"))):
         return {
             "token": token,
             "sha256": sha256,
-            "instructions": (
-                "Add the sha256 value to API_KEY_HASHES env setting. Do not store the plaintext token."
-            ),
+            "instructions": ("Add the sha256 value to API_KEY_HASHES env setting. Do not store the plaintext token."),
         }
 
     except Exception as e:

@@ -45,9 +45,7 @@ async def get_agents_index(
 
         # Validate input parameters
         if top < 1 or top > 100:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="top parameter must be between 1 and 100"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="top parameter must be between 1 and 100")
 
         if skip < 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="skip parameter must be non-negative")
@@ -126,9 +124,7 @@ async def get_agent_card_well_known(
             result = registry_service.get_latest("default", agent_id)
         except Exception as e:
             logger.error(f"Failed to retrieve agent {agent_id}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error while retrieving agent"
-            )
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error while retrieving agent")
 
         if not result:
             logger.info(f"Agent {agent_id} not found")
@@ -179,6 +175,7 @@ async def get_agent_card_well_known(
 
         # Type cast to help mypy understand the runtime type
         from typing import cast
+
         card_dict = cast(dict, card_data)
 
         return _log_and_return_card(card_dict, agent_id)

@@ -99,9 +99,7 @@ def public_agents(top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0)
 
 
 @router.get("/entitled")
-async def get_entitled_agents(
-    top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0), payload: dict = Depends(require_oauth)
-):
+async def get_entitled_agents(top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0), payload: dict = Depends(require_oauth)):
     """
     Get entitled agents for the authenticated client with error handling.
 
@@ -197,21 +195,15 @@ async def get_agent(agent_id: str, payload: dict = Depends(require_oauth)):
         if not ver.public:
             if not client_id:
                 logger.warning(f"Client ID missing for private agent {agent_id}")
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: authentication required"
-                )
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: authentication required")
 
             try:
                 if not agent_service.check_agent_access(agent_id, tenant, client_id):
                     logger.info(f"Client {client_id} not entitled to private agent {agent_id}")
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: insufficient permissions"
-                    )
+                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: insufficient permissions")
             except Exception as e:
                 logger.error(f"Entitlement check failed for agent {agent_id}: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to verify access permissions"
-                )
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to verify access permissions")
 
         # Build response with safe data extraction
         try:
@@ -232,9 +224,7 @@ async def get_agent(agent_id: str, payload: dict = Depends(require_oauth)):
 
         except Exception as e:
             logger.error(f"Failed to build response for agent {agent_id}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to process agent data"
-            )
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to process agent data")
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
@@ -282,9 +272,7 @@ async def get_agent_card(agent_id: str, payload: dict = Depends(require_oauth)):
                 tenant = ctx.get("tenant") or "default"
                 client_id = ctx.get("client_id")
 
-                logger.debug(
-                    f"Checking entitlement for private agent {agent_id}, " f"tenant={tenant}, client_id={client_id}"
-                )
+                logger.debug(f"Checking entitlement for private agent {agent_id}, " f"tenant={tenant}, client_id={client_id}")
 
                 entitled = False
                 if client_id:
@@ -307,9 +295,7 @@ async def get_agent_card(agent_id: str, payload: dict = Depends(require_oauth)):
                 raise
             except Exception as e:
                 logger.error(f"Failed to check entitlement for agent {agent_id}: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to verify access permissions"
-                )
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to verify access permissions")
 
         # Return card data with validation
         try:
@@ -319,6 +305,7 @@ async def get_agent_card(agent_id: str, payload: dict = Depends(require_oauth)):
 
             # Type cast to help mypy understand the runtime type
             from typing import cast
+
             card_dict = cast(dict, card_data)
 
             return _log_and_return_card(card_dict, agent_id)

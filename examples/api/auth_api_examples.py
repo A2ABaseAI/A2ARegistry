@@ -42,9 +42,7 @@ class A2AAuthClient:
             headers["Authorization"] = f"Bearer {self.access_token}"
         return headers
 
-    def register_user(
-        self, username: str, email: str, password: str, full_name: Optional[str] = None, tenant_id: str = "default"
-    ) -> Dict[str, Any]:
+    def register_user(self, username: str, email: str, password: str, full_name: Optional[str] = None, tenant_id: str = "default") -> Dict[str, Any]:
         """Register a new user."""
         url = f"{self.base_url}/auth/register"
         payload = {
@@ -204,9 +202,7 @@ def demonstrate_user_registration(client: A2AAuthClient):
     # Example 2: Try to register duplicate user
     print("\n2. Attempting to register duplicate user...")
     try:
-        client.register_user(
-            username="testuser123", email="different@example.com", password="password123"  # Same username
-        )
+        client.register_user(username="testuser123", email="different@example.com", password="password123")  # Same username
         print("✗ Unexpectedly registered duplicate user")
     except HTTPError as e:
         if e.response.status_code == 409:

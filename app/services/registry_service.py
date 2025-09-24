@@ -56,15 +56,11 @@ class RegistryService:
 
     def __del__(self):
         """Clean up database session if we own it."""
-        if hasattr(self, '_owns_session') and self._owns_session and hasattr(self, 'db') and self.db:
+        if hasattr(self, "_owns_session") and self._owns_session and hasattr(self, "db") and self.db:
             self.db.close()
 
     def list_public(self, tenant_id: str, top: int, skip: int) -> Tuple[List[Dict[str, Any]], int]:
-        q = (
-            _latest_visible_versions_query(self.db, tenant_id)
-            .filter(AgentVersion.public.is_(True))
-            .order_by(desc(AgentVersion.created_at))
-        )
+        q = _latest_visible_versions_query(self.db, tenant_id).filter(AgentVersion.public.is_(True)).order_by(desc(AgentVersion.created_at))
         items = q.offset(skip).limit(top).all()
         data = [_to_item(r, v) for r, v in items]
         return data, len(data)

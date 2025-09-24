@@ -24,10 +24,7 @@ from a2a_reg_sdk import (
 )
 
 
-def register_user(
-    registry_url: str, username: str, email: str, password: str,
-    tenant_id: str, roles: Optional[List[str]] = None
-) -> Dict[str, Any]:
+def register_user(registry_url: str, username: str, email: str, password: str, tenant_id: str, roles: Optional[List[str]] = None) -> Dict[str, Any]:
     """Register a new user with specific tenant and roles."""
     try:
         response = requests.post(
@@ -38,10 +35,10 @@ def register_user(
                 "password": password,
                 "full_name": "User {username}",
                 "tenant_id": tenant_id,
-                "roles": roles or ["User"]
+                "roles": roles or ["User"],
             },
             headers={"Content-Type": "application/json"},
-            timeout=30
+            timeout=30,
         )
         response.raise_for_status()
         return response.json()
@@ -51,10 +48,7 @@ def register_user(
         raise
 
 
-def create_agent_for_user(
-    client: A2AClient, agent_name: str, description: str,
-    is_public: bool, tags: List[str]
-) -> Any:
+def create_agent_for_user(client: A2AClient, agent_name: str, description: str, is_public: bool, tags: List[str]) -> Any:
     """Create an agent for a specific user."""
 
     # Create input schema
@@ -69,10 +63,7 @@ def create_agent_for_user(
     output_schema = (
         OutputSchemaBuilder()
         .add_string_property("response", "Agent response", required=True)
-        .add_object_property("metadata", {
-            "confidence": {"type": "number"},
-            "processing_time": {"type": "number"}
-        }, "Response metadata")
+        .add_object_property("metadata", {"confidence": {"type": "number"}, "processing_time": {"type": "number"}}, "Response metadata")
         .build()
     )
 
@@ -88,22 +79,10 @@ def create_agent_for_user(
     )
 
     # Create auth scheme
-    auth_scheme = (
-        AuthSchemeBuilder("api_key")
-        .description("API key authentication")
-        .required(True)
-        .header_name("X-API-Key")
-        .build()
-    )
+    auth_scheme = AuthSchemeBuilder("api_key").description("API key authentication").required(True).header_name("X-API-Key").build()
 
     # Create skills
-    skills = (
-        AgentSkillsBuilder()
-        .input_schema(input_schema)
-        .output_schema(output_schema)
-        .examples(["Example query for {agent_name}"])
-        .build()
-    )
+    skills = AgentSkillsBuilder().input_schema(input_schema).output_schema(output_schema).examples(["Example query for {agent_name}"]).build()
 
     # Create agent
     agent = (
@@ -143,22 +122,22 @@ def demonstrate_multi_tenant_visibility():
             "email": "user-a-{timestamp}@tenant-a.com",
             "password": "UserA{timestamp}!",
             "tenant_id": tenant_a,
-            "roles": ["User"]
+            "roles": ["User"],
         },
         "user_b": {
             "username": "user-b-{timestamp}",
             "email": "user-b-{timestamp}@tenant-b.com",
             "password": "UserB{timestamp}!",
             "tenant_id": tenant_b,
-            "roles": ["User"]
+            "roles": ["User"],
         },
         "admin_a": {
             "username": "admin-a-{timestamp}",
             "email": "admin-a-{timestamp}@tenant-a.com",
             "password": "AdminA{timestamp}!",
             "tenant_id": tenant_a,
-            "roles": ["CatalogManager"]
-        }
+            "roles": ["CatalogManager"],
+        },
     }
 
     print("📝 Registering users in different tenants...")
@@ -180,10 +159,7 @@ def demonstrate_multi_tenant_visibility():
     print()
 
     # Initialize admin client for agent creation
-    admin_client = A2AClient(
-        registry_url=registry_url,
-        api_key=admin_api_key
-    )
+    admin_client = A2AClient(registry_url=registry_url, api_key=admin_api_key)
 
     # Create agents for different users
     print("🏗️  Creating agents for different users...")
@@ -197,11 +173,7 @@ def demonstrate_multi_tenant_visibility():
         # User A creates a public agent
         print("  Creating public agent for User A...")
         user_a_public = create_agent_for_user(
-            admin_client,
-            "user-a-public-{timestamp}",
-            "User A's public agent",
-            is_public=True,
-            tags=["public", "user-a", "tenant-a"]
+            admin_client, "user-a-public-{timestamp}", "User A's public agent", is_public=True, tags=["public", "user-a", "tenant-a"]
         )
         agents_created["user_a_public"] = user_a_public
         print("    ✓ Created: {user_a_public.name} (ID: {user_a_public.id})")
@@ -209,11 +181,7 @@ def demonstrate_multi_tenant_visibility():
         # User B creates a public agent
         print("  Creating public agent for User B...")
         user_b_public = create_agent_for_user(
-            admin_client,
-            "user-b-public-{timestamp}",
-            "User B's public agent",
-            is_public=True,
-            tags=["public", "user-b", "tenant-b"]
+            admin_client, "user-b-public-{timestamp}", "User B's public agent", is_public=True, tags=["public", "user-b", "tenant-b"]
         )
         agents_created["user_b_public"] = user_b_public
         print("    ✓ Created: {user_b_public.name} (ID: {user_b_public.id})")
@@ -228,11 +196,7 @@ def demonstrate_multi_tenant_visibility():
         try:
             print("  Creating private agent for User A...")
             user_a_private = create_agent_for_user(
-                admin_client,
-                "user-a-private-{timestamp}",
-                "User A's private agent",
-                is_public=False,
-                tags=["private", "user-a", "tenant-a"]
+                admin_client, "user-a-private-{timestamp}", "User A's private agent", is_public=False, tags=["private", "user-a", "tenant-a"]
             )
             agents_created["user_a_private"] = user_a_private
             print("    ✓ Created: {user_a_private.name} (ID: {user_a_private.id})")
@@ -244,11 +208,7 @@ def demonstrate_multi_tenant_visibility():
         try:
             print("  Creating private agent for User B...")
             user_b_private = create_agent_for_user(
-                admin_client,
-                "user-b-private-{timestamp}",
-                "User B's private agent",
-                is_public=False,
-                tags=["private", "user-b", "tenant-b"]
+                admin_client, "user-b-private-{timestamp}", "User B's private agent", is_public=False, tags=["private", "user-b", "tenant-b"]
             )
             agents_created["user_b_private"] = user_b_private
             print("    ✓ Created: {user_b_private.name} (ID: {user_b_private.id})")
@@ -260,11 +220,7 @@ def demonstrate_multi_tenant_visibility():
         try:
             print("  Creating tenant-shared agent for Admin A...")
             admin_a_shared = create_agent_for_user(
-                admin_client,
-                "admin-a-shared-{timestamp}",
-                "Admin A's shared agent for Tenant A",
-                is_public=False,
-                tags=["shared", "admin-a", "tenant-a"]
+                admin_client, "admin-a-shared-{timestamp}", "Admin A's shared agent for Tenant A", is_public=False, tags=["shared", "admin-a", "tenant-a"]
             )
             agents_created["admin_a_shared"] = admin_a_shared
             print("    ✓ Created: {admin_a_shared.name} (ID: {admin_a_shared.id})")
@@ -287,20 +243,17 @@ def demonstrate_multi_tenant_visibility():
         print("\n🔍 Testing visibility for {user_type} ({user_data['username']}):")
 
         # Create client for this user (using admin key for now since OAuth has limitations)
-        user_client = A2AClient(
-            registry_url=registry_url,
-            api_key=admin_api_key  # Using admin key for demonstration
-        )
+        user_client = A2AClient(registry_url=registry_url, api_key=admin_api_key)  # Using admin key for demonstration
 
         try:
             # List all agents this user can see
             agents_response = user_client.list_agents(page=1, limit=20)
-            visible_agents = agents_response.get('agents', [])
+            visible_agents = agents_response.get("agents", [])
 
             print("  📋 Total agents visible: {len(visible_agents)}")
 
             # Check which specific agents are visible
-            visible_agent_names = [agent.get('name', 'Unknown') for agent in visible_agents]
+            visible_agent_names = [agent.get("name", "Unknown") for agent in visible_agents]
             print("  👁️  Visible agents:")
             for agent_name in visible_agent_names:
                 print(f"    - {agent_name}")

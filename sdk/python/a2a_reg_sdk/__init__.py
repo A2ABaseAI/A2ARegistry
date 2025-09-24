@@ -19,7 +19,7 @@ from .models import (
     AgentTeeDetailsBuilder,
     AgentSkillsBuilder,
     InputSchemaBuilder,
-    OutputSchemaBuilder
+    OutputSchemaBuilder,
 )
 from .exceptions import A2AError, AuthenticationError, ValidationError, NotFoundError
 from .publisher import AgentPublisher

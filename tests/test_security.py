@@ -112,9 +112,7 @@ class TestJWTTokenSecurity:
 
     def test_verify_access_token_success(self):
         """Test successful token verification."""
-        token = create_access_token(
-            user_id="user123", username="testuser", email="test@example.com", roles=["User"], tenant_id="default"
-        )
+        token = create_access_token(user_id="user123", username="testuser", email="test@example.com", roles=["User"], tenant_id="default")
 
         payload = verify_access_token(token)
 

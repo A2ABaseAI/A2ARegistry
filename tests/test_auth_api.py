@@ -181,9 +181,7 @@ class TestAuthAPI(BaseTest):
         """Test successful token refresh via API."""
         # Register and login user
         client.post("/auth/register", json=sample_user_data)
-        login_response = client.post(
-            "/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"}
-        )
+        login_response = client.post("/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"})
 
         refresh_token = login_response.json()["refresh_token"]
 
@@ -233,9 +231,7 @@ class TestAuthAPI(BaseTest):
         """Test successful get current user via API."""
         # Register and login user
         client.post("/auth/register", json=sample_user_data)
-        login_response = client.post(
-            "/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"}
-        )
+        login_response = client.post("/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"})
 
         access_token = login_response.json()["access_token"]
 
@@ -271,9 +267,7 @@ class TestAuthAPI(BaseTest):
         """Test successful password change via API."""
         # Register and login user
         client.post("/auth/register", json=sample_user_data)
-        login_response = client.post(
-            "/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"}
-        )
+        login_response = client.post("/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"})
 
         access_token = login_response.json()["access_token"]
 
@@ -287,9 +281,7 @@ class TestAuthAPI(BaseTest):
         assert "Password changed successfully" in response.json()["message"]
 
         # Verify new password works
-        login_response = client.post(
-            "/auth/login", json={"email_or_username": "test@example.com", "password": "newpassword456"}
-        )
+        login_response = client.post("/auth/login", json={"email_or_username": "test@example.com", "password": "newpassword456"})
 
         assert login_response.status_code == 200
 
@@ -297,9 +289,7 @@ class TestAuthAPI(BaseTest):
         """Test password change with wrong current password."""
         # Register and login user
         client.post("/auth/register", json=sample_user_data)
-        login_response = client.post(
-            "/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"}
-        )
+        login_response = client.post("/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"})
 
         access_token = login_response.json()["access_token"]
 
@@ -324,9 +314,7 @@ class TestAuthAPI(BaseTest):
         """Test password change with invalid data."""
         # Register and login user
         client.post("/auth/register", json=sample_user_data)
-        login_response = client.post(
-            "/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"}
-        )
+        login_response = client.post("/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"})
 
         access_token = login_response.json()["access_token"]
 
@@ -342,9 +330,7 @@ class TestAuthAPI(BaseTest):
         """Test successful user logout via API."""
         # Register and login user
         client.post("/auth/register", json=sample_user_data)
-        login_response = client.post(
-            "/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"}
-        )
+        login_response = client.post("/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"})
 
         access_token = login_response.json()["access_token"]
 
@@ -384,9 +370,7 @@ class TestAuthAPI(BaseTest):
         assert register_response.status_code == 200
 
         # 2. Login user
-        login_response = client.post(
-            "/auth/login", json={"email_or_username": "flow@example.com", "password": "password123"}
-        )
+        login_response = client.post("/auth/login", json={"email_or_username": "flow@example.com", "password": "password123"})
         assert login_response.status_code == 200
 
         login_data = login_response.json()
@@ -430,9 +414,7 @@ class TestAuthAPI(BaseTest):
         assert password_response.status_code == 200
 
         # 7. Login with new password
-        new_login_response = client.post(
-            "/auth/login", json={"email_or_username": "flow@example.com", "password": "newpassword456"}
-        )
+        new_login_response = client.post("/auth/login", json={"email_or_username": "flow@example.com", "password": "newpassword456"})
         assert new_login_response.status_code == 200
 
         # 8. Logout
@@ -463,9 +445,7 @@ class TestAuthAPI(BaseTest):
         # Multiple rapid requests should not cause 429 (rate limit) in test environment
         # since Redis is mocked
         for _ in range(5):
-            response = client.post(
-                "/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"}
-            )
+            response = client.post("/auth/login", json={"email_or_username": "test@example.com", "password": "securepassword123"})
             # Should get 401 (invalid credentials) or 200 (if user exists)
             assert response.status_code in [200, 401]
 

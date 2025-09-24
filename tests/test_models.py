@@ -68,9 +68,7 @@ class TestModels(BaseTest):
         # Create agent record and versions
         agent_record, version1 = self.setup_complete_agent(db_session, "test-agent-123")
 
-        self.create_test_agent_version(
-            db_session, "test-agent-123", id="version-2", version="2.0.0", card_json={"name": "Test Agent v2"}
-        )
+        self.create_test_agent_version(db_session, "test-agent-123", id="version-2", version="2.0.0", card_json={"name": "Test Agent v2"})
 
         # Test relationships
         versions = db_session.query(AgentVersion).filter_by(agent_id="test-agent-123").all()
@@ -115,17 +113,13 @@ class TestModels(BaseTest):
         # Test different scopes
         scopes = ["view", "use", "admin"]
         for scope in scopes:
-            entitlement = self.create_test_entitlement(
-                db_session, agent_id=f"test-agent-{scope}", id=f"entitlement-{scope}", scope=scope
-            )
+            entitlement = self.create_test_entitlement(db_session, agent_id=f"test-agent-{scope}", id=f"entitlement-{scope}", scope=scope)
             assert entitlement.scope == scope
 
     def test_agent_record_constraints(self, db_session):
         """Test AgentRecord field constraints."""
         # Test required fields - this should succeed with all required fields
-        agent_record = AgentRecord(
-            id="test-agent-id", tenant_id="default", publisher_id="test-publisher", agent_key="test-key"
-        )
+        agent_record = AgentRecord(id="test-agent-id", tenant_id="default", publisher_id="test-publisher", agent_key="test-key")
         db_session.add(agent_record)
         db_session.commit()
 

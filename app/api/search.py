@@ -45,9 +45,7 @@ def search_agents(body: SearchBody, payload: dict = Depends(require_oauth)) -> D
 
         # Validate input parameters
         if body.top < 1 or body.top > 100:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="top parameter must be between 1 and 100"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="top parameter must be between 1 and 100")
 
         if body.skip < 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="skip parameter must be non-negative")
@@ -100,9 +98,7 @@ def search_agents(body: SearchBody, payload: dict = Depends(require_oauth)) -> D
         raise
     except Exception as e:
         logger.error(f"Unexpected error in search endpoint: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error during search"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error during search")
 
 
 def _generate_cache_key(tenant: str, body: SearchBody) -> str:

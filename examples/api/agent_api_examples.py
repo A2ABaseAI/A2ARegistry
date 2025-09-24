@@ -68,9 +68,7 @@ class A2ARegistryClient:
             print(f"Request Error authenticating user: {e}")
             raise
 
-    def register_user(
-        self, username: str, email: str, password: str, full_name: Optional[str] = None, tenant_id: str = "default"
-    ) -> Dict[str, Any]:
+    def register_user(self, username: str, email: str, password: str, full_name: Optional[str] = None, tenant_id: str = "default") -> Dict[str, Any]:
         """Register a new user."""
         url = f"{self.base_url}/auth/register"
         payload = {
@@ -389,9 +387,7 @@ def setup_authentication(client: A2ARegistryClient) -> bool:
 
     print("\n1. Registering user for agent examples...")
     try:
-        user_data = client.register_user(
-            username=username, email=email, password=password, full_name="Agent Example User", tenant_id="default"
-        )
+        user_data = client.register_user(username=username, email=email, password=password, full_name="Agent Example User", tenant_id="default")
         print("✓ User registered successfully!")
         print(f"  User ID: {user_data.get('id')}")
         print(f"  Username: {user_data.get('username')}")

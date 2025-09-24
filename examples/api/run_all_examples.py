@@ -45,9 +45,7 @@ class ExampleRunner:
 
         try:
             # Run the script
-            result = subprocess.run(
-                [sys.executable, script_path], capture_output=True, text=True, timeout=300  # 5 minute timeout
-            )
+            result = subprocess.run([sys.executable, script_path], capture_output=True, text=True, timeout=300)  # 5 minute timeout
 
             duration = time.time() - start_time
 

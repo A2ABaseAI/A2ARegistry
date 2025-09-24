@@ -34,12 +34,7 @@ def main():
     # Initialize the client with READ scope for basic operations
     # Note: Regular users with "User" role can only request "read" scope
     # For publishing agents, you need "CatalogManager" or "Administrator" role
-    client = A2AClient(
-        registry_url=registry_url,
-        client_id=client_id,
-        client_secret=client_secret,
-        scope="read"  # User role only allows read operations
-    )
+    client = A2AClient(registry_url=registry_url, client_id=client_id, client_secret=client_secret, scope="read")  # User role only allows read operations
 
     # Authenticate with OAuth
     try:
@@ -57,7 +52,7 @@ def main():
         # List public agents (read operation)
         print("📋 Listing public agents...")
         agents_response = client.list_agents(page=1, limit=10)
-        agents = agents_response.get('items', [])
+        agents = agents_response.get("items", [])
         print("✓ Found {len(agents)} public agents")
 
         if agents:
@@ -72,7 +67,7 @@ def main():
             print("🔍 Testing agent access...")
             try:
                 first_agent = agents[0]
-                agent_details = client.get_agent(first_agent['id'])
+                agent_details = client.get_agent(first_agent["id"])
                 print(f"✓ Successfully accessed agent: {agent_details.name}")
                 print(f"  - Version: {agent_details.version}")
                 print(f"  - Public: {'Yes' if agent_details.is_public else 'No'}")
@@ -96,6 +91,7 @@ def main():
     except Exception as e:
         print(f"✗ Operation failed: {e}")
         import traceback
+
         traceback.print_exc()
 
     finally:

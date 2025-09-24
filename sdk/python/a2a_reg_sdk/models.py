@@ -503,14 +503,9 @@ class InputSchemaBuilder:
     """Builder class for creating input schemas."""
 
     def __init__(self):
-        self._schema: Dict[str, Any] = {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
+        self._schema: Dict[str, Any] = {"type": "object", "properties": {}, "required": []}
 
-    def add_property(self, name: str, property_type: str, description: Optional[str] = None,
-                     required: bool = False, **kwargs) -> "InputSchemaBuilder":
+    def add_property(self, name: str, property_type: str, description: Optional[str] = None, required: bool = False, **kwargs) -> "InputSchemaBuilder":
         """Add a property to the schema."""
         prop = {"type": property_type}
         if description:
@@ -527,9 +522,15 @@ class InputSchemaBuilder:
 
         return self
 
-    def add_string_property(self, name: str, description: Optional[str] = None,
-                            required: bool = False, min_length: Optional[int] = None,
-                            max_length: Optional[int] = None, pattern: Optional[str] = None) -> "InputSchemaBuilder":
+    def add_string_property(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        required: bool = False,
+        min_length: Optional[int] = None,
+        max_length: Optional[int] = None,
+        pattern: Optional[str] = None,
+    ) -> "InputSchemaBuilder":
         """Add a string property."""
         kwargs: Dict[str, Any] = {}
         if min_length is not None:
@@ -541,9 +542,9 @@ class InputSchemaBuilder:
 
         return self.add_property(name, "string", description, required, **kwargs)
 
-    def add_number_property(self, name: str, description: Optional[str] = None,
-                            required: bool = False, minimum: Optional[float] = None,
-                            maximum: Optional[float] = None) -> "InputSchemaBuilder":
+    def add_number_property(
+        self, name: str, description: Optional[str] = None, required: bool = False, minimum: Optional[float] = None, maximum: Optional[float] = None
+    ) -> "InputSchemaBuilder":
         """Add a number property."""
         kwargs = {}
         if minimum is not None:
@@ -553,9 +554,9 @@ class InputSchemaBuilder:
 
         return self.add_property(name, "number", description, required, **kwargs)
 
-    def add_integer_property(self, name: str, description: Optional[str] = None,
-                             required: bool = False, minimum: Optional[int] = None,
-                             maximum: Optional[int] = None) -> "InputSchemaBuilder":
+    def add_integer_property(
+        self, name: str, description: Optional[str] = None, required: bool = False, minimum: Optional[int] = None, maximum: Optional[int] = None
+    ) -> "InputSchemaBuilder":
         """Add an integer property."""
         kwargs = {}
         if minimum is not None:
@@ -565,14 +566,19 @@ class InputSchemaBuilder:
 
         return self.add_property(name, "integer", description, required, **kwargs)
 
-    def add_boolean_property(self, name: str, description: Optional[str] = None,
-                             required: bool = False) -> "InputSchemaBuilder":
+    def add_boolean_property(self, name: str, description: Optional[str] = None, required: bool = False) -> "InputSchemaBuilder":
         """Add a boolean property."""
         return self.add_property(name, "boolean", description, required)
 
-    def add_array_property(self, name: str, item_type: str, description: Optional[str] = None,
-                           required: bool = False, min_items: Optional[int] = None,
-                           max_items: Optional[int] = None) -> "InputSchemaBuilder":
+    def add_array_property(
+        self,
+        name: str,
+        item_type: str,
+        description: Optional[str] = None,
+        required: bool = False,
+        min_items: Optional[int] = None,
+        max_items: Optional[int] = None,
+    ) -> "InputSchemaBuilder":
         """Add an array property."""
         kwargs: Dict[str, Any] = {"items": {"type": item_type}}
         if min_items is not None:
@@ -582,8 +588,7 @@ class InputSchemaBuilder:
 
         return self.add_property(name, "array", description, required, **kwargs)
 
-    def add_object_property(self, name: str, properties: Dict[str, Any],
-                            description: Optional[str] = None, required: bool = False) -> "InputSchemaBuilder":
+    def add_object_property(self, name: str, properties: Dict[str, Any], description: Optional[str] = None, required: bool = False) -> "InputSchemaBuilder":
         """Add an object property."""
         return self.add_property(name, "object", description, required, properties=properties)
 
@@ -607,14 +612,9 @@ class OutputSchemaBuilder:
     """Builder class for creating output schemas."""
 
     def __init__(self):
-        self._schema: Dict[str, Any] = {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
+        self._schema: Dict[str, Any] = {"type": "object", "properties": {}, "required": []}
 
-    def add_property(self, name: str, property_type: str, description: Optional[str] = None,
-                     required: bool = False, **kwargs) -> "OutputSchemaBuilder":
+    def add_property(self, name: str, property_type: str, description: Optional[str] = None, required: bool = False, **kwargs) -> "OutputSchemaBuilder":
         """Add a property to the schema."""
         prop = {"type": property_type}
         if description:
@@ -631,9 +631,9 @@ class OutputSchemaBuilder:
 
         return self
 
-    def add_string_property(self, name: str, description: Optional[str] = None,
-                            required: bool = False, min_length: Optional[int] = None,
-                            max_length: Optional[int] = None) -> "OutputSchemaBuilder":
+    def add_string_property(
+        self, name: str, description: Optional[str] = None, required: bool = False, min_length: Optional[int] = None, max_length: Optional[int] = None
+    ) -> "OutputSchemaBuilder":
         """Add a string property."""
         kwargs = {}
         if min_length is not None:
@@ -643,9 +643,9 @@ class OutputSchemaBuilder:
 
         return self.add_property(name, "string", description, required, **kwargs)
 
-    def add_number_property(self, name: str, description: Optional[str] = None,
-                            required: bool = False, minimum: Optional[float] = None,
-                            maximum: Optional[float] = None) -> "OutputSchemaBuilder":
+    def add_number_property(
+        self, name: str, description: Optional[str] = None, required: bool = False, minimum: Optional[float] = None, maximum: Optional[float] = None
+    ) -> "OutputSchemaBuilder":
         """Add a number property."""
         kwargs = {}
         if minimum is not None:
@@ -655,9 +655,9 @@ class OutputSchemaBuilder:
 
         return self.add_property(name, "number", description, required, **kwargs)
 
-    def add_integer_property(self, name: str, description: Optional[str] = None,
-                             required: bool = False, minimum: Optional[int] = None,
-                             maximum: Optional[int] = None) -> "OutputSchemaBuilder":
+    def add_integer_property(
+        self, name: str, description: Optional[str] = None, required: bool = False, minimum: Optional[int] = None, maximum: Optional[int] = None
+    ) -> "OutputSchemaBuilder":
         """Add an integer property."""
         kwargs = {}
         if minimum is not None:
@@ -667,14 +667,19 @@ class OutputSchemaBuilder:
 
         return self.add_property(name, "integer", description, required, **kwargs)
 
-    def add_boolean_property(self, name: str, description: Optional[str] = None,
-                             required: bool = False) -> "OutputSchemaBuilder":
+    def add_boolean_property(self, name: str, description: Optional[str] = None, required: bool = False) -> "OutputSchemaBuilder":
         """Add a boolean property."""
         return self.add_property(name, "boolean", description, required)
 
-    def add_array_property(self, name: str, item_type: str, description: Optional[str] = None,
-                           required: bool = False, min_items: Optional[int] = None,
-                           max_items: Optional[int] = None) -> "OutputSchemaBuilder":
+    def add_array_property(
+        self,
+        name: str,
+        item_type: str,
+        description: Optional[str] = None,
+        required: bool = False,
+        min_items: Optional[int] = None,
+        max_items: Optional[int] = None,
+    ) -> "OutputSchemaBuilder":
         """Add an array property."""
         kwargs: Dict[str, Any] = {"items": {"type": item_type}}
         if min_items is not None:
@@ -684,8 +689,7 @@ class OutputSchemaBuilder:
 
         return self.add_property(name, "array", description, required, **kwargs)
 
-    def add_object_property(self, name: str, properties: Dict[str, Any],
-                            description: Optional[str] = None, required: bool = False) -> "OutputSchemaBuilder":
+    def add_object_property(self, name: str, properties: Dict[str, Any], description: Optional[str] = None, required: bool = False) -> "OutputSchemaBuilder":
         """Add an object property."""
         return self.add_property(name, "object", description, required, properties=properties)
 

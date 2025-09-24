@@ -199,19 +199,9 @@ class AgentPublisher:
             .build()
         )
 
-        auth_schemes = [
-            AuthSchemeBuilder("api_key")
-            .description("API key authentication")
-            .required(True)
-            .header_name("X-API-Key")
-            .build()
-        ]
+        auth_schemes = [AuthSchemeBuilder("api_key").description("API key authentication").required(True).header_name("X-API-Key").build()]
 
-        tee_details = (
-            AgentTeeDetailsBuilder()
-            .enabled(False)
-            .build()
-        )
+        tee_details = AgentTeeDetailsBuilder().enabled(False).build()
 
         # Create input and output schemas using builders
         input_schema = (

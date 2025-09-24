@@ -34,9 +34,7 @@ class UserLogin(BaseModel):
     email_or_username: str = Field(..., description="Email address or username")
     password: str = Field(..., description="User password")
 
-    model_config = ConfigDict(
-        json_schema_extra={"example": {"email_or_username": "john.doe@example.com", "password": "securepassword123"}}
-    )
+    model_config = ConfigDict(json_schema_extra={"example": {"email_or_username": "john.doe@example.com", "password": "securepassword123"}})
 
 
 class TokenResponse(BaseModel):
@@ -107,9 +105,7 @@ class PasswordChange(BaseModel):
     current_password: str = Field(..., description="Current password")
     new_password: str = Field(..., min_length=8, description="New password")
 
-    model_config = ConfigDict(
-        json_schema_extra={"example": {"current_password": "oldpassword123", "new_password": "newpassword456"}}
-    )
+    model_config = ConfigDict(json_schema_extra={"example": {"current_password": "oldpassword123", "new_password": "newpassword456"}})
 
 
 class TokenRefresh(BaseModel):
@@ -117,9 +113,7 @@ class TokenRefresh(BaseModel):
 
     refresh_token: str = Field(..., description="Refresh token")
 
-    model_config = ConfigDict(
-        json_schema_extra={"example": {"refresh_token": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"}}
-    )
+    model_config = ConfigDict(json_schema_extra={"example": {"refresh_token": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"}})
 
 
 class UserInvitation(BaseModel):
@@ -181,6 +175,4 @@ class PasswordResetConfirm(BaseModel):
     token: str = Field(..., description="Password reset token")
     new_password: str = Field(..., min_length=8, description="New password")
 
-    model_config = ConfigDict(
-        json_schema_extra={"example": {"token": "reset-token-123", "new_password": "newpassword456"}}
-    )
+    model_config = ConfigDict(json_schema_extra={"example": {"token": "reset-token-123", "new_password": "newpassword456"}})

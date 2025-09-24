@@ -51,15 +51,11 @@ class CardService:
             # Validate content type
             ctype = resp.headers.get("content-type", "")
             if "application/json" not in ctype:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="cardUrl must return application/json"
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="cardUrl must return application/json")
 
             # Limit payload size to 256KB
             if resp.content and len(resp.content) > 256 * 1024:
-                raise HTTPException(
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Card exceeds size limit"
-                )
+                raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Card exceeds size limit")
 
             card_data = resp.json()
             logger.debug(f"Successfully fetched card from URL: {card_url}")

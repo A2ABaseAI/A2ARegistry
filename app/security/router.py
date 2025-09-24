@@ -106,10 +106,7 @@ async def create_api_key(
         )
     except Exception as exc:  # pragma: no cover - defensive guard
         logger.error("Failed to create API key", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create API key"
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create API key") from exc
 
 
 @router.post("/api-keys/validate", response_model=ApiKeyInfoResponse)

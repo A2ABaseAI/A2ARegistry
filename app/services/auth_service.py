@@ -77,11 +77,7 @@ class AuthService:
         """Authenticate user and return user object."""
         try:
             # Find user by email or username
-            user = (
-                self.db.query(User)
-                .filter((User.email == login_data.email_or_username) | (User.username == login_data.email_or_username))
-                .first()
-            )
+            user = self.db.query(User).filter((User.email == login_data.email_or_username) | (User.username == login_data.email_or_username)).first()
 
             if not user:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
@@ -138,9 +134,7 @@ class AuthService:
             raise
         except Exception as e:
             logger.error(f"Failed to get user profile: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve user profile"
-            )
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve user profile")
 
     def change_password(self, user_id: str, password_data: PasswordChange) -> bool:
         """Change user password."""
@@ -193,9 +187,7 @@ class AuthService:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
 
             # Create new access token
-            new_token = create_access_token(
-                user_id=user.id, username=user.username, email=user.email, roles=user.roles, tenant_id=user.tenant_id
-            )
+            new_token = create_access_token(user_id=user.id, username=user.username, email=user.email, roles=user.roles, tenant_id=user.tenant_id)
 
             logger.info(f"Token refreshed for user: {user.username}")
             return new_token
@@ -210,9 +202,7 @@ class AuthService:
         """Logout user and invalidate all sessions."""
         try:
             # Invalidate all sessions for the user
-            sessions = (
-                self.db.query(UserSession).filter(UserSession.user_id == user_id, UserSession.is_active.is_(True)).all()
-            )
+            sessions = self.db.query(UserSession).filter(UserSession.user_id == user_id, UserSession.is_active.is_(True)).all()
 
             for session in sessions:
                 session.is_active = False
@@ -233,8 +223,11 @@ class AuthService:
         try:
             # Create access token
             access_token = create_access_token(
-                user_id=str(user.id), username=str(user.username), email=str(user.email),
-                roles=list(user.roles) if user.roles else [], tenant_id=str(user.tenant_id)
+                user_id=str(user.id),
+                username=str(user.username),
+                email=str(user.email),
+                roles=list(user.roles) if user.roles else [],
+                tenant_id=str(user.tenant_id),
             )
 
             # Create session
@@ -260,9 +253,7 @@ class AuthService:
 
         except Exception as e:
             logger.error(f"Failed to create login response: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login response creation failed"
-            )
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login response creation failed")
 
     def create_refresh_response(self, new_access_token: str, refresh_token: str) -> TokenResponse:
         """Create a token refresh response."""
@@ -289,6 +280,4 @@ class AuthService:
 
         except Exception as e:
             logger.error(f"Failed to create refresh response: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Refresh response creation failed"
-            )
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Refresh response creation failed")

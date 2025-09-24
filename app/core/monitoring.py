@@ -147,11 +147,7 @@ class HealthChecker:
         redis_health = await self.check_redis()
         es_health = await self.check_elasticsearch()
 
-        overall_status = (
-            "healthy"
-            if all(health["status"] == "healthy" for health in [db_health, redis_health, es_health])
-            else "unhealthy"
-        )
+        overall_status = "healthy" if all(health["status"] == "healthy" for health in [db_health, redis_health, es_health]) else "unhealthy"
 
         return {
             "status": overall_status,

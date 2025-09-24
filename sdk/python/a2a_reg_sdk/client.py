@@ -161,15 +161,17 @@ class A2AClient:
                 # Convert from AgentSkills format
                 examples = agent_skills.get("examples", [])
                 if examples:
-                    skills.append({
-                        "id": "main_skill",
-                        "name": "Main Skill",
-                        "description": agent_dict.get("description", "Agent skill"),
-                        "tags": agent_dict.get("tags", []),
-                        "examples": examples,
-                        "inputModes": ["text/plain"],
-                        "outputModes": ["text/plain"],
-                    })
+                    skills.append(
+                        {
+                            "id": "main_skill",
+                            "name": "Main Skill",
+                            "description": agent_dict.get("description", "Agent skill"),
+                            "tags": agent_dict.get("tags", []),
+                            "examples": examples,
+                            "inputModes": ["text/plain"],
+                            "outputModes": ["text/plain"],
+                        }
+                    )
             elif isinstance(agent_skills, list):
                 skills = agent_skills
 
@@ -182,10 +184,7 @@ class A2AClient:
 
         # Add additional interfaces if location_url is provided
         if agent_dict.get("location_url"):
-            interface["additionalInterfaces"] = [{
-                "transport": "http",
-                "url": agent_dict["location_url"]
-            }]
+            interface["additionalInterfaces"] = [{"transport": "http", "url": agent_dict["location_url"]}]
 
         # Build the card spec
         card_spec = {
@@ -391,10 +390,7 @@ class A2AClient:
             card_data = self._convert_to_card_spec(agent_dict)
 
             # Format the request body according to the API spec
-            request_body = {
-                "public": agent_dict.get("is_public", True),
-                "card": card_data
-            }
+            request_body = {"public": agent_dict.get("is_public", True), "card": card_data}
 
             response = self.session.post(
                 urljoin(self.registry_url, "/agents/publish"),
@@ -488,16 +484,9 @@ class A2AClient:
         self._ensure_authenticated()
 
         try:
-            payload = {
-                "scopes": scopes,
-                "expires_days": expires_days
-            }
+            payload = {"scopes": scopes, "expires_days": expires_days}
 
-            response = self.session.post(
-                urljoin(self.registry_url, "/security/api-keys"),
-                json=payload,
-                timeout=self.timeout
-            )
+            response = self.session.post(urljoin(self.registry_url, "/security/api-keys"), json=payload, timeout=self.timeout)
 
             response_data = self._handle_response(response)
 
@@ -506,15 +495,13 @@ class A2AClient:
                 "key_id": response_data["key_id"],
                 "scopes": response_data["scopes"],
                 "created_at": response_data["created_at"],
-                "expires_at": response_data.get("expires_at")
+                "expires_at": response_data.get("expires_at"),
             }
 
         except Exception as e:
             raise A2AError(f"Failed to generate API key: {e}")
 
-    def generate_api_key_and_authenticate(
-        self, scopes: List[str], expires_days: Optional[int] = None
-    ) -> tuple[str, Dict[str, Any]]:
+    def generate_api_key_and_authenticate(self, scopes: List[str], expires_days: Optional[int] = None) -> tuple[str, Dict[str, Any]]:
         """
         Generate a new API key and automatically authenticate the client with it.
 
@@ -552,16 +539,9 @@ class A2AClient:
             Key info dict if valid, None if invalid
         """
         try:
-            payload = {
-                "api_key": api_key,
-                "required_scopes": required_scopes
-            }
+            payload = {"api_key": api_key, "required_scopes": required_scopes}
 
-            response = self.session.post(
-                urljoin(self.registry_url, "/security/api-keys/validate"),
-                json=payload,
-                timeout=self.timeout
-            )
+            response = self.session.post(urljoin(self.registry_url, "/security/api-keys/validate"), json=payload, timeout=self.timeout)
 
             if response.status_code == 401:
                 return None
@@ -586,10 +566,7 @@ class A2AClient:
         self._ensure_authenticated()
 
         try:
-            response = self.session.delete(
-                urljoin(self.registry_url, f"/security/api-keys/{key_id}"),
-                timeout=self.timeout
-            )
+            response = self.session.delete(urljoin(self.registry_url, f"/security/api-keys/{key_id}"), timeout=self.timeout)
 
             if response.status_code == 404:
                 return False
@@ -616,11 +593,7 @@ class A2AClient:
         try:
             params = {"active_only": active_only}
 
-            response = self.session.get(
-                urljoin(self.registry_url, "/security/api-keys"),
-                params=params,
-                timeout=self.timeout
-            )
+            response = self.session.get(urljoin(self.registry_url, "/security/api-keys"), params=params, timeout=self.timeout)
 
             return self._handle_response(response)  # type: ignore[no-any-return]
 

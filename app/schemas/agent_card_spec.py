@@ -16,13 +16,9 @@ class AgentCapabilities(BaseModel):
     """Agent Capabilities Object - Optional capabilities supported by the Agent."""
 
     streaming: Optional[bool] = Field(None, description="If the Agent supports Server-Sent Events (SSE)")
-    pushNotifications: Optional[bool] = Field(
-        None, description="If the Agent can push update notifications to the client"
-    )
+    pushNotifications: Optional[bool] = Field(None, description="If the Agent can push update notifications to the client")
     stateTransitionHistory: Optional[bool] = Field(None, description="If the Agent exposes task state change history")
-    supportsAuthenticatedExtendedCard: Optional[bool] = Field(
-        None, description="If the Agent supports authenticated extended card retrieval"
-    )
+    supportsAuthenticatedExtendedCard: Optional[bool] = Field(None, description="If the Agent supports authenticated extended card retrieval")
 
 
 class SecurityScheme(BaseModel):
@@ -53,9 +49,7 @@ class AgentInterface(BaseModel):
     """Agent Interface Object - Transport and interaction capabilities."""
 
     preferredTransport: str = Field(..., description="Preferred transport protocol")
-    additionalInterfaces: Optional[List[Dict[str, Any]]] = Field(
-        None, description="Additional transport interfaces supported"
-    )
+    additionalInterfaces: Optional[List[Dict[str, Any]]] = Field(None, description="Additional transport interfaces supported")
     defaultInputModes: List[str] = Field(..., description="Supported input MIME types")
     defaultOutputModes: List[str] = Field(..., description="Supported output MIME types")
 
@@ -79,31 +73,20 @@ class AgentCardSpec(BaseModel):
 
     # A2A Protocol objects
     provider: Optional[AgentProvider] = Field(None, description="Agent Provider Object - Service provider information")
-    capabilities: AgentCapabilities = Field(
-        ..., description="Agent Capabilities Object - Optional capabilities supported"
-    )
-    securitySchemes: List[SecurityScheme] = Field(
-        ..., description="Security Scheme Objects - Authentication requirements"
-    )
+    capabilities: AgentCapabilities = Field(..., description="Agent Capabilities Object - Optional capabilities supported")
+    securitySchemes: List[SecurityScheme] = Field(..., description="Security Scheme Objects - Authentication requirements")
     skills: List[AgentSkill] = Field(..., description="Agent Skill Objects - Collection of capability units")
-    interface: AgentInterface = Field(
-        ..., description="Agent Interface Object - Transport and interaction capabilities"
-    )
+    interface: AgentInterface = Field(..., description="Agent Interface Object - Transport and interaction capabilities")
 
     # Optional fields
     documentationUrl: Optional[HttpUrl] = Field(None, description="URL for the Agent's documentation")
-    signature: Optional[AgentCardSignature] = Field(
-        None, description="Agent Card Signature Object - Digital signature information"
-    )
+    signature: Optional[AgentCardSignature] = Field(None, description="Agent Card Signature Object - Digital signature information")
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "name": "Recipe Agent",
-                "description": (
-                    "An AI agent that helps users find and create recipes "
-                    "based on available ingredients and dietary preferences"
-                ),
+                "description": ("An AI agent that helps users find and create recipes " "based on available ingredients and dietary preferences"),
                 "url": "https://recipe-agent.example.com",
                 "version": "1.0.0",
                 "provider": {"organization": "Culinary AI Solutions", "url": "https://culinary-ai.com"},
