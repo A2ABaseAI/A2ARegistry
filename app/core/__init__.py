@@ -1,5 +1,6 @@
 """Core production utilities."""
 
+from ..security.middleware import RateLimitMiddleware, RequestSizeLimitMiddleware
 from .caching import AgentCache, CacheManager, CacheWarmer
 from .exceptions import (
     A2ARegistryException,
@@ -18,7 +19,6 @@ from .exceptions import (
 )
 from .logging import RequestLoggingMiddleware, get_logger, setup_logging
 from .monitoring import HealthChecker, MetricsCollector, MetricsMiddleware
-from ..security.middleware import RateLimitMiddleware, RequestSizeLimitMiddleware
 
 __all__ = [
     "setup_logging",

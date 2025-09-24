@@ -5,11 +5,10 @@ import os
 from typing import Any, Optional, Tuple
 
 from fastapi import Request, Response, status
-
-from .jwt import verify_access_token
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from ..config import settings
+from .jwt import verify_access_token
 
 logger = logging.getLogger(__name__)
 

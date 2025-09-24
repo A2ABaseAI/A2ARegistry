@@ -101,8 +101,8 @@ class BaseTest:
     @pytest.fixture
     def mock_auth(self):
         """Mock authentication dependency."""
-        from app.security import require_oauth
         from app.main import app
+        from app.security import require_oauth
 
         def mock_require_oauth():
             return {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": ["Administrator"]}

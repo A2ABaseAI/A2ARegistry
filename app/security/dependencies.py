@@ -1,7 +1,7 @@
 """FastAPI dependencies for authentication and authorization."""
 
-import secrets
 import hashlib
+import secrets
 from typing import Any, Dict, Optional
 
 from fastapi import Depends, HTTPException, status

@@ -7,9 +7,9 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from ..security import extract_context, require_oauth
 from ..core.caching import CacheManager
 from ..core.logging import get_logger
+from ..security import extract_context, require_oauth
 from ..services.registry_service import RegistryService
 from ..services.search_index import SearchIndex
 

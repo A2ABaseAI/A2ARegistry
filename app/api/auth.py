@@ -1,13 +1,14 @@
 """Authentication endpoints for user registration, login, token management, and API key generation."""
 
-import secrets
 import hashlib
+import secrets
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi import APIRouter, Depends, Form, HTTPException, status
+
 from ..core.logging import get_logger
-from ..security import extract_context, require_oauth, require_roles
 from ..schemas.auth import PasswordChange, TokenRefresh, TokenResponse, UserLogin, UserProfile, UserRegistration
+from ..security import extract_context, require_oauth, require_roles
 from ..services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -203,9 +204,9 @@ def oauth_token(grant_type: str = Form("client_credentials"), client_id: str = F
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="client_id and client_secret are required")
 
         # Production implementation: Validate client credentials against database
-        from ..security import create_access_token, verify_password
         from ..database import SessionLocal
         from ..models.user import User
+        from ..security import create_access_token, verify_password
 
         db = SessionLocal()
         try:

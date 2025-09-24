@@ -6,10 +6,10 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 
 from ..core.logging import get_logger
-from ..security import create_access_token, hash_password, verify_password, verify_access_token
 from ..database import SessionLocal
 from ..models.user import User, UserSession
 from ..schemas.auth import PasswordChange, TokenResponse, UserLogin, UserProfile, UserRegistration
+from ..security import create_access_token, hash_password, verify_access_token, verify_password
 
 
 def _get_db_session():

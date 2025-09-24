@@ -5,9 +5,9 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, HttpUrl
 
-from ..security import extract_context, require_oauth, require_roles
 from ..core.caching import AgentCache, CacheManager
 from ..core.logging import get_logger
+from ..security import extract_context, require_oauth, require_roles
 from ..services.agent_service import AgentService
 from ..services.card_service import CardService
 from ..services.registry_service import RegistryService

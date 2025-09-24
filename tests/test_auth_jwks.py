@@ -5,9 +5,9 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app.security import extract_context, require_oauth
 from app.database import get_db
 from app.main import app
+from app.security import extract_context, require_oauth
 
 from .base_test import BaseTest
 

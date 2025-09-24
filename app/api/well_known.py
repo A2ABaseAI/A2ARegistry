@@ -4,8 +4,8 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from ..security import extract_context, require_oauth
 from ..core.logging import get_logger
+from ..security import extract_context, require_oauth
 from ..services.registry_service import RegistryService
 
 logger = get_logger(__name__)

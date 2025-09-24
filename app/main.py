@@ -10,8 +10,6 @@ from opensearchpy import OpenSearch
 
 from .api import agents, auth, health, well_known
 from .api.search import router as search_router
-from .security import RateLimitMiddleware, RequestSizeLimitMiddleware
-from .security.router import router as security_router
 from .config import settings
 from .core import (
     MetricsMiddleware,
@@ -23,6 +21,8 @@ from .core import (
 from .core.otel import setup_tracing
 from .database import SessionLocal, create_tables
 from .models.tenant import Tenant
+from .security import RateLimitMiddleware, RequestSizeLimitMiddleware
+from .security.router import router as security_router
 from .services.search_index import SearchIndex
 
 logger = get_logger(__name__)
