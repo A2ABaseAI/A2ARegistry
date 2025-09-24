@@ -1,11 +1,11 @@
-"""Tests for app/auth_jwks.py - JWT authentication and authorization."""
+"""Tests for consolidated security utilities."""
 
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.auth_jwks import extract_context, require_oauth
+from app.security import extract_context, require_oauth
 from app.database import get_db
 from app.main import app
 
@@ -82,7 +82,7 @@ class TestAuthJWKS(BaseTest):
 
     def test_require_roles_success(self):
         """Test require_roles with valid roles."""
-        from app.auth_jwks import require_roles
+        from app.security import require_roles
 
         # Mock payload with Administrator role
         mock_payload = {
@@ -96,7 +96,7 @@ class TestAuthJWKS(BaseTest):
         role_dep = require_roles("Administrator")
 
         # Mock the require_oauth dependency to return our mock payload
-        with patch("app.auth_jwks.require_oauth", return_value=mock_payload):
+        with patch("app.security.require_oauth", return_value=mock_payload):
             # Call the dependency function
             result = role_dep(mock_payload)
 
@@ -107,7 +107,7 @@ class TestAuthJWKS(BaseTest):
 
         # Test with multiple roles - user has one of the required roles
         role_dep_multi = require_roles("Administrator", "CatalogManager")
-        with patch("app.auth_jwks.require_oauth", return_value=mock_payload):
+        with patch("app.security.require_oauth", return_value=mock_payload):
             result = role_dep_multi(mock_payload)
             assert result["roles"] == ["Administrator"]
 
@@ -119,7 +119,7 @@ class TestAuthJWKS(BaseTest):
             "roles": ["CatalogManager"],
         }
 
-        with patch("app.auth_jwks.require_oauth", return_value=mock_payload_catalog):
+        with patch("app.security.require_oauth", return_value=mock_payload_catalog):
             result = role_dep_multi(mock_payload_catalog)
             assert result["roles"] == ["CatalogManager"]
 
@@ -127,7 +127,7 @@ class TestAuthJWKS(BaseTest):
         """Test require_roles with insufficient permissions."""
         from fastapi import HTTPException
 
-        from app.auth_jwks import require_roles
+        from app.security import require_roles
 
         # Mock payload with insufficient role
         mock_payload = {
@@ -141,19 +141,19 @@ class TestAuthJWKS(BaseTest):
         role_dep = require_roles("Administrator")
 
         # Mock the require_oauth dependency to return our mock payload
-        with patch("app.auth_jwks.require_oauth", return_value=mock_payload):
+        with patch("app.security.require_oauth", return_value=mock_payload):
             # This should raise HTTPException with 403 status
             with pytest.raises(HTTPException) as exc_info:
                 role_dep(mock_payload)
 
             # Verify the exception details
             assert exc_info.value.status_code == 403
-            assert "Insufficient role" in str(exc_info.value.detail)
+            assert "Insufficient permissions" in str(exc_info.value.detail)
 
         # Test with empty roles
         mock_payload_no_roles = {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": []}
 
-        with patch("app.auth_jwks.require_oauth", return_value=mock_payload_no_roles):
+        with patch("app.security.require_oauth", return_value=mock_payload_no_roles):
             with pytest.raises(HTTPException) as exc_info:
                 role_dep(mock_payload_no_roles)
 
@@ -162,7 +162,7 @@ class TestAuthJWKS(BaseTest):
         # Test with None roles
         mock_payload_none_roles = {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": None}
 
-        with patch("app.auth_jwks.require_oauth", return_value=mock_payload_none_roles):
+        with patch("app.security.require_oauth", return_value=mock_payload_none_roles):
             with pytest.raises(HTTPException) as exc_info:
                 role_dep(mock_payload_none_roles)
 

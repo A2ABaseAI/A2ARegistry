@@ -5,7 +5,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, HttpUrl
 
-from ..auth_jwks import extract_context, require_oauth, require_roles
+from ..security import extract_context, require_oauth, require_roles
 from ..core.caching import AgentCache, CacheManager
 from ..core.logging import get_logger
 from ..services.agent_service import AgentService
@@ -15,6 +15,12 @@ from ..services.registry_service import RegistryService
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/agents", tags=["agents"])
+
+
+def _log_and_return_card(card_dict: Dict[str, Any], agent_id: str) -> Dict[str, Any]:
+    """Log success and return card data."""
+    logger.debug(f"Successfully retrieved card for agent {agent_id}")
+    return card_dict
 
 
 class PublishByUrl(BaseModel):
@@ -39,7 +45,7 @@ def public_agents(top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0)
     default_response = {
         "items": [],
         "count": 0,
-        "next": f"/agents/public?skip={skip+top}&top={top}",
+        "next": f"/agents/public?skip={skip + top}&top={top}",
     }
 
     # Try to get cached data first
@@ -49,7 +55,7 @@ def public_agents(top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0)
         cached = cache.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for key: {cache_key}")
-            return cached
+            return cached  # type: ignore[no-any-return]
     except Exception as e:
         logger.warning(f"Cache retrieval failed: {e}", exc_info=True)
         # Continue without cache - not critical for functionality
@@ -72,7 +78,7 @@ def public_agents(top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0)
         resp = {
             "items": safe_items,
             "count": len(safe_items),
-            "next": f"/agents/public?skip={skip+top}&top={top}",
+            "next": f"/agents/public?skip={skip + top}&top={top}",
         }
 
         # Try to cache the response (non-critical)
@@ -94,7 +100,7 @@ def public_agents(top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0)
 
 @router.get("/entitled")
 async def get_entitled_agents(
-    top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0), payload=Depends(require_oauth)
+    top: int = Query(20, ge=1, le=100), skip: int = Query(0, ge=0), payload: dict = Depends(require_oauth)
 ):
     """
     Get entitled agents for the authenticated client with error handling.
@@ -106,7 +112,7 @@ async def get_entitled_agents(
     default_response = {
         "items": [],
         "count": 0,
-        "next": f"/agents/entitled?skip={skip+top}&top={top}",
+        "next": f"/agents/entitled?skip={skip + top}&top={top}",
     }
 
     try:
@@ -130,15 +136,17 @@ async def get_entitled_agents(
                     if isinstance(item, dict):
                         safe_items.append(item)
                     else:
-                        logger.warning(f"Invalid item type in entitled agents: {type(item)}")
+                        # Log non-dict items for debugging
+                        if item is not None:  # type: ignore[unreachable]
+                            logger.warning(f"Invalid item type in entitled agents: {type(item)}")
                 except Exception as e:
                     logger.warning(f"Failed to process entitled agent item: {e}")
-                    continue
+                    # Skip this item and continue with the next one
 
         response = {
             "items": safe_items,
             "count": count if isinstance(count, int) else len(safe_items),
-            "next": f"/agents/entitled?skip={skip+top}&top={top}",
+            "next": f"/agents/entitled?skip={skip + top}&top={top}",
         }
 
         logger.debug(f"Successfully retrieved {len(safe_items)} entitled agents")
@@ -151,7 +159,7 @@ async def get_entitled_agents(
 
 
 @router.get("/{agent_id}")
-async def get_agent(agent_id: str, payload=Depends(require_oauth)):
+async def get_agent(agent_id: str, payload: dict = Depends(require_oauth)):
     """
     Get latest agent version by ID with entitlement enforcement and error handling.
 
@@ -207,7 +215,7 @@ async def get_agent(agent_id: str, payload=Depends(require_oauth)):
 
         # Build response with safe data extraction
         try:
-            card_json = ver.card_json or {}
+            card_json: Dict[str, Any] = dict(ver.card_json) if ver.card_json else {}
             response = {
                 "agentId": rec.id,
                 "name": card_json.get("name", "Unknown"),
@@ -237,7 +245,7 @@ async def get_agent(agent_id: str, payload=Depends(require_oauth)):
 
 
 @router.get("/{agent_id}/card")
-async def get_agent_card(agent_id: str, payload=Depends(require_oauth)):
+async def get_agent_card(agent_id: str, payload: dict = Depends(require_oauth)):
     """
     Get an agent's card data with comprehensive error handling.
 
@@ -305,20 +313,15 @@ async def get_agent_card(agent_id: str, payload=Depends(require_oauth)):
 
         # Return card data with validation
         try:
-            card_json = agent_version.card_json
-            if card_json is None:
-                logger.warning(f"Agent {agent_id} has no card data")
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent card data not available")
+            # At runtime, card_json is the actual JSON data, not a Column object
+            card_data = agent_version.card_json
+            assert card_data is not None, f"Agent {agent_id} has no card data"  # nosec B101
 
-            # Validate that card_json is a dictionary
-            if not isinstance(card_json, dict):
-                logger.error(f"Invalid card data type for agent {agent_id}: {type(card_json)}")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invalid card data format"
-                )
+            # Type cast to help mypy understand the runtime type
+            from typing import cast
+            card_dict = cast(dict, card_data)
 
-            logger.debug(f"Successfully retrieved card for agent {agent_id}")
-            return card_json
+            return _log_and_return_card(card_dict, agent_id)
 
         except HTTPException:
             # Re-raise HTTP exceptions as-is

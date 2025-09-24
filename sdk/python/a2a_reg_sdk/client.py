@@ -4,7 +4,6 @@ A2A Registry Client
 Main client class for interacting with the A2A Agent Registry.
 """
 
-import json
 import time
 from typing import Dict, List, Optional, Any, Union
 from urllib.parse import urljoin
@@ -25,6 +24,7 @@ class A2AClient:
         timeout: int = 30,
         api_key: Optional[str] = None,
         api_key_header: str = "X-API-Key",
+        scope: str = "read write",
     ):
         """
         Initialize the A2A client.
@@ -34,6 +34,9 @@ class A2AClient:
             client_id: OAuth client ID for authentication
             client_secret: OAuth client secret for authentication
             timeout: Request timeout in seconds
+            api_key: API key for authentication (alternative to OAuth)
+            api_key_header: HTTP header name for API key
+            scope: OAuth scope for token (e.g., "read", "write", "admin", "read write admin")
         """
         self.registry_url = registry_url.rstrip("/")
         self.client_id = client_id
@@ -43,6 +46,7 @@ class A2AClient:
         self._token_expires_at = None
         self._api_key = api_key
         self._api_key_header = api_key_header
+        self.scope = scope
 
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "A2A-Python-SDK/1.0.0", "Content-Type": "application/json"})
@@ -62,9 +66,13 @@ class A2AClient:
         self._api_key_header = header_name
         self.session.headers["Authorization"] = f"Bearer {self._api_key}"
 
-    def authenticate(self) -> None:
+    def authenticate(self, scope: Optional[str] = None) -> None:
         """
         Authenticate with the A2A registry using OAuth 2.0 client credentials flow.
+
+        Args:
+            scope: OAuth scope for the token (e.g., "read", "write", "admin", "read write admin").
+                  If None, uses the scope from the constructor.
 
         Raises:
             AuthenticationError: If authentication fails
@@ -76,13 +84,17 @@ class A2AClient:
         if not self.client_id or not self.client_secret:
             raise AuthenticationError("Client ID and secret are required for authentication")
 
+        # Use provided scope or fall back to constructor scope
+        auth_scope = scope if scope is not None else self.scope
+
         try:
             response = self.session.post(
-                urljoin(self.registry_url, "/oauth/token"),
+                urljoin(self.registry_url, "/auth/oauth/token"),
                 data={
                     "grant_type": "client_credentials",
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
+                    "scope": auth_scope,
                 },
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=self.timeout,
@@ -94,13 +106,19 @@ class A2AClient:
             expires_in = token_data.get("expires_in", 3600)
             self._token_expires_at = time.time() + expires_in - 60  # Refresh 1 minute early
 
-            if self._access_token:
-                self.session.headers["Authorization"] = f"Bearer {self._access_token}"
-            else:
+            access_token = self._access_token
+            if access_token is None:
                 raise AuthenticationError("No access token received")
+
+            # Set authorization header with the valid token
+            self._set_auth_header(access_token)  # type: ignore[unreachable]
 
         except requests.RequestException as e:
             raise AuthenticationError(f"Authentication failed: {e}")
+
+    def _set_auth_header(self, access_token: str) -> None:
+        """Set the authorization header with the access token."""
+        self.session.headers["Authorization"] = f"Bearer {access_token}"
 
     def _ensure_authenticated(self) -> None:
         """Ensure we have a valid access token."""
@@ -108,8 +126,87 @@ class A2AClient:
         if self._api_key:
             return
 
-        if not self._access_token or (self._token_expires_at and time.time() >= self._token_expires_at):
-            self.authenticate()
+        if not self._access_token:
+            self.authenticate(self.scope)
+        elif self._token_expires_at and time.time() >= self._token_expires_at:  # type: ignore[unreachable]
+            self.authenticate(self.scope)
+
+    def _convert_to_card_spec(self, agent_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert Agent model to AgentCardSpec format."""
+        # Extract capabilities
+        capabilities = agent_dict.get("capabilities", {})
+        card_capabilities = {
+            "streaming": capabilities.get("streaming", False),
+            "pushNotifications": capabilities.get("pushNotifications", False),
+            "stateTransitionHistory": capabilities.get("stateTransitionHistory", False),
+            "supportsAuthenticatedExtendedCard": capabilities.get("supportsAuthenticatedExtendedCard", False),
+        }
+
+        # Convert auth schemes to security schemes
+        security_schemes = []
+        for auth_scheme in agent_dict.get("auth_schemes", []):
+            security_scheme = {
+                "type": auth_scheme.get("type", "apiKey"),
+                "location": "header",
+                "name": auth_scheme.get("header_name", "Authorization"),
+            }
+            security_schemes.append(security_scheme)
+
+        # Convert skills
+        skills = []
+        agent_skills = agent_dict.get("skills")
+        if agent_skills:
+            # Handle different skill formats
+            if isinstance(agent_skills, dict):
+                # Convert from AgentSkills format
+                examples = agent_skills.get("examples", [])
+                if examples:
+                    skills.append({
+                        "id": "main_skill",
+                        "name": "Main Skill",
+                        "description": agent_dict.get("description", "Agent skill"),
+                        "tags": agent_dict.get("tags", []),
+                        "examples": examples,
+                        "inputModes": ["text/plain"],
+                        "outputModes": ["text/plain"],
+                    })
+            elif isinstance(agent_skills, list):
+                skills = agent_skills
+
+        # Build interface
+        interface: Dict[str, Any] = {
+            "preferredTransport": "jsonrpc",
+            "defaultInputModes": ["text/plain"],
+            "defaultOutputModes": ["text/plain"],
+        }
+
+        # Add additional interfaces if location_url is provided
+        if agent_dict.get("location_url"):
+            interface["additionalInterfaces"] = [{
+                "transport": "http",
+                "url": agent_dict["location_url"]
+            }]
+
+        # Build the card spec
+        card_spec = {
+            "name": agent_dict.get("name", "Unnamed Agent"),
+            "description": agent_dict.get("description", "Agent description"),
+            "url": agent_dict.get("location_url", "https://example.com"),
+            "version": agent_dict.get("version", "1.0.0"),
+            "capabilities": card_capabilities,
+            "securitySchemes": security_schemes,
+            "skills": skills,
+            "interface": interface,
+        }
+
+        # Add provider if available
+        if agent_dict.get("provider"):
+            card_spec["provider"] = {
+                "organization": agent_dict["provider"],
+                "url": agent_dict.get("location_url", "https://example.com"),
+            }
+
+        return card_spec
 
     def _handle_response(self, response: requests.Response) -> Any:
         """
@@ -156,7 +253,7 @@ class A2AClient:
         """
         try:
             response = self.session.get(urljoin(self.registry_url, "/health"), timeout=self.timeout)
-            return self._handle_response(response)
+            return self._handle_response(response)  # type: ignore[no-any-return]
         except requests.RequestException as e:
             raise A2AError(f"Failed to get health status: {e}")
 
@@ -173,13 +270,13 @@ class A2AClient:
             Dictionary containing agents list and pagination info
         """
         try:
-            endpoint = "/agents/public" if public_only else "/agents"
+            endpoint = "/agents/public" if public_only else "/agents/entitled"
             response = self.session.get(
                 urljoin(self.registry_url, endpoint),
                 params={"page": page, "limit": limit},
                 timeout=self.timeout,
             )
-            return self._handle_response(response)
+            return self._handle_response(response)  # type: ignore[no-any-return]
         except requests.RequestException as e:
             raise A2AError(f"Failed to list agents: {e}")
 
@@ -255,9 +352,22 @@ class A2AClient:
                 json=search_data,
                 timeout=self.timeout,
             )
-            return self._handle_response(response)
+            return self._handle_response(response)  # type: ignore[no-any-return]
         except requests.RequestException as e:
             raise A2AError(f"Failed to search agents: {e}")
+
+    def get_registry_stats(self) -> Dict[str, Any]:
+        """
+        Get registry statistics.
+
+        Returns:
+            Registry statistics
+        """
+        try:
+            response = self.session.get(urljoin(self.registry_url, "/stats"), timeout=self.timeout)
+            return self._handle_response(response)  # type: ignore[no-any-return]
+        except requests.RequestException as e:
+            raise A2AError(f"Failed to get registry stats: {e}")
 
     def publish_agent(self, agent_data: Union[Dict[str, Any], Agent]) -> Agent:
         """
@@ -277,13 +387,30 @@ class A2AClient:
             else:
                 agent_dict = agent_data
 
+            # Convert Agent model to AgentCardSpec format
+            card_data = self._convert_to_card_spec(agent_dict)
+
+            # Format the request body according to the API spec
+            request_body = {
+                "public": agent_dict.get("is_public", True),
+                "card": card_data
+            }
+
             response = self.session.post(
-                urljoin(self.registry_url, "/agents"),
-                json=agent_dict,
+                urljoin(self.registry_url, "/agents/publish"),
+                json=request_body,
                 timeout=self.timeout,
             )
             published_data = self._handle_response(response)
-            return Agent.from_dict(published_data)
+
+            # The API returns a different format, so we need to fetch the full agent data
+            if "agentId" in published_data:
+                agent_id = published_data["agentId"]
+                # Fetch the full agent data
+                full_agent = self.get_agent(agent_id)
+                return full_agent
+            else:
+                return Agent.from_dict(published_data)
         except requests.RequestException as e:
             raise A2AError(f"Failed to publish agent: {e}")
 
@@ -340,9 +467,165 @@ class A2AClient:
         """
         try:
             response = self.session.get(urljoin(self.registry_url, "/stats"), timeout=self.timeout)
-            return self._handle_response(response)
+            return self._handle_response(response)  # type: ignore[no-any-return]
         except requests.RequestException as e:
             raise A2AError(f"Failed to get registry stats: {e}")
+
+    def generate_api_key(self, scopes: List[str], expires_days: Optional[int] = None) -> tuple[str, Dict[str, Any]]:
+        """
+        Generate a new API key using the backend security service.
+
+        Args:
+            scopes: List of scopes for the API key
+            expires_days: Number of days until expiration (None for no expiration)
+
+        Returns:
+            Tuple of (api_key_string, key_info_dict)
+
+        Raises:
+            A2AError: If API key generation fails
+        """
+        self._ensure_authenticated()
+
+        try:
+            payload = {
+                "scopes": scopes,
+                "expires_days": expires_days
+            }
+
+            response = self.session.post(
+                urljoin(self.registry_url, "/security/api-keys"),
+                json=payload,
+                timeout=self.timeout
+            )
+
+            response_data = self._handle_response(response)
+
+            # Return API key and info
+            return response_data["api_key"], {
+                "key_id": response_data["key_id"],
+                "scopes": response_data["scopes"],
+                "created_at": response_data["created_at"],
+                "expires_at": response_data.get("expires_at")
+            }
+
+        except Exception as e:
+            raise A2AError(f"Failed to generate API key: {e}")
+
+    def generate_api_key_and_authenticate(
+        self, scopes: List[str], expires_days: Optional[int] = None
+    ) -> tuple[str, Dict[str, Any]]:
+        """
+        Generate a new API key and automatically authenticate the client with it.
+
+        Args:
+            scopes: List of scopes for the API key
+            expires_days: Number of days until expiration (None for no expiration)
+
+        Returns:
+            Tuple of (api_key_string, key_info_dict)
+
+        Raises:
+            A2AError: If API key generation or authentication fails
+        """
+        try:
+            # Generate API key
+            api_key, key_info = self.generate_api_key(scopes, expires_days)
+
+            # Authenticate with the new API key
+            self.set_api_key(api_key)
+
+            return api_key, key_info
+
+        except Exception as e:
+            raise A2AError(f"Failed to generate and authenticate with API key: {e}")
+
+    def validate_api_key(self, api_key: str, required_scopes: Optional[List[str]] = None) -> Optional[Dict[str, Any]]:
+        """
+        Validate an API key using the backend security service.
+
+        Args:
+            api_key: The API key to validate
+            required_scopes: Optional list of required scopes
+
+        Returns:
+            Key info dict if valid, None if invalid
+        """
+        try:
+            payload = {
+                "api_key": api_key,
+                "required_scopes": required_scopes
+            }
+
+            response = self.session.post(
+                urljoin(self.registry_url, "/security/api-keys/validate"),
+                json=payload,
+                timeout=self.timeout
+            )
+
+            if response.status_code == 401:
+                return None
+
+            response_data = self._handle_response(response)
+            return response_data  # type: ignore[no-any-return]
+
+        except Exception:
+            # Log error but don't raise - validation failure should return None
+            return None
+
+    def revoke_api_key(self, key_id: str) -> bool:
+        """
+        Revoke an API key using the backend security service.
+
+        Args:
+            key_id: The ID of the API key to revoke
+
+        Returns:
+            True if revoked successfully, False otherwise
+        """
+        self._ensure_authenticated()
+
+        try:
+            response = self.session.delete(
+                urljoin(self.registry_url, f"/security/api-keys/{key_id}"),
+                timeout=self.timeout
+            )
+
+            if response.status_code == 404:
+                return False
+
+            self._handle_response(response)
+            return True
+
+        except Exception:
+            # Log error but don't raise - revocation failure should return False
+            return False
+
+    def list_api_keys(self, active_only: bool = True) -> List[Dict[str, Any]]:
+        """
+        List all API keys using the backend security service.
+
+        Args:
+            active_only: If True, only return active keys
+
+        Returns:
+            List of key info dictionaries
+        """
+        self._ensure_authenticated()
+
+        try:
+            params = {"active_only": active_only}
+
+            response = self.session.get(
+                urljoin(self.registry_url, "/security/api-keys"),
+                params=params,
+                timeout=self.timeout
+            )
+
+            return self._handle_response(response)  # type: ignore[no-any-return]
+
+        except Exception as e:
+            raise A2AError(f"Failed to list API keys: {e}")
 
     def close(self) -> None:
         """Close the HTTP session."""

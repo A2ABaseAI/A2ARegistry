@@ -36,6 +36,11 @@ class AgentService:
         # Create a new session using the factory function
         self.db = _get_db_session()
 
+    def __del__(self):
+        """Clean up database session."""
+        if hasattr(self, 'db') and self.db:
+            self.db.close()
+
     def create_or_update_agent_record(
         self, card_data: Dict[str, Any], card_hash: str, tenant_id: str, publisher_id: str, agent_key: str, version: str
     ) -> AgentRecord:
@@ -70,7 +75,7 @@ class AgentService:
 
             if rec is None:
                 # Create new record
-                rec = AgentRecord(  # type: ignore
+                rec = AgentRecord(
                     id=card_hash[:24],
                     tenant_id=tenant_id,
                     publisher_id=publisher_id,
@@ -82,10 +87,10 @@ class AgentService:
                 logger.debug(f"Created new agent record: {rec.id}")
             else:
                 # Update existing record
-                rec.latest_version = version  # type: ignore
+                rec.latest_version = version
                 logger.debug(f"Updated existing agent record: {rec.id}")
 
-            return rec
+            return rec  # type: ignore[no-any-return]
 
         except Exception as exc:
             logger.error(f"Failed to create/update agent record: {exc}")
@@ -129,10 +134,10 @@ class AgentService:
 
             if existing:
                 logger.debug(f"Found existing agent version: {existing.id}")
-                return existing
+                return existing  # type: ignore[no-any-return]
 
             # Create new version
-            av = AgentVersion(  # type: ignore
+            av = AgentVersion(
                 id=f"{rec.id}:{version}",
                 agent_id=rec.id,
                 version=version,
@@ -182,7 +187,7 @@ class AgentService:
             version = card.version or datetime.now(timezone.utc).isoformat()
 
             # Extract metadata
-            publisher_id = card.url.host if hasattr(card.url, "host") else "publisher"
+            publisher_id = card.url.host if hasattr(card.url, "host") and card.url.host else "publisher"
             agent_key = card.name.lower().replace(" ", "-")
 
             logger.debug(f"Publishing agent: {card.name} v{version} for tenant {tenant_id}")
@@ -310,7 +315,7 @@ class AgentService:
             result = self.get_agent_by_id(agent_id, tenant_id)
             if result:
                 _, agent_version = result
-                return agent_version.card_json
+                return agent_version.card_json  # type: ignore[return-value]
             return None
         except Exception as exc:
             logger.error(f"Failed to get card data for agent {agent_id}: {exc}")

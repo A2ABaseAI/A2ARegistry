@@ -34,7 +34,7 @@ class CacheManager:
         try:
             ttl = ttl or self.default_ttl
             serialized_value = orjson.dumps(value)
-            return self.redis_client.setex(key, ttl, serialized_value)
+            return bool(self.redis_client.setex(key, ttl, serialized_value))
         except Exception as e:
             logger.error(f"Cache set error for key {key}: {e}")
             return False
@@ -68,7 +68,7 @@ class CacheManager:
         try:
             keys = self.redis_client.keys(pattern)
             if keys:
-                return self.redis_client.delete(*keys)
+                return int(self.redis_client.delete(*keys))
             return 0
         except Exception as e:
             logger.error(f"Cache pattern invalidation error for {pattern}: {e}")
@@ -237,7 +237,10 @@ class CacheWarmer:
         # Cache public agents
         public_agents, _ = registry_service.list_public(tenant_id="default", top=100, skip=0)
         for agent in public_agents:
-            self.agent_cache.set_agent(agent.id, {"id": agent.id, "name": agent.latest_version})
+            agent_id = agent.get("id") if isinstance(agent, dict) else agent.id
+            agent_name = agent.get("latest_version") if isinstance(agent, dict) else agent.latest_version
+            if agent_id:
+                self.agent_cache.set_agent(str(agent_id), {"id": str(agent_id), "name": str(agent_name)})
 
         # Cache agent counts
         total_count = len(public_agents)

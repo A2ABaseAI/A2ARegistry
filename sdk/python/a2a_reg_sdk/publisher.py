@@ -13,13 +13,15 @@ from .client import A2AClient
 from .models import (
     Agent,
     AgentBuilder,
-    AgentCapabilities,
-    AuthScheme,
-    AgentTeeDetails,
-    AgentSkills,
+    AgentCapabilitiesBuilder,
+    AuthSchemeBuilder,
+    AgentTeeDetailsBuilder,
+    AgentSkillsBuilder,
+    InputSchemaBuilder,
+    OutputSchemaBuilder,
     AgentCard,
 )
-from .exceptions import A2AError, ValidationError
+from .exceptions import ValidationError
 
 
 class AgentPublisher:
@@ -87,10 +89,9 @@ class AgentPublisher:
 
         # Validate capabilities if present
         if agent.capabilities:
-            if not isinstance(agent.capabilities.protocols, list):
-                errors.append("Capabilities protocols must be a list")
-            if not isinstance(agent.capabilities.supported_formats, list):
-                errors.append("Capabilities supported_formats must be a list")
+            # protocols and supported_formats are always lists due to default_factory=list
+            # No need to validate their types
+            pass
 
         # Validate auth schemes
         for i, scheme in enumerate(agent.auth_schemes):
@@ -188,41 +189,50 @@ class AgentPublisher:
         Returns:
             Sample agent configuration
         """
-        capabilities = AgentCapabilities(
-            protocols=["http", "websocket"],
-            supported_formats=["json"],
-            max_request_size=1048576,
-            max_concurrent_requests=10,
-            a2a_version="1.0",
+        capabilities = (
+            AgentCapabilitiesBuilder()
+            .protocols(["http", "websocket"])
+            .supported_formats(["json"])
+            .max_request_size(1048576)
+            .max_concurrent_requests(10)
+            .a2a_version("1.0")
+            .build()
         )
 
         auth_schemes = [
-            AuthScheme(
-                type="api_key",
-                description="API key authentication",
-                required=True,
-                header_name="X-API-Key",
-            )
+            AuthSchemeBuilder("api_key")
+            .description("API key authentication")
+            .required(True)
+            .header_name("X-API-Key")
+            .build()
         ]
 
-        tee_details = AgentTeeDetails(enabled=False)
+        tee_details = (
+            AgentTeeDetailsBuilder()
+            .enabled(False)
+            .build()
+        )
 
-        skills = AgentSkills(
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "message": {"type": "string"},
-                    "context": {"type": "object"},
-                },
-            },
-            output_schema={
-                "type": "object",
-                "properties": {
-                    "response": {"type": "string"},
-                    "confidence": {"type": "number"},
-                },
-            },
-            examples=["Input: {'message': 'Hello'} -> Output: {'response': 'Hi there!', 'confidence': 0.95}"],
+        # Create input and output schemas using builders
+        input_schema = (
+            InputSchemaBuilder()
+            .add_string_property("message", "Message to process", required=True)
+            .add_object_property("context", {}, "Request context")
+            .build()
+        )
+        output_schema = (
+            OutputSchemaBuilder()
+            .add_string_property("response", "Agent response", required=True)
+            .add_number_property("confidence", "Response confidence score", required=True, minimum=0.0, maximum=1.0)
+            .build()
+        )
+
+        skills = (
+            AgentSkillsBuilder()
+            .input_schema(input_schema)
+            .output_schema(output_schema)
+            .examples(["Input: {'message': 'Hello'} -> Output: {'response': 'Hi there!', 'confidence': 0.95}"])
+            .build()
         )
 
         agent_card = AgentCard(

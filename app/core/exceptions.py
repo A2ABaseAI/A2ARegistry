@@ -1,7 +1,7 @@
 """Custom exceptions and error handling."""
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from fastapi import HTTPException, status
 
@@ -263,7 +263,7 @@ def retry_on_exception(exceptions: tuple, config: Optional[RetryConfig] = None, 
 
     def decorator(func):
         async def wrapper(*args, **kwargs):
-            last_exception = None
+            last_exception: Optional[Exception] = None
 
             for attempt in range(config.max_attempts):
                 try:
@@ -307,7 +307,8 @@ def retry_on_exception(exceptions: tuple, config: Optional[RetryConfig] = None, 
 
                     await asyncio.sleep(delay)
 
-            raise last_exception
+            if last_exception:
+                raise last_exception
 
         return wrapper
 
@@ -322,14 +323,14 @@ class CircuitBreaker:
         self,
         failure_threshold: int = 5,
         recovery_timeout: float = 60.0,
-        expected_exception: type = Exception,
+        expected_exception: Type[Exception] = Exception,
     ):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
         self.expected_exception = expected_exception
 
         self.failure_count = 0
-        self.last_failure_time = None
+        self.last_failure_time: Optional[float] = None
         self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
 
     def call(self, func, *args, **kwargs):

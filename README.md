@@ -369,6 +369,36 @@ curl -X POST "http://localhost:8000/peers/sync-all" \
 
 ## Development
 
+### Quality Checks
+Run comprehensive quality checks using the provided scripts:
+
+```bash
+# Python script (recommended)
+python quality_check.py --all
+
+# Shell script
+./quality_check.sh --all
+
+# Makefile
+make quality
+
+# Individual checks
+python quality_check.py --lint --test
+make lint test
+
+# Development commands
+make backend                    # Run the backend server
+make examples                   # Run all examples
+make example NAME=basic_usage   # Run specific example
+
+# Publishing commands
+make publish                    # Publish SDK to PyPI
+make build-sdk                  # Build SDK package
+make test-sdk                   # Test SDK package locally
+```
+
+See [QUALITY_CHECKS.md](QUALITY_CHECKS.md) for detailed information.
+
 ### Running Tests
 ```bash
 pytest tests/

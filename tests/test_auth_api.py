@@ -188,13 +188,13 @@ class TestAuthAPI(BaseTest):
         refresh_token = login_response.json()["refresh_token"]
 
         # Mock the verify_access_token call to avoid external JWKS dependency
-        with patch("app.auth_jwks.verify_access_token") as mock_verify:
+        with patch("app.security.jwt.verify_access_token") as mock_verify:
             mock_verify.return_value = {
                 "user_id": "test-user-id",
                 "username": "testuser",
                 "email": "test@example.com",
                 "full_name": "Test User",
-                "tenant_id": "default",
+                "tenant": "default",
                 "roles": ["User"],
                 "iat": 1640995200,
             }
@@ -257,7 +257,7 @@ class TestAuthAPI(BaseTest):
         """Test get current user without token."""
         response = client.get("/auth/me")
 
-        assert response.status_code == 403  # FastAPI returns 403 for missing auth
+        assert response.status_code == 401  # FastAPI returns 401 for missing auth
 
     def test_get_current_user_invalid_token(self, client):
         """Test get current user with invalid token."""
@@ -318,7 +318,7 @@ class TestAuthAPI(BaseTest):
 
         response = client.post("/auth/change-password", json=password_data)
 
-        assert response.status_code == 403  # FastAPI returns 403 for missing auth
+        assert response.status_code == 401  # FastAPI returns 401 for missing auth
 
     def test_change_password_invalid_data(self, client, sample_user_data):
         """Test password change with invalid data."""
@@ -359,7 +359,7 @@ class TestAuthAPI(BaseTest):
         """Test logout without token."""
         response = client.post("/auth/logout")
 
-        assert response.status_code == 403  # FastAPI returns 403 for missing auth
+        assert response.status_code == 401  # FastAPI returns 401 for missing auth
 
     def test_logout_user_invalid_token(self, client):
         """Test logout with invalid token."""
@@ -400,13 +400,13 @@ class TestAuthAPI(BaseTest):
         assert me_response.json()["username"] == "flowtest"
 
         # 4. Refresh token (with JWKS mocking)
-        with patch("app.auth_jwks.verify_access_token") as mock_verify:
+        with patch("app.security.jwt.verify_access_token") as mock_verify:
             mock_verify.return_value = {
                 "user_id": "test-user-id",
                 "username": "flowtest",
                 "email": "flow@example.com",
                 "full_name": "Flow Test User",
-                "tenant_id": "test_tenant",
+                "tenant": "test_tenant",
                 "roles": ["User"],
                 "iat": 1640995200,
             }

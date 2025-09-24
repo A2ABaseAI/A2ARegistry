@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 
 from ..core.logging import get_logger
-from ..core.security import create_access_token, hash_password, verify_password
+from ..security import create_access_token, hash_password, verify_password, verify_access_token
 from ..database import SessionLocal
 from ..models.user import User, UserSession
 from ..schemas.auth import PasswordChange, TokenResponse, UserLogin, UserProfile, UserRegistration
@@ -93,7 +93,7 @@ class AuthService:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
             logger.info(f"User authenticated successfully: {user.username}")
-            return user
+            return user  # type: ignore[no-any-return]
 
         except HTTPException:
             raise
@@ -133,7 +133,7 @@ class AuthService:
             user = self.db.query(User).filter(User.id == user_id).first()
             if not user:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-            return user
+            return user  # type: ignore[no-any-return]
         except HTTPException:
             raise
         except Exception as e:
@@ -233,7 +233,8 @@ class AuthService:
         try:
             # Create access token
             access_token = create_access_token(
-                user_id=user.id, username=user.username, email=user.email, roles=user.roles, tenant_id=user.tenant_id
+                user_id=str(user.id), username=str(user.username), email=str(user.email),
+                roles=list(user.roles) if user.roles else [], tenant_id=str(user.tenant_id)
             )
 
             # Create session
@@ -242,18 +243,18 @@ class AuthService:
             return TokenResponse(
                 access_token=access_token,
                 refresh_token=refresh_token,
-                token_type="bearer",
+                token_type="bearer",  # nosec B106 - OAuth 2.0 standard token type
                 expires_in=1800,  # 30 minutes
                 user=UserProfile(
-                    id=user.id,
-                    username=user.username,
-                    email=user.email,
-                    full_name=user.full_name,
-                    tenant_id=user.tenant_id,
-                    roles=user.roles,
-                    is_active=user.is_active,
-                    created_at=user.created_at,
-                    updated_at=user.updated_at,
+                    id=str(user.id),
+                    username=str(user.username),
+                    email=str(user.email),
+                    full_name=str(user.full_name) if user.full_name else None,
+                    tenant_id=str(user.tenant_id),
+                    roles=list(user.roles) if user.roles else [],
+                    is_active=bool(user.is_active),
+                    created_at=user.created_at,  # type: ignore[arg-type]
+                    updated_at=user.updated_at,  # type: ignore[arg-type]
                 ),
             )
 
@@ -266,25 +267,23 @@ class AuthService:
     def create_refresh_response(self, new_access_token: str, refresh_token: str) -> TokenResponse:
         """Create a token refresh response."""
         try:
-            from ..auth_jwks import verify_access_token
-
             payload = verify_access_token(new_access_token)
 
             return TokenResponse(
                 access_token=new_access_token,
                 refresh_token=refresh_token,  # Keep same refresh token
-                token_type="bearer",
+                token_type="bearer",  # nosec B106 - OAuth 2.0 standard token type
                 expires_in=1800,  # 30 minutes
                 user=UserProfile(
-                    id=payload.get("user_id"),
-                    username=payload.get("username"),
-                    email=payload.get("email"),
-                    full_name=payload.get("full_name"),
-                    tenant_id=payload.get("tenant_id"),
-                    roles=payload.get("roles", []),
+                    id=str(payload.get("user_id", "")),
+                    username=str(payload.get("username", "")),
+                    email=str(payload.get("email", "")),
+                    full_name=str(payload.get("full_name")) if payload.get("full_name") else None,
+                    tenant_id=str(payload.get("tenant", "")),
+                    roles=list(payload.get("roles", [])),
                     is_active=True,
-                    created_at=payload.get("iat"),
-                    updated_at=payload.get("iat"),
+                    created_at=datetime.fromtimestamp(payload.get("iat", 0)) if payload.get("iat") else datetime.now(timezone.utc),  # noqa: E501
+                    updated_at=datetime.fromtimestamp(payload.get("iat", 0)) if payload.get("iat") else datetime.now(timezone.utc),  # noqa: E501
                 ),
             )
 

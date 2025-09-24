@@ -6,7 +6,21 @@ Provides easy-to-use classes and methods for agent registration, discovery, and 
 """
 
 from .client import A2AClient
-from .models import Agent, AgentCard, AgentCapabilities, AuthScheme, AgentTeeDetails
+from .models import (
+    Agent,
+    AgentCard,
+    AgentCapabilities,
+    AuthScheme,
+    AgentTeeDetails,
+    AgentSkills,
+    AgentBuilder,
+    AgentCapabilitiesBuilder,
+    AuthSchemeBuilder,
+    AgentTeeDetailsBuilder,
+    AgentSkillsBuilder,
+    InputSchemaBuilder,
+    OutputSchemaBuilder
+)
 from .exceptions import A2AError, AuthenticationError, ValidationError, NotFoundError
 from .publisher import AgentPublisher
 
@@ -18,9 +32,17 @@ __all__ = [
     "AgentCapabilities",
     "AuthScheme",
     "AgentTeeDetails",
+    "AgentSkills",
+    "AgentBuilder",
+    "AgentCapabilitiesBuilder",
+    "AuthSchemeBuilder",
+    "AgentTeeDetailsBuilder",
+    "AgentSkillsBuilder",
+    "InputSchemaBuilder",
+    "OutputSchemaBuilder",
+    "AgentPublisher",
     "A2AError",
     "AuthenticationError",
     "ValidationError",
     "NotFoundError",
-    "AgentPublisher",
 ]

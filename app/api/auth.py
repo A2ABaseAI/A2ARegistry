@@ -2,12 +2,11 @@
 
 import secrets
 import hashlib
+from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer
-
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from ..core.logging import get_logger
-from ..auth_jwks import require_oauth, require_roles
+from ..security import extract_context, require_oauth, require_roles
 from ..schemas.auth import PasswordChange, TokenRefresh, TokenResponse, UserLogin, UserProfile, UserRegistration
 from ..services.auth_service import AuthService
 
@@ -28,15 +27,15 @@ def register_user(registration_data: UserRegistration):
         user = auth_service.register_user(registration_data)
 
         return UserProfile(
-            id=user.id,
-            username=user.username,
-            email=user.email,
-            full_name=user.full_name,
-            tenant_id=user.tenant_id,
-            roles=user.roles,
-            is_active=user.is_active,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
+            id=str(user.id),
+            username=str(user.username),
+            email=str(user.email),
+            full_name=str(user.full_name) if user.full_name else None,
+            tenant_id=str(user.tenant_id),
+            roles=list(user.roles) if user.roles else [],
+            is_active=bool(user.is_active),
+            created_at=user.created_at,  # type: ignore[arg-type]
+            updated_at=user.updated_at,  # type: ignore[arg-type]
         )
 
     except HTTPException:
@@ -94,16 +93,13 @@ def refresh_access_token(refresh_data: TokenRefresh):
 
 
 @router.get("/me", response_model=UserProfile)
-def get_current_user(credentials: HTTPBearer = Depends(HTTPBearer())):
+def get_current_user(current_user: dict = Depends(require_oauth)):
     """
     Get current user profile.
 
     Returns the profile information of the currently authenticated user.
     """
     try:
-        current_user = require_oauth(credentials)
-        from ..auth_jwks import extract_context
-
         context = extract_context(current_user)
         user_id = context.get("client_id")
 
@@ -114,15 +110,15 @@ def get_current_user(credentials: HTTPBearer = Depends(HTTPBearer())):
         user = auth_service.get_user_profile(user_id)
 
         return UserProfile(
-            id=user.id,
-            username=user.username,
-            email=user.email,
-            full_name=user.full_name,
-            tenant_id=user.tenant_id,
-            roles=user.roles,
-            is_active=user.is_active,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
+            id=str(user.id),
+            username=str(user.username),
+            email=str(user.email),
+            full_name=str(user.full_name) if user.full_name else None,
+            tenant_id=str(user.tenant_id),
+            roles=list(user.roles) if user.roles else [],
+            is_active=bool(user.is_active),
+            created_at=user.created_at,  # type: ignore[arg-type]
+            updated_at=user.updated_at,  # type: ignore[arg-type]
         )
 
     except HTTPException:
@@ -133,7 +129,7 @@ def get_current_user(credentials: HTTPBearer = Depends(HTTPBearer())):
 
 
 @router.post("/change-password")
-def change_password(password_data: PasswordChange, credentials: HTTPBearer = Depends(HTTPBearer())):
+def change_password(password_data: PasswordChange, current_user: dict = Depends(require_oauth)):
     """
     Change user password.
 
@@ -141,9 +137,6 @@ def change_password(password_data: PasswordChange, credentials: HTTPBearer = Dep
     Requires the current password for verification.
     """
     try:
-        current_user = require_oauth(credentials)
-        from ..auth_jwks import extract_context
-
         context = extract_context(current_user)
         user_id = context.get("client_id")
 
@@ -166,16 +159,13 @@ def change_password(password_data: PasswordChange, credentials: HTTPBearer = Dep
 
 
 @router.post("/logout")
-def logout_user(credentials: HTTPBearer = Depends(HTTPBearer())):
+def logout_user(current_user: dict = Depends(require_oauth)):
     """
     Logout user and invalidate session.
 
     Invalidates the current user session and refresh token.
     """
     try:
-        current_user = require_oauth(credentials)
-        from ..auth_jwks import extract_context
-
         context = extract_context(current_user)
         user_id = context.get("client_id")
 
@@ -195,6 +185,106 @@ def logout_user(credentials: HTTPBearer = Depends(HTTPBearer())):
     except Exception as e:
         logger.error(f"Logout endpoint error: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Logout failed")
+
+
+@router.post("/oauth/token")
+def oauth_token(
+    grant_type: str = Form("client_credentials"),
+    client_id: str = Form(...),
+    client_secret: str = Form(...),
+    scope: str = Form("read write")
+):
+    """
+    OAuth 2.0 Client Credentials flow endpoint.
+
+    This endpoint allows clients to authenticate using client_id and client_secret
+    and receive an access token for API access.
+    """
+    try:
+        if grant_type != "client_credentials":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only client_credentials grant type is supported"
+            )
+
+        if not client_id or not client_secret:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="client_id and client_secret are required"
+            )
+
+        # Production implementation: Validate client credentials against database
+        from ..security import create_access_token, verify_password
+        from ..database import SessionLocal
+        from ..models.user import User
+
+        db = SessionLocal()
+        try:
+            # Validate client credentials against registered users
+            # In OAuth 2.0 Client Credentials flow, client_id is typically the username
+            user = db.query(User).filter(User.username == client_id).first()
+
+            if not user:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid client credentials")
+
+            # Verify client_secret against user's password hash
+            # In OAuth 2.0 Client Credentials flow, client_secret is typically the user's password
+            if not verify_password(client_secret, str(user.password_hash)):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid client credentials")
+
+            if not user.is_active:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Client account is inactive")
+
+            # Validate requested scopes against user's roles
+            scopes = scope.split() if scope else ["read"]
+            user_roles: List[str] = list(user.roles) if user.roles else []
+
+            logger.info(f"OAuth token request - User: {user.username}, Scopes: {scopes}, User Roles: {user_roles}")
+
+            # Check if user has sufficient roles for requested scopes
+            if ("write" in scopes
+                    and "CatalogManager" not in user_roles
+                    and "Administrator" not in user_roles):
+                logger.warning(
+                    f"User {user.username} with roles {user_roles} denied write scope"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Insufficient permissions for write scope"
+                )
+
+            if (("admin" in scopes or "all" in scopes)
+                    and "Administrator" not in user_roles):
+                logger.warning(f"User {user.username} with roles {user_roles} denied admin scope")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Insufficient permissions for admin scope"
+                )
+
+            # Create token with actual user data
+            access_token = create_access_token(
+                user_id=str(user.id),
+                username=str(user.username),
+                email=str(user.email),
+                roles=user_roles,
+                tenant_id=str(user.tenant_id) if user.tenant_id else "default"
+            )
+
+        finally:
+            db.close()
+
+        return {
+            "access_token": access_token,
+            "token_type": "Bearer",
+            "expires_in": 3600,  # 1 hour
+            "scope": scope
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"OAuth token generation failed: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Token generation failed")
 
 
 @router.post("/api-token")

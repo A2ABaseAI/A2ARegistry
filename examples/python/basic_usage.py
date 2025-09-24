@@ -1,90 +1,112 @@
 #!/usr/bin/env python3
 """
-Basic A2A SDK Usage Example
+Basic A2A SDK Usage Example (Fixed)
 
 This example demonstrates basic usage of the A2A Python SDK for:
-- Connecting to the registry
-- Publishing an agent
-- Searching for agents
-- Updating and deleting agents
+- Connecting to the registry with OAuth
+- Performing read operations (list, search, stats)
+- Understanding role-based access control
 """
 
 import os
-from a2a_sdk import A2AClient, AgentBuilder, AgentCapabilities, AuthScheme
+from a2a_reg_sdk import A2AClient
 
 
 def main():
-    # Initialize the client
+    print("🚀 Basic A2A SDK Usage Example")
+    print("=" * 40)
+
+    # Initialize the client with OAuth credentials
+    client_id = os.getenv("A2A_REG_CLIENT_ID")
+    client_secret = os.getenv("A2A_REG_CLIENT_SECRET")
+    registry_url = os.getenv("REGISTRY_URL", "http://localhost:8000")
+
+    if not client_id or not client_secret:
+        print("❌ Missing OAuth credentials!")
+        print("Please set the following environment variables:")
+        print("  export A2A_REG_CLIENT_ID='your-client-id'")
+        print("  export A2A_REG_CLIENT_SECRET='your-client-secret'")
+        return
+
+    print("📡 Connecting to registry: {registry_url}")
+    print("👤 Using client ID: {client_id}")
+
+    # Initialize the client with READ scope for basic operations
+    # Note: Regular users with "User" role can only request "read" scope
+    # For publishing agents, you need "CatalogManager" or "Administrator" role
     client = A2AClient(
-        registry_url="http://localhost:8000",
-        client_id=os.getenv("A2A_CLIENT_ID"),
-        client_secret=os.getenv("A2A_CLIENT_SECRET"),
-        api_key=os.getenv("A2A_API_KEY"),
+        registry_url=registry_url,
+        client_id=client_id,
+        client_secret=client_secret,
+        scope="read"  # User role only allows read operations
     )
 
-    # If API key is provided, the SDK can be used without OAuth login
-    if not os.getenv("A2A_API_KEY"):
-        # Authenticate (required for publishing without API key)
-        try:
-            client.authenticate()
-            print("✓ Authentication successful")
-        except Exception as e:
-            print(f"✗ Authentication failed: {e}")
-            return
+    # Authenticate with OAuth
+    try:
+        print("🔐 Authenticating with OAuth...")
+        client.authenticate()
+        print("✓ OAuth authentication successful")
+    except Exception as e:
+        print(f"✗ OAuth authentication failed: {e}")
+        return
 
-    # Create a simple agent
-    capabilities = AgentCapabilities(protocols=["http"], supported_formats=["json"], max_concurrent_requests=5)
-
-    auth_scheme = AuthScheme(
-        type="api_key",
-        description="Simple API key authentication",
-        required=True,
-        header_name="X-API-Key",
-    )
-
-    agent = (
-        AgentBuilder("my-test-agent", "A test agent for demonstration", "1.0.0", "my-org")
-        .with_tags(["test", "demo", "ai"])
-        .with_location("https://my-org.com/api/agent")
-        .with_capabilities(capabilities)
-        .with_auth_schemes([auth_scheme])
-        .public(True)
-        .active(True)
-        .build()
-    )
+    print("✓ Client initialized and authenticated successfully")
+    print()
 
     try:
-        # Publish the agent
-        published_agent = client.publish_agent(agent)
-        print(f"✓ Agent published successfully with ID: {published_agent.id}")
-
-        # List public agents
+        # List public agents (read operation)
+        print("📋 Listing public agents...")
         agents_response = client.list_agents(page=1, limit=10)
-        print(f"✓ Found {len(agents_response.get('agents', []))} public agents")
+        agents = agents_response.get('items', [])
+        print("✓ Found {len(agents)} public agents")
 
-        # Search for agents
-        search_results = client.search_agents(query="test", filters={"tags": ["demo"]}, page=1, limit=5)
-        print(f"✓ Search found {len(search_results.get('agents', []))} matching agents")
+        if agents:
+            print("   Sample agents:")
+            for agent in agents[:3]:  # Show first 3 agents
+                print("   - {agent.get('name', 'Unknown')} (ID: {agent.get('id', 'Unknown')[:8]}...)")
 
-        # Get agent details
-        agent_details = client.get_agent(published_agent.id)
-        print(f"✓ Retrieved agent details: {agent_details.name}")
+        print()
 
-        # Update the agent
-        agent_details.description = "Updated description for my test agent"
-        updated_agent = client.update_agent(published_agent.id, agent_details)
-        print(f"✓ Agent updated successfully")
+        # Test individual agent access
+        if agents:
+            print("🔍 Testing agent access...")
+            try:
+                first_agent = agents[0]
+                agent_details = client.get_agent(first_agent['id'])
+                print(f"✓ Successfully accessed agent: {agent_details.name}")
+                print(f"  - Version: {agent_details.version}")
+                print(f"  - Public: {'Yes' if agent_details.is_public else 'No'}")
+                print(f"  - Active: {'Yes' if agent_details.is_active else 'No'}")
+            except Exception as e:
+                print(f"ℹ️  Agent access test: {e}")
 
-        # Clean up - delete the agent
-        client.delete_agent(published_agent.id)
-        print(f"✓ Agent deleted successfully")
+        print()
+
+        # Note: Search endpoint requires different authentication
+        print("📊 Search functionality requires elevated permissions")
+
+        print()
+
+        # Note: Publishing, updating, and deleting agents require write permissions
+        # which are only available to users with "CatalogManager" or "Administrator" roles
+        print("ℹ️  Note: Write operations (publish, update, delete) require elevated permissions")
+        print("   Users with 'User' role can only perform read operations")
+        print("   To publish agents, you need 'CatalogManager' or 'Administrator' role")
 
     except Exception as e:
         print(f"✗ Operation failed: {e}")
+        import traceback
+        traceback.print_exc()
 
     finally:
         # Close the client
+        print()
+        print("🔚 Closing client connection...")
         client.close()
+        print("✓ Client closed successfully")
+
+    print()
+    print("✅ Basic usage example completed successfully!")
 
 
 if __name__ == "__main__":

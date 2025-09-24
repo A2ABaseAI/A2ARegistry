@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     app_name: str = "A2A Agent Registry"
     app_version: str = "1.0.0"
     debug: bool = False
+    test_mode: bool = False  # Set to True for testing environments
     host: str = "127.0.0.1"
     port: int = 8000
 
@@ -49,6 +50,8 @@ class Settings(BaseSettings):
     # Registry
     registry_base_url: str = "http://localhost:8000"
     search_timeout_seconds: int = 30
+    enable_federation: bool = False
+    max_agents_per_client: int = 100
 
     # DB bootstrap
     auto_create_tables: bool = False

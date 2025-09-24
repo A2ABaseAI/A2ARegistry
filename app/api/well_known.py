@@ -4,13 +4,19 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from ..auth_jwks import extract_context, require_oauth
+from ..security import extract_context, require_oauth
 from ..core.logging import get_logger
 from ..services.registry_service import RegistryService
 
 logger = get_logger(__name__)
 
 router = APIRouter(tags=["well-known"])
+
+
+def _log_and_return_card(card_dict: Dict[str, Any], agent_id: str) -> Dict[str, Any]:
+    """Log success and return card data."""
+    logger.debug(f"Successfully retrieved card for agent {agent_id}")
+    return card_dict
 
 
 @router.get("/agents/index.json", response_model=Dict[str, Any])
@@ -80,7 +86,7 @@ async def get_agents_index(
             "agents": agents_list,
             "count": len(agents_list),
             "total_count": total,
-            "next": (f"/.well-known/agents/index.json?skip={skip+top}&top={top}" if skip + top < total else None),
+            "next": (f"/.well-known/agents/index.json?skip={skip + top}&top={top}" if skip + top < total else None),
         }
 
         logger.debug(f"Returning agents index with {len(agents_list)} agents")
@@ -99,7 +105,7 @@ async def get_agents_index(
 @router.get("/agents/{agent_id}/card")
 async def get_agent_card_well_known(
     agent_id: str,
-    payload=Depends(require_oauth),
+    payload: dict = Depends(require_oauth),
 ):
     """
     Get an agent card via well-known endpoint.
@@ -167,17 +173,15 @@ async def get_agent_card_well_known(
                 )
 
         # Validate card data
-        card_json = agent_version.card_json
-        if card_json is None:
-            logger.warning(f"Agent {agent_id} has no card data")
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent card data not available")
+        # At runtime, card_json is the actual JSON data, not a Column object
+        card_data = agent_version.card_json
+        assert card_data is not None, f"Agent {agent_id} has no card data"  # nosec B101
 
-        if not isinstance(card_json, dict):
-            logger.error(f"Invalid card data type for agent {agent_id}: {type(card_json)}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invalid card data format")
+        # Type cast to help mypy understand the runtime type
+        from typing import cast
+        card_dict = cast(dict, card_data)
 
-        logger.debug(f"Successfully retrieved card for agent {agent_id}")
-        return card_json
+        return _log_and_return_card(card_dict, agent_id)
 
     except HTTPException:
         raise

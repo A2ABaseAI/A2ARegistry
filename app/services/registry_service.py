@@ -48,9 +48,16 @@ class RegistryService:
     def __init__(self, db_session=None):
         if db_session is not None:
             self.db = db_session
+            self._owns_session = False
         else:
             # Create a new session using the factory function
             self.db = _get_db_session()
+            self._owns_session = True
+
+    def __del__(self):
+        """Clean up database session if we own it."""
+        if hasattr(self, '_owns_session') and self._owns_session and hasattr(self, 'db') and self.db:
+            self.db.close()
 
     def list_public(self, tenant_id: str, top: int, skip: int) -> Tuple[List[Dict[str, Any]], int]:
         q = (
@@ -85,7 +92,7 @@ class RegistryService:
     def get_latest(self, tenant_id: str, agent_id: str) -> Optional[Tuple[AgentRecord, AgentVersion]]:
         q = _latest_visible_versions_query(self.db, tenant_id).filter(AgentRecord.id == agent_id)
         row = q.first()
-        return row
+        return row  # type: ignore[no-any-return]
 
     def is_entitled(self, tenant_id: str, client_id: str, agent_id: str) -> bool:
         exists = (

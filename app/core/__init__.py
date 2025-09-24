@@ -1,7 +1,7 @@
 """Core production utilities."""
 
 from .caching import AgentCache, CacheManager, CacheWarmer
-from .exceptions import (  # ClientNotFoundError, FederationError, SearchServiceError removed
+from .exceptions import (
     A2ARegistryException,
     AccessDeniedError,
     AgentNotFoundError,
@@ -18,10 +18,7 @@ from .exceptions import (  # ClientNotFoundError, FederationError, SearchService
 )
 from .logging import RequestLoggingMiddleware, get_logger, setup_logging
 from .monitoring import HealthChecker, MetricsCollector, MetricsMiddleware
-from .security import (
-    RateLimitMiddleware,
-    RequestSizeLimitMiddleware,
-)
+from ..security.middleware import RateLimitMiddleware, RequestSizeLimitMiddleware
 
 __all__ = [
     "setup_logging",

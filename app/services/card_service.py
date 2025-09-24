@@ -63,7 +63,7 @@ class CardService:
 
             card_data = resp.json()
             logger.debug(f"Successfully fetched card from URL: {card_url}")
-            return card_data
+            return card_data  # type: ignore[no-any-return]
 
         except HTTPException:
             # Re-raise HTTP exceptions as-is

@@ -25,10 +25,10 @@ class ExampleRunner:
 
     def run_example(self, script_name: str, description: str) -> Dict[str, Any]:
         """Run a single example script."""
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"RUNNING: {description}")
         print(f"Script: {script_name}")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         script_path = os.path.join(self.examples_dir, script_name)
 
@@ -155,9 +155,9 @@ class ExampleRunner:
 
     def print_summary(self, total_duration: float):
         """Print final summary of all examples."""
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("FINAL SUMMARY")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         successful = sum(1 for r in self.results if r["status"] == "success")
         failed = sum(1 for r in self.results if r["status"] == "error")
@@ -182,7 +182,7 @@ class ExampleRunner:
                     if result.get("error"):
                         print(f"    Error: {result['error'][:100]}...")
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         if successful == len(self.results):
             print("ALL EXAMPLES COMPLETED SUCCESSFULLY! 🎉")
             print("\nKey Features Demonstrated:")
@@ -193,7 +193,7 @@ class ExampleRunner:
             print("✓ Production-ready error handling and security")
         else:
             print("SOME EXAMPLES FAILED - CHECK OUTPUT ABOVE ⚠️")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
 
 def main():

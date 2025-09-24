@@ -158,7 +158,7 @@ def demonstrate_agents_index(client: A2AWellKnownClient):
         if agents:
             print("  Sample agents:")
             for i, agent in enumerate(agents[:5]):
-                print(f"    {i+1}. {agent.get('name', 'Unknown')} (ID: {agent.get('id', 'Unknown')})")
+                print(f"    {i + 1}. {agent.get('name', 'Unknown')} (ID: {agent.get('id', 'Unknown')})")
                 print(f"       Description: {agent.get('description', 'No description')}")
                 print(f"       Provider: {agent.get('provider', 'Unknown')}")
                 print(f"       Location: {agent.get('location', {}).get('url', 'Unknown')}")
@@ -223,7 +223,7 @@ def demonstrate_agent_cards(client: A2AWellKnownClient):
         for i, agent_id in enumerate(agent_ids[:3]):  # Test first 3 agents
             try:
                 card = client.get_agent_card(agent_id)
-                print(f"✓ Agent {i+1} ({agent_id}):")
+                print(f"✓ Agent {i + 1} ({agent_id}):")
                 print(f"  Protocol Version: {card.get('protocolVersion', 'Unknown')}")
                 print(f"  Name: {card.get('name', 'Unknown')}")
                 print(f"  Description: {card.get('description', 'No description')}")

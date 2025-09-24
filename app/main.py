@@ -10,12 +10,12 @@ from opensearchpy import OpenSearch
 
 from .api import agents, auth, health, well_known
 from .api.search import router as search_router
+from .security import RateLimitMiddleware, RequestSizeLimitMiddleware
+from .security.router import router as security_router
 from .config import settings
 from .core import (
     MetricsMiddleware,
-    RateLimitMiddleware,
     RequestLoggingMiddleware,
-    RequestSizeLimitMiddleware,
     get_logger,
     handle_generic_exception,
     setup_logging,
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
         finally:
             try:
                 db.close()
-            except Exception:
+            except Exception:  # nosec B110 - Intentional cleanup, ignore errors during shutdown
                 pass
 
     # Initialize search index (dev-only). Use infra provisioning in production.
@@ -107,6 +107,7 @@ app.include_router(agents.router)
 app.include_router(well_known.router, prefix="/.well-known")
 app.include_router(health.router)
 app.include_router(search_router)
+app.include_router(security_router)
 
 
 @app.get("/", tags=["root"])

@@ -14,7 +14,7 @@ class SearchIndex:
         self.client = OpenSearch(hosts=[settings.opensearch_url])
 
     def ensure_index(self) -> None:
-        if self.client.indices.exists(INDEX_NAME):
+        if self.client.indices.exists(index=INDEX_NAME):
             return
         mapping = {
             "settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}},

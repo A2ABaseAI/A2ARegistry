@@ -257,7 +257,7 @@ def demonstrate_pagination(client: A2ASearchClient):
         if items:
             print("  Agents on first page:")
             for i, item in enumerate(items):
-                print(f"    {i+1}. {item.get('name', 'Unknown')} (ID: {item.get('agentId', 'Unknown')})")
+                print(f"    {i + 1}. {item.get('name', 'Unknown')} (ID: {item.get('agentId', 'Unknown')})")
     except Exception as e:
         print(f"✗ Failed to get first page: {e}")
         return
@@ -272,7 +272,7 @@ def demonstrate_pagination(client: A2ASearchClient):
         if items:
             print("  Agents on second page:")
             for i, item in enumerate(items):
-                print(f"    {i+6}. {item.get('name', 'Unknown')} (ID: {item.get('agentId', 'Unknown')})")
+                print(f"    {i + 6}. {item.get('name', 'Unknown')} (ID: {item.get('agentId', 'Unknown')})")
     except Exception as e:
         print(f"✗ Failed to get second page: {e}")
 

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import HTTPException
 
-from app.core.security import (
+from app.security import (
     create_access_token,
     extract_context,
     hash_password,
@@ -271,7 +271,7 @@ class TestAuthenticationDependencies:
         role_dep = require_roles("Admin")
 
         # Mock the require_oauth dependency
-        with patch("app.core.security.require_oauth", return_value=mock_payload):
+        with patch("app.security.require_oauth", return_value=mock_payload):
             result = role_dep(mock_payload)
 
             assert result["roles"] == ["Admin", "User"]
@@ -290,7 +290,7 @@ class TestAuthenticationDependencies:
 
         role_dep = require_roles("Admin")
 
-        with patch("app.core.security.require_oauth", return_value=mock_payload):
+        with patch("app.security.require_oauth", return_value=mock_payload):
             with pytest.raises(HTTPException) as exc_info:
                 role_dep(mock_payload)
 
@@ -310,7 +310,7 @@ class TestAuthenticationDependencies:
         # Require either Admin OR User
         role_dep = require_roles("Admin", "User")
 
-        with patch("app.core.security.require_oauth", return_value=mock_payload):
+        with patch("app.security.require_oauth", return_value=mock_payload):
             result = role_dep(mock_payload)
 
             assert result["roles"] == ["User"]
@@ -327,7 +327,7 @@ class TestAuthenticationDependencies:
 
         role_dep = require_roles("Admin")
 
-        with patch("app.core.security.require_oauth", return_value=mock_payload):
+        with patch("app.security.require_oauth", return_value=mock_payload):
             with pytest.raises(HTTPException) as exc_info:
                 role_dep(mock_payload)
 

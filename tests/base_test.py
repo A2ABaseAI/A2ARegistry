@@ -1,3 +1,4 @@
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,6 +12,15 @@ from app.models.base import Base
 
 class BaseTest:
     """Base test class with common setup and helper methods."""
+
+    @pytest.fixture(autouse=True)
+    def setup_test_mode(self):
+        """Set TEST_MODE environment variable for all tests."""
+        os.environ["TEST_MODE"] = "true"
+        yield
+        # Clean up after test
+        if "TEST_MODE" in os.environ:
+            del os.environ["TEST_MODE"]
 
     @pytest.fixture
     def setup_test_db(self):
@@ -91,7 +101,7 @@ class BaseTest:
     @pytest.fixture
     def mock_auth(self):
         """Mock authentication dependency."""
-        from app.auth_jwks import require_oauth
+        from app.security import require_oauth
         from app.main import app
 
         def mock_require_oauth():

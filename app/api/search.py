@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from ..auth_jwks import extract_context, require_oauth
+from ..security import extract_context, require_oauth
 from ..core.caching import CacheManager
 from ..core.logging import get_logger
 from ..services.registry_service import RegistryService
@@ -27,7 +27,7 @@ class SearchBody(BaseModel):
 
 
 @router.post("/search")
-def search_agents(body: SearchBody, payload=Depends(require_oauth)) -> Dict[str, Any]:
+def search_agents(body: SearchBody, payload: dict = Depends(require_oauth)) -> Dict[str, Any]:
     """
     Search for agents with caching and fallback mechanisms.
 
@@ -61,7 +61,7 @@ def search_agents(body: SearchBody, payload=Depends(require_oauth)) -> Dict[str,
             cached = cache.get(cache_key)
             if cached is not None:
                 logger.debug(f"Cache hit for search key: {cache_key}")
-                return cached
+                return cached  # type: ignore[no-any-return]
         except Exception as e:
             logger.warning(f"Cache retrieval failed: {e}")
             # Continue without cache - not critical for functionality

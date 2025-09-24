@@ -214,7 +214,7 @@ class TestAuthService(BaseTest):
         assert isinstance(new_access_token, str)
 
         # Verify token contains expected claims (with JWKS mocking)
-        with patch("app.auth_jwks.verify_access_token") as mock_verify:
+        with patch("app.security.verify_access_token") as mock_verify:
             mock_verify.return_value = {
                 "user_id": sample_user.id,
                 "username": sample_user.username,
@@ -225,7 +225,7 @@ class TestAuthService(BaseTest):
                 "iat": 1640995200,
             }
 
-            from app.auth_jwks import verify_access_token
+            from app.security import verify_access_token
 
             payload = verify_access_token(new_access_token)
             assert payload.get("user_id") == sample_user.id
@@ -302,13 +302,13 @@ class TestAuthService(BaseTest):
     def test_create_refresh_response(self, auth_service, sample_user):
         """Test creation of token refresh response."""
         # Mock the verify_access_token function
-        with patch("app.auth_jwks.verify_access_token") as mock_verify:
+        with patch("app.services.auth_service.verify_access_token") as mock_verify:
             mock_verify.return_value = {
                 "user_id": sample_user.id,
                 "username": sample_user.username,
                 "email": sample_user.email,
                 "full_name": sample_user.full_name,
-                "tenant_id": sample_user.tenant_id,
+                "tenant": sample_user.tenant_id,
                 "roles": sample_user.roles,
                 "iat": datetime.now(timezone.utc).timestamp(),
             }

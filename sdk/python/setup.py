@@ -2,18 +2,25 @@
 """Setup script for A2A Python SDK."""
 
 from setuptools import setup, find_packages
-import os
 
 # Read the README file
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 # Read requirements
-with open("requirements.txt", "r", encoding="utf-8") as fh:
-    requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+try:
+    with open("requirements.txt", "r", encoding="utf-8") as fh:
+        requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+except FileNotFoundError:
+    # Fallback to hardcoded requirements if file not found
+    requirements = [
+        "requests>=2.31.0",
+        "PyYAML>=6.0",
+        "dataclasses>=0.6; python_version<\"3.7\"",
+    ]
 
 setup(
-    name="a2a-sdk",
+    name="a2a-reg-sdk",
     version="1.0.0",
     author="A2A Registry Team",
     author_email="team@a2areg.dev",
