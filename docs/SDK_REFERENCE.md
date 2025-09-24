@@ -15,7 +15,7 @@ Complete reference documentation for the A2A Python SDK.
 
 ```bash
 # Install from PyPI (when available)
-pip install a2a-sdk
+pip install a2a-reg-sdk
 
 # Install from source
 git clone https://github.com/a2areg/a2a-registry.git
@@ -26,7 +26,7 @@ pip install -e .
 ## Quick Start
 
 ```python
-from a2a_sdk import A2AClient, AgentBuilder
+from a2a_reg_sdk import A2AClient, AgentBuilder
 
 # Create and authenticate client
 client = A2AClient(
@@ -454,7 +454,7 @@ class AgentCard:
 ### Basic Agent Creation
 
 ```python
-from a2a_sdk import AgentBuilder, AgentCapabilities, AuthScheme
+from a2a_reg_sdk import AgentBuilder, AgentCapabilities, AuthScheme
 
 capabilities = AgentCapabilities(
     protocols=["http"],
@@ -479,7 +479,7 @@ agent = AgentBuilder("chatbot", "AI Chatbot", "1.0.0", "my-company") \
 ### Publishing with High-Level API
 
 ```python
-from a2a_sdk import create_quick_publisher
+from a2a_reg_sdk import create_quick_publisher
 
 publisher = create_quick_publisher(
     registry_url="http://localhost:8000",
@@ -501,7 +501,7 @@ published_agent = publisher.publish(agent, validate=True)
 ### Loading from Configuration File
 
 ```python
-from a2a_sdk import AgentPublisher, A2AClient
+from a2a_reg_sdk import AgentPublisher, A2AClient
 
 client = A2AClient(...)
 client.authenticate()
@@ -575,7 +575,7 @@ A2AError                    # Base exception
 ### Error Handling Examples
 
 ```python
-from a2a_sdk import A2AClient, AuthenticationError, ValidationError, NotFoundError
+from a2a_reg_sdk import A2AClient, AuthenticationError, ValidationError, NotFoundError
 
 client = A2AClient(...)
 
@@ -595,7 +595,7 @@ except Exception as e:
 ### Validation Error Details
 
 ```python
-from a2a_sdk import AgentPublisher
+from a2a_reg_sdk import AgentPublisher
 
 publisher = AgentPublisher(client)
 
@@ -611,7 +611,7 @@ if errors:
 
 ```python
 import time
-from a2a_sdk import A2AClient, RateLimitError
+from a2a_reg_sdk import A2AClient, RateLimitError
 
 def publish_with_retry(client, agent, max_retries=3):
     for attempt in range(max_retries):
@@ -628,7 +628,7 @@ def publish_with_retry(client, agent, max_retries=3):
 ## Context Manager Usage
 
 ```python
-from a2a_sdk import A2AClient
+from a2a_reg_sdk import A2AClient
 
 # Use as context manager for automatic cleanup
 with A2AClient(registry_url="...", client_id="...", client_secret="...") as client:
@@ -646,7 +646,7 @@ with A2AClient(registry_url="...", client_id="...", client_secret="...") as clie
 
 ```python
 import requests
-from a2a_sdk import A2AClient
+from a2a_reg_sdk import A2AClient
 
 # Create client with custom session
 session = requests.Session()
@@ -673,7 +673,7 @@ import logging
 
 # Enable debug logging
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('a2a_sdk')
+logger = logging.getLogger('a2a_reg_sdk')
 logger.setLevel(logging.DEBUG)
 ```
 

@@ -4,10 +4,10 @@ A Python SDK for interacting with the A2A Agent Registry. This SDK provides easy
 
 ## Installation
 
-### From PyPI (when available)
+### From PyPI
 
 ```bash
-pip install a2a-sdk
+pip install a2a-reg-sdk
 ```
 
 ### From Source
@@ -21,7 +21,7 @@ pip install -e .
 ## Quick Start
 
 ```python
-from a2a_sdk import A2AClient, AgentBuilder
+from a2a_reg_sdk import A2AClient, AgentBuilder
 
 # Create and authenticate client
 client = A2AClient(
@@ -70,7 +70,7 @@ client.close()
 Main client for interacting with the registry.
 
 ```python
-from a2a_sdk import A2AClient
+from a2a_reg_sdk import A2AClient
 
 client = A2AClient(
     registry_url="http://localhost:8000",
@@ -92,7 +92,7 @@ agent = client.get_agent("agent-id")
 Fluent builder for creating agents.
 
 ```python
-from a2a_sdk import AgentBuilder, AgentCapabilities, AuthScheme
+from a2a_reg_sdk import AgentBuilder, AgentCapabilities, AuthScheme
 
 capabilities = AgentCapabilities(
     protocols=["http", "websocket"],
@@ -121,7 +121,7 @@ agent = AgentBuilder("chatbot", "AI Chatbot", "1.0.0", "ai-corp") \
 High-level interface for publishing with validation.
 
 ```python
-from a2a_sdk import A2AClient, AgentPublisher
+from a2a_reg_sdk import A2AClient, AgentPublisher
 
 client = A2AClient(...)
 client.authenticate()
@@ -151,7 +151,7 @@ published_file_agent = publisher.publish(file_agent)
 Main agent data model with comprehensive metadata.
 
 ```python
-from a2a_sdk import Agent, AgentCapabilities, AuthScheme
+from a2a_reg_sdk import Agent, AgentCapabilities, AuthScheme
 
 agent = Agent(
     name="my-agent",
@@ -172,7 +172,7 @@ agent = Agent(
 Defines what the agent can do.
 
 ```python
-from a2a_sdk import AgentCapabilities
+from a2a_reg_sdk import AgentCapabilities
 
 capabilities = AgentCapabilities(
     protocols=["http", "websocket", "grpc"],
@@ -188,7 +188,7 @@ capabilities = AgentCapabilities(
 Authentication methods supported by the agent.
 
 ```python
-from a2a_sdk import AuthScheme
+from a2a_reg_sdk import AuthScheme
 
 # API Key authentication
 api_key_auth = AuthScheme(
@@ -212,7 +212,7 @@ oauth_auth = AuthScheme(
 ### Basic Agent Management
 
 ```python
-from a2a_sdk import A2AClient
+from a2a_reg_sdk import A2AClient
 
 # Create client
 with A2AClient(
@@ -244,7 +244,7 @@ with A2AClient(
 ### Advanced Search
 
 ```python
-from a2a_sdk import A2AClient
+from a2a_reg_sdk import A2AClient
 
 client = A2AClient(...)
 client.authenticate()
@@ -278,7 +278,7 @@ for agent in results['agents']:
 ### Publishing from Configuration
 
 ```python
-from a2a_sdk import AgentPublisher, A2AClient
+from a2a_reg_sdk import AgentPublisher, A2AClient
 import yaml
 
 # Load configuration from file
@@ -306,7 +306,7 @@ else:
 ### Complex Agent with TEE
 
 ```python
-from a2a_sdk import (
+from a2a_reg_sdk import (
     AgentBuilder, AgentCapabilities, AuthScheme, 
     AgentTeeDetails, AgentSkills, AgentCard
 )
@@ -396,7 +396,7 @@ published_agent = client.publish_agent(agent)
 ### Error Handling
 
 ```python
-from a2a_sdk import (
+from a2a_reg_sdk import (
     A2AClient, AuthenticationError, ValidationError, 
     NotFoundError, RateLimitError
 )
@@ -425,7 +425,7 @@ except Exception as e:
 ### Batch Operations
 
 ```python
-from a2a_sdk import A2AClient, AgentPublisher
+from a2a_reg_sdk import A2AClient, AgentPublisher
 
 client = A2AClient(...)
 client.authenticate()
@@ -478,7 +478,7 @@ pip install -e ".[dev]"
 pytest
 
 # Run tests with coverage
-pytest --cov=a2a_sdk
+pytest --cov=a2a_reg_sdk
 
 # Run specific test
 pytest tests/test_client.py::test_authentication

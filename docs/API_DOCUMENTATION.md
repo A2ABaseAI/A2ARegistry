@@ -697,11 +697,11 @@ Subscribe to events:
 ### Python SDK
 
 ```bash
-pip install a2a-sdk
+pip install a2a-reg-sdk
 ```
 
 ```python
-from a2a_sdk import A2AClient
+from a2a_reg_sdk import A2AClient
 
 client = A2AClient(
     registry_url="http://localhost:8000",

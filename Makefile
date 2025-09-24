@@ -30,10 +30,11 @@ help:
 	@echo "  examples         Run all examples"
 	@echo "  example NAME=... Run specific example by name"
 	@echo ""
-	@echo "Publishing:"
-	@echo "  publish          Publish SDK to PyPI"
-	@echo "  build-sdk        Build SDK package"
-	@echo "  test-sdk         Test SDK package locally"
+	@echo "SDK Publishing:"
+	@echo "  sdk-build        Build SDK package"
+	@echo "  sdk-check        Check SDK package"
+	@echo "  sdk-publish-test Publish to Test PyPI"
+	@echo "  sdk-publish      Publish to PyPI"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  install-deps     Install required dependencies"
@@ -200,3 +201,20 @@ clean:
 	@if [ -d "sdk/python/dist" ]; then rm -rf sdk/python/dist; fi
 	@if [ -d "sdk/python/build" ]; then rm -rf sdk/python/build; fi
 	@if [ -d "sdk/python/*.egg-info" ]; then rm -rf sdk/python/*.egg-info; fi
+
+# SDK Publishing targets
+sdk-build:
+	@echo "🔨 Building SDK package..."
+	@cd sdk/python && source ../../venv/bin/activate && rm -rf dist/ build/ *.egg-info/ && python -m build
+
+sdk-check:
+	@echo "✅ Checking SDK package..."
+	@cd sdk/python && source ../../venv/bin/activate && twine check dist/*
+
+sdk-publish-test:
+	@echo "🚀 Publishing to Test PyPI..."
+	@cd sdk/python && source ../../venv/bin/activate && twine upload --repository testpypi dist/*
+
+sdk-publish:
+	@echo "🚀 Publishing to PyPI..."
+	@cd sdk/python && source ../../venv/bin/activate && twine upload dist/*

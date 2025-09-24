@@ -28,8 +28,8 @@ def main():
         print("  export A2A_REG_CLIENT_SECRET='your-client-secret'")
         return
 
-    print("📡 Connecting to registry: {registry_url}")
-    print("👤 Using client ID: {client_id}")
+    print(f"📡 Connecting to registry: {registry_url}")
+    print(f"👤 Using client ID: {client_id}")
 
     # Initialize the client with READ scope for basic operations
     # Note: Regular users with "User" role can only request "read" scope

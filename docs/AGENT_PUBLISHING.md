@@ -232,7 +232,7 @@ a2a-publisher delete <agent-id>
 Use the Python SDK for programmatic publishing:
 
 ```python
-from a2a_sdk import A2AClient, AgentBuilder, AgentCapabilities, AuthScheme
+from a2a_reg_sdk import A2AClient, AgentBuilder, AgentCapabilities, AuthScheme
 
 # Create client
 client = A2AClient(
@@ -261,7 +261,7 @@ print(f"Published agent with ID: {published_agent.id}")
 Use the `AgentPublisher` class for advanced features:
 
 ```python
-from a2a_sdk import A2AClient, AgentPublisher
+from a2a_reg_sdk import A2AClient, AgentPublisher
 
 client = A2AClient(...)
 client.authenticate()
