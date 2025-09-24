@@ -1,7 +1,7 @@
 # Makefile for A2A Registry Development
 # 
 # Usage:
-#   make quality          # Run all quality checks
+#   make qa		          # Run all quality checks
 #   make lint             # Run linting only
 #   make security         # Run security check only
 #   make type             # Run type checking only
@@ -12,14 +12,14 @@
 #   make publish          # Publish SDK to PyPI
 #   make help             # Show help
 
-.PHONY: help quality lint security type test clean install-deps backend examples example publish build-sdk test-sdk
+.PHONY: help qa lint security type test clean install-deps backend examples example publish build-sdk test-sdk
 
 # Default target
 help:
 	@echo "A2A Registry Development Commands"
 	@echo ""
 	@echo "Quality Checks:"
-	@echo "  quality          Run all quality checks"
+	@echo "  qa          Run all quality checks"
 	@echo "  lint             Run linting (flake8)"
 	@echo "  security         Run security analysis (bandit)"
 	@echo "  type             Run type checking (mypy)"
@@ -54,7 +54,7 @@ install-deps:
 	pip install flake8 bandit mypy pytest
 
 # Run all quality checks
-quality: lint security type test
+qa: lint security type test
 	@echo "🎉 All quality checks completed!"
 
 # Run linting
