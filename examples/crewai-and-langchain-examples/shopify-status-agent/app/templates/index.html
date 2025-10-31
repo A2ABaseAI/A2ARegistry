@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopify Status Agent</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛍️ Shopify Status Agent</h1>
+            <p>Ask me about your order status and tracking information!</p>
+        </header>
+        
+        <div class="chat-container">
+            <div id="chat-messages" class="chat-messages"></div>
+            
+            <div class="chat-input-container">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="message-input" 
+                        placeholder="Ask about your order (e.g., 'Where's my order #1001?')"
+                        autocomplete="off"
+                    >
+                    <button id="send-button" type="button">Send</button>
+                </div>
+                <div class="input-hints">
+                    <small>Try: "Track order #1001" or "Where's my order for customer@example.com"</small>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <div class="status-info">
+                <span id="connection-status" class="status-indicator">●</span>
+                <span id="session-info">Session: Not started</span>
+            </div>
+            <div class="help-text">
+                <p>This agent can help you track orders by order number, email, or phone number.</p>
+                <p>All personal information is automatically masked for privacy.</p>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>
