@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+from registry.main import app
 from tests.base_test import BaseTest
 
 
@@ -11,7 +11,7 @@ class TestWellKnownAPI(BaseTest):
     @pytest.fixture
     def client(self, db_session, mock_redis, mock_opensearch, mock_services_db):
         """Create a test client with mocked dependencies."""
-        from app.database import get_db
+        from registry.database import get_db
 
         def get_test_db():
             try:

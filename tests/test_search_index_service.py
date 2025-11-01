@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.services.search_index import SearchIndex
+from registry.services.search_index import SearchIndex
 
 from .base_test import BaseTest
 
@@ -15,7 +15,7 @@ class TestSearchIndexService(BaseTest):
     @pytest.fixture(autouse=True)
     def setup_mocks(self):
         """Set up mocks for external dependencies."""
-        with patch("app.services.search_index.OpenSearch") as mock_opensearch:
+        with patch("registry.services.search_index.OpenSearch") as mock_opensearch:
             mock_es_instance = MagicMock()
             mock_es_instance.ping.return_value = True
             mock_es_instance.search.return_value = {"hits": {"hits": [], "total": {"value": 0}}}

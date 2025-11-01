@@ -2,14 +2,14 @@
 
 import pytest
 
-from app.schemas.agent import (
+from registry.schemas.agent import (
     AgentAuthScheme,
     AgentCapabilities,
     AgentCard,
     AgentCreate,
     AgentResponse,
 )
-from app.schemas.agent_card_spec import AgentCardSpec, AgentSkill
+from registry.schemas.agent_card_spec import AgentCardSpec, AgentSkill
 
 from .base_test import BaseTest
 
@@ -286,3 +286,165 @@ class TestSchemas(BaseTest):
         assert agent_card.skills == []
         assert agent_card.provider is not None
         assert agent_card.documentationUrl is None
+
+    def test_agent_card_spec_with_all_optional_fields(self):
+        """Test AgentCardSpec with all optional fields."""
+        data = {
+            "name": "Test Agent",
+            "description": "A test agent",
+            "url": "https://test.example.com",
+            "version": "1.0.0",
+            "provider": {"organization": "Test Org", "url": "https://test.org"},
+            "capabilities": {
+                "streaming": True,
+                "pushNotifications": True,
+                "stateTransitionHistory": True,
+                "supportsAuthenticatedExtendedCard": True,
+            },
+            "securitySchemes": [
+                {
+                    "type": "apiKey",
+                    "location": "header",
+                    "name": "X-API-Key",
+                    "credentials": "test_credentials",
+                },
+                {
+                    "type": "oauth2",
+                    "flow": "client_credentials",
+                    "tokenUrl": "https://test.org/token",
+                    "scopes": ["read", "write"],
+                },
+            ],
+            "skills": [
+                {
+                    "id": "skill1",
+                    "name": "Skill 1",
+                    "description": "First skill",
+                    "tags": ["test", "skill"],
+                    "examples": ["Example 1", "Example 2"],
+                    "inputModes": ["text/plain"],
+                    "outputModes": ["application/json"],
+                }
+            ],
+            "interface": {
+                "preferredTransport": "jsonrpc",
+                "defaultInputModes": ["text/plain", "application/json"],
+                "defaultOutputModes": ["text/plain", "application/json"],
+                "additionalInterfaces": [{"transport": "http", "url": "https://test.example.com/api"}],
+            },
+            "documentationUrl": "https://test.example.com/docs",
+            "signature": {
+                "algorithm": "RS256",
+                "signature": "test_signature",
+                "jwksUrl": "https://test.example.com/.well-known/jwks.json",
+            },
+        }
+
+        agent_card = AgentCardSpec.model_validate(data)
+
+        assert agent_card.name == "Test Agent"
+        assert agent_card.provider is not None
+        assert agent_card.provider.organization == "Test Org"
+        assert len(agent_card.securitySchemes) == 2
+        assert agent_card.securitySchemes[0].type == "apiKey"
+        assert agent_card.securitySchemes[1].type == "oauth2"
+        assert agent_card.securitySchemes[1].flow == "client_credentials"
+        assert len(agent_card.skills) == 1
+        assert agent_card.skills[0].id == "skill1"
+        assert agent_card.interface.preferredTransport == "jsonrpc"
+        assert len(agent_card.interface.additionalInterfaces) == 1
+        assert agent_card.documentationUrl is not None
+        assert str(agent_card.documentationUrl) == "https://test.example.com/docs"
+        assert agent_card.signature is not None
+        assert agent_card.signature.algorithm == "RS256"
+        assert agent_card.signature.jwksUrl is not None
+        assert str(agent_card.signature.jwksUrl) == "https://test.example.com/.well-known/jwks.json"
+
+    def test_agent_card_spec_validation_missing_required_fields(self):
+        """Test that missing required fields raise validation errors."""
+        # Missing name
+        with pytest.raises(Exception):
+            AgentCardSpec.model_validate(
+                {
+                    "description": "A test agent",
+                    "url": "https://test.example.com",
+                    "version": "1.0.0",
+                    "capabilities": {},
+                    "securitySchemes": [],
+                    "skills": [],
+                    "interface": {
+                        "preferredTransport": "jsonrpc",
+                        "defaultInputModes": ["text/plain"],
+                        "defaultOutputModes": ["text/plain"],
+                    },
+                }
+            )
+
+        # Missing interface
+        with pytest.raises(Exception):
+            AgentCardSpec.model_validate(
+                {
+                    "name": "Test Agent",
+                    "description": "A test agent",
+                    "url": "https://test.example.com",
+                    "version": "1.0.0",
+                    "capabilities": {},
+                    "securitySchemes": [],
+                    "skills": [],
+                }
+            )
+
+    def test_security_scheme_validation(self):
+        """Test SecurityScheme validation."""
+        from registry.schemas.agent_card_spec import SecurityScheme
+
+        # Valid apiKey scheme
+        scheme = SecurityScheme(type="apiKey", location="header", name="X-API-Key")
+        assert scheme.type == "apiKey"
+        assert scheme.location == "header"
+
+        # Valid oauth2 scheme
+        scheme2 = SecurityScheme(
+            type="oauth2",
+            flow="client_credentials",
+            tokenUrl="https://example.com/token",
+            scopes=["read", "write"],
+        )
+        assert scheme2.type == "oauth2"
+        assert scheme2.flow == "client_credentials"
+        assert scheme2.scopes == ["read", "write"]
+
+    def test_agent_interface_validation(self):
+        """Test AgentInterface validation."""
+        from registry.schemas.agent_card_spec import AgentInterface
+
+        # Valid interface
+        interface = AgentInterface(
+            preferredTransport="jsonrpc",
+            defaultInputModes=["text/plain", "application/json"],
+            defaultOutputModes=["text/plain", "application/json"],
+            additionalInterfaces=[{"transport": "http", "url": "https://example.com/api"}],
+        )
+        assert interface.preferredTransport == "jsonrpc"
+        assert len(interface.defaultInputModes) == 2
+        assert len(interface.additionalInterfaces) == 1
+
+    def test_agent_skill_validation_with_all_fields(self):
+        """Test AgentSkill validation with all fields."""
+        from registry.schemas.agent_card_spec import AgentSkill
+
+        skill = AgentSkill(
+            id="find_recipe",
+            name="Find Recipe",
+            description="Find recipes based on ingredients",
+            tags=["cooking", "recipe"],
+            examples=["I need a recipe for bread", "Find vegetarian pasta recipes"],
+            inputModes=["text/plain"],
+            outputModes=["application/json"],
+        )
+        assert skill.id == "find_recipe"
+        assert skill.name == "Find Recipe"
+        assert len(skill.tags) == 2
+        assert len(skill.examples) == 2
+        assert skill.inputModes == ["text/plain"]
+        assert skill.outputModes == ["application/json"]

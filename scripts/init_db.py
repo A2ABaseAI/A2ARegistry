@@ -7,15 +7,15 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy.orm import Session
-from app.database import SessionLocal, create_tables
-from app.models.client import Client
-from app.models.agent import Agent
-from app.models.client import ClientEntitlement
-from app.auth import get_password_hash
-from app.services.registry_service import RegistryService
-from app.services.search_index import SearchIndex
-from app.models.agent_core import AgentRecord, AgentVersion
-from app.schemas.agent import AgentCreate
+from registry.database import SessionLocal, create_tables
+from registry.models.client import Client
+from registry.models.agent import Agent
+from registry.models.client import ClientEntitlement
+from registry.auth import get_password_hash
+from registry.services.registry_service import RegistryService
+from registry.services.search_index import SearchIndex
+from registry.models.agent_core import AgentRecord, AgentVersion
+from registry.schemas.agent import AgentCreate
 
 
 def create_sample_data():
@@ -258,7 +258,7 @@ def create_sample_data():
             pass
 
         # Seed a minimal tenant and an example agent
-        from app.database import SessionLocal
+        from registry.database import SessionLocal
 
         db = SessionLocal()
         try:

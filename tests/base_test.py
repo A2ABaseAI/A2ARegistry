@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.models.agent_core import AgentRecord, AgentVersion, Entitlement
-from app.models.base import Base
+from registry.models.agent_core import AgentRecord, AgentVersion, Entitlement
+from registry.models.base import Base
 
 
 class BaseTest:
@@ -72,7 +72,7 @@ class BaseTest:
     def mock_opensearch(self):
         """Mock OpenSearch connection."""
         with (
-            patch("app.services.search_index.OpenSearch") as mock_opensearch,
+            patch("registry.services.search_index.OpenSearch") as mock_opensearch,
             patch("opensearchpy.OpenSearch") as mock_health_opensearch,
         ):
             mock_es_instance = MagicMock()
@@ -95,14 +95,14 @@ class BaseTest:
         def mock_session_local():
             return next(test_db_factory())
 
-        with patch("app.database.SessionLocal", side_effect=mock_session_local):
+        with patch("registry.database.SessionLocal", side_effect=mock_session_local):
             yield
 
     @pytest.fixture
     def mock_auth(self):
         """Mock authentication dependency."""
-        from app.main import app
-        from app.security import require_oauth
+        from registry.main import app
+        from registry.security import require_oauth
 
         def mock_require_oauth():
             return {"sub": "test-client", "client_id": "test-client", "tenant": "default", "roles": ["Administrator"]}
@@ -123,7 +123,7 @@ class BaseTest:
         test_db_factory = setup_test_db
 
         def mock_registry_service():
-            from app.services.registry_service import RegistryService
+            from registry.services.registry_service import RegistryService
 
             service = RegistryService()
             # Replace the db session with test database
@@ -131,7 +131,7 @@ class BaseTest:
             return service
 
         def mock_agent_service():
-            from app.services.agent_service import AgentService
+            from registry.services.agent_service import AgentService
 
             service = AgentService()
             # Replace the db session with test database
@@ -139,7 +139,7 @@ class BaseTest:
             return service
 
         def mock_card_service():
-            from app.services.card_service import CardService
+            from registry.services.card_service import CardService
 
             service = CardService()
             # Replace the db session with test database
@@ -148,18 +148,18 @@ class BaseTest:
 
         # Mock the static method separately
         def mock_parse_and_validate_card(body):
-            from app.services.card_service import CardService
+            from registry.services.card_service import CardService
 
             # Call the real method but with test database
             return CardService.parse_and_validate_card(body)
 
         with (
-            patch("app.api.agents.RegistryService", side_effect=mock_registry_service),
-            patch("app.api.agents.AgentService", side_effect=mock_agent_service),
-            patch("app.api.agents.CardService", side_effect=mock_card_service),
-            patch("app.api.agents.CardService.parse_and_validate_card", side_effect=mock_parse_and_validate_card),
-            patch("app.api.well_known.RegistryService", side_effect=mock_registry_service),
-            patch("app.api.search.RegistryService", side_effect=mock_registry_service),
+            patch("registry.api.agents.RegistryService", side_effect=mock_registry_service),
+            patch("registry.api.agents.AgentService", side_effect=mock_agent_service),
+            patch("registry.api.agents.CardService", side_effect=mock_card_service),
+            patch("registry.api.agents.CardService.parse_and_validate_card", side_effect=mock_parse_and_validate_card),
+            patch("registry.api.well_known.RegistryService", side_effect=mock_registry_service),
+            patch("registry.api.search.RegistryService", side_effect=mock_registry_service),
         ):
             yield
 

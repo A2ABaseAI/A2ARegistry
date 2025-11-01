@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+from registry.main import app
 from tests.base_test import BaseTest
 
 
@@ -11,7 +11,7 @@ class TestAgentsAPI(BaseTest):
     @pytest.fixture
     def client(self, db_session, mock_redis, mock_opensearch):
         """Create a test client with mocked dependencies."""
-        from app.database import get_db
+        from registry.database import get_db
 
         def get_test_db():
             try:
@@ -171,7 +171,7 @@ class TestAgentsAPI(BaseTest):
 
     def test_authentication_required(self, db_session, mock_redis, mock_opensearch):
         """Test that authentication is required for protected endpoints."""
-        from app.database import get_db
+        from registry.database import get_db
 
         def get_test_db():
             try:

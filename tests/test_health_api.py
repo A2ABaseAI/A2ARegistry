@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+from registry.main import app
 
 from .base_test import BaseTest
 
@@ -16,7 +16,7 @@ class TestHealthAPI(BaseTest):
     @pytest.fixture
     def client(self, db_session, mock_redis, mock_opensearch, mock_health_checker_db):
         """Create a test client with mocked dependencies."""
-        from app.database import get_db
+        from registry.database import get_db
 
         def get_test_db():
             try:
@@ -46,7 +46,7 @@ class TestHealthAPI(BaseTest):
     def test_health_detailed_endpoint(self, client):
         """Test detailed health check endpoint."""
         # Mock the HealthChecker
-        with patch("app.api.health.HealthChecker") as mock_health_checker:
+        with patch("registry.api.health.HealthChecker") as mock_health_checker:
             mock_checker_instance = MagicMock()
 
             # Create an async mock that returns the health data
@@ -107,7 +107,7 @@ class TestHealthAPI(BaseTest):
 
     def test_health_detailed_structure(self, client):
         """Test that detailed health check has correct structure."""
-        with patch("app.api.health.HealthChecker") as mock_health_checker:
+        with patch("registry.api.health.HealthChecker") as mock_health_checker:
             mock_checker_instance = MagicMock()
 
             # Create an async mock that returns the health data
@@ -168,7 +168,7 @@ class TestHealthAPI(BaseTest):
 
     def test_health_detailed_checks(self, client):
         """Test individual health checks in detailed endpoint."""
-        with patch("app.api.health.HealthChecker") as mock_health_checker:
+        with patch("registry.api.health.HealthChecker") as mock_health_checker:
             mock_checker_instance = MagicMock()
 
             # Create an async mock that returns the health data

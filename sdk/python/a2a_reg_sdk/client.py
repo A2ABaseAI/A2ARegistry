@@ -7,13 +7,25 @@ Main client class for interacting with the A2A Agent Registry.
 import time
 from typing import Dict, List, Optional, Any, Union
 from urllib.parse import urljoin
+from pathlib import Path
 import requests
+import yaml
+import json
 
 from .exceptions import A2AError, AuthenticationError, ValidationError, NotFoundError
-from .models import Agent, AgentCard
+from .models import (
+    Agent,
+    AgentCardSpec,
+    AgentBuilder,
+    AgentCapabilitiesBuilder,
+    SecuritySchemeBuilder,
+    AgentSkillBuilder,
+    AgentInterfaceBuilder,
+    AgentCardSpecBuilder,
+)
 
 
-class A2AClient:
+class A2ARegClient:
     """Client for interacting with the A2A Agent Registry."""
 
     def __init__(
@@ -134,13 +146,22 @@ class A2AClient:
     def _convert_to_card_spec(self, agent_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Convert Agent model to AgentCardSpec format."""
         # Extract capabilities
-        capabilities = agent_dict.get("capabilities", {})
-        card_capabilities = {
-            "streaming": capabilities.get("streaming", False),
-            "pushNotifications": capabilities.get("pushNotifications", False),
-            "stateTransitionHistory": capabilities.get("stateTransitionHistory", False),
-            "supportsAuthenticatedExtendedCard": capabilities.get("supportsAuthenticatedExtendedCard", False),
-        }
+        capabilities = agent_dict.get("capabilities") or {}
+        if isinstance(capabilities, dict):
+            card_capabilities = {
+                "streaming": capabilities.get("streaming", False),
+                "pushNotifications": capabilities.get("pushNotifications", False),
+                "stateTransitionHistory": capabilities.get("stateTransitionHistory", False),
+                "supportsAuthenticatedExtendedCard": capabilities.get("supportsAuthenticatedExtendedCard", False),
+            }
+        else:
+            # Handle AgentCapabilities object
+            card_capabilities = {
+                "streaming": getattr(capabilities, "streaming", False) or False,
+                "pushNotifications": getattr(capabilities, "pushNotifications", False) or False,
+                "stateTransitionHistory": getattr(capabilities, "stateTransitionHistory", False) or False,
+                "supportsAuthenticatedExtendedCard": getattr(capabilities, "supportsAuthenticatedExtendedCard", False) or False,
+            }
 
         # Convert auth schemes to security schemes
         security_schemes = []
@@ -296,7 +317,7 @@ class A2AClient:
         except requests.RequestException as e:
             raise A2AError(f"Failed to get agent {agent_id}: {e}")
 
-    def get_agent_card(self, agent_id: str) -> AgentCard:
+    def get_agent_card(self, agent_id: str) -> AgentCardSpec:
         """
         Get an agent's card (detailed metadata).
 
@@ -304,7 +325,7 @@ class A2AClient:
             agent_id: The agent's unique identifier
 
         Returns:
-            AgentCard object
+            AgentCardSpec object
         """
         try:
             response = self.session.get(
@@ -312,7 +333,7 @@ class A2AClient:
                 timeout=self.timeout,
             )
             card_data = self._handle_response(response)
-            return AgentCard.from_dict(card_data)
+            return AgentCardSpec.from_dict(card_data)
         except requests.RequestException as e:
             raise A2AError(f"Failed to get agent card for {agent_id}: {e}")
 
@@ -368,23 +389,36 @@ class A2AClient:
         except requests.RequestException as e:
             raise A2AError(f"Failed to get registry stats: {e}")
 
-    def publish_agent(self, agent_data: Union[Dict[str, Any], Agent]) -> Agent:
+    def publish_agent(self, agent_data: Union[Dict[str, Any], Agent], validate: bool = False) -> Agent:
         """
         Publish a new agent to the registry.
 
         Args:
             agent_data: Agent data as dict or Agent object
+            validate: Whether to validate the agent before publishing
 
         Returns:
             Published Agent object
+
+        Raises:
+            ValidationError: If validation fails
+            A2AError: If publishing fails
         """
         self._ensure_authenticated()
 
         try:
             if isinstance(agent_data, Agent):
+                agent = agent_data
                 agent_dict = agent_data.to_dict()
             else:
                 agent_dict = agent_data
+                agent = Agent.from_dict(agent_dict)
+
+            # Validate if requested
+            if validate:
+                errors = self.validate_agent(agent)
+                if errors:
+                    raise ValidationError(f"Agent validation failed: {'; '.join(errors)}")
 
             # Convert Agent model to AgentCardSpec format
             card_data = self._convert_to_card_spec(agent_dict)
@@ -599,6 +633,195 @@ class A2AClient:
 
         except Exception as e:
             raise A2AError(f"Failed to list API keys: {e}")
+
+    # Publisher convenience methods
+
+    def load_agent_from_file(self, file_path: Union[str, Path]) -> Agent:
+        """
+        Load agent configuration from a file.
+
+        Args:
+            file_path: Path to YAML or JSON configuration file
+
+        Returns:
+            Agent object
+
+        Raises:
+            ValidationError: If file cannot be loaded or parsed
+        """
+        file_path = Path(file_path)
+
+        if not file_path.exists():
+            raise ValidationError(f"Configuration file not found: {file_path}")
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                if file_path.suffix.lower() in [".yaml", ".yml"]:
+                    data = yaml.safe_load(f)
+                else:
+                    data = json.load(f)
+
+            return Agent.from_dict(data)
+        except Exception as e:
+            raise ValidationError(f"Failed to load agent configuration: {e}")
+
+    def validate_agent(self, agent: Agent) -> List[str]:
+        """
+        Validate an agent configuration.
+
+        Args:
+            agent: Agent to validate
+
+        Returns:
+            List of validation errors (empty if valid)
+        """
+        errors = []
+
+        # Required fields
+        if not agent.name:
+            errors.append("Agent name is required")
+        if not agent.description:
+            errors.append("Agent description is required")
+        if not agent.version:
+            errors.append("Agent version is required")
+        if not agent.provider:
+            errors.append("Agent provider is required")
+
+        # Validate auth schemes
+        for i, scheme in enumerate(agent.auth_schemes):
+            if not scheme.type:
+                errors.append(f"Auth scheme {i} missing required field: type")
+            if scheme.type not in ["apiKey", "oauth2", "jwt", "mTLS", "bearer"]:
+                errors.append(f"Auth scheme {i} has invalid type: {scheme.type}")
+
+        # Validate agent card if present
+        if agent.agent_card:
+            if not agent.agent_card.name:
+                errors.append("Agent card name is required")
+            if not agent.agent_card.description:
+                errors.append("Agent card description is required")
+            if not agent.agent_card.version:
+                errors.append("Agent card version is required")
+
+        return errors
+
+    def publish_from_file(self, file_path: Union[str, Path], validate: bool = True) -> Agent:
+        """
+        Load and publish an agent from a configuration file.
+
+        Args:
+            file_path: Path to agent configuration file
+            validate: Whether to validate the agent before publishing
+
+        Returns:
+            Published agent with assigned ID
+        """
+        agent = self.load_agent_from_file(file_path)
+        if validate:
+            errors = self.validate_agent(agent)
+            if errors:
+                raise ValidationError(f"Agent validation failed: {'; '.join(errors)}")
+        return self.publish_agent(agent)
+
+    def create_sample_agent(
+        self,
+        name: str,
+        description: str,
+        version: str = "1.0.0",
+        provider: str = "my-org",
+        api_url: Optional[str] = None,
+    ) -> Agent:
+        """
+        Create a sample agent configuration.
+
+        Args:
+            name: Agent name
+            description: Agent description
+            version: Agent version
+            provider: Agent provider
+            api_url: API base URL
+
+        Returns:
+            Sample agent configuration
+        """
+        # Build capabilities using A2A Protocol specification
+        capabilities = (
+            AgentCapabilitiesBuilder()
+            .streaming(False)
+            .push_notifications(False)
+            .state_transition_history(False)
+            .build()
+        )
+
+        # Build security scheme
+        security_scheme = SecuritySchemeBuilder("apiKey").location("header").name("X-API-Key").build()
+
+        # Build skills using A2A Protocol specification
+        skill = (
+            AgentSkillBuilder("main_skill", "Main Skill", "Primary agent skill", ["ai", "assistant"])
+            .examples(["Example: {'message': 'Hello'} -> {'response': 'Hi there!'}"])
+            .input_modes(["application/json"])
+            .output_modes(["application/json"])
+            .build()
+        )
+
+        # Build interface
+        interface = AgentInterfaceBuilder(
+            "jsonrpc",
+            ["text/plain", "application/json"],
+            ["text/plain", "application/json"]
+        ).build()
+
+        # Build agent card spec using A2A Protocol specification
+        agent_card = (
+            AgentCardSpecBuilder(name, description, api_url or f"https://{provider}.com", version)
+            .with_provider(provider, api_url or f"https://{provider}.com")
+            .with_capabilities(capabilities)
+            .add_security_scheme(security_scheme)
+            .add_skill(skill)
+            .with_interface(interface)
+            .build()
+        )
+
+        # Build Agent with AgentCardSpec
+        # Construct location URL - if api_url provided, append /api/agent, otherwise use default
+        if api_url:
+            location_url = f"{api_url}/api/agent" if not api_url.endswith("/api/agent") else api_url
+        else:
+            location_url = f"https://{provider}.com/api/agent"
+        
+        return (
+            AgentBuilder(name, description, version, provider)
+            .with_tags(["ai", "assistant", "sample"])
+            .with_location(location_url, "api_endpoint")
+            .with_capabilities(capabilities)
+            .with_auth_schemes([security_scheme])
+            .with_skills([skill])
+            .with_agent_card(agent_card)
+            .public(True)
+            .active(True)
+            .build()
+        )
+
+    def save_agent_config(self, agent: Agent, file_path: Union[str, Path], format: str = "yaml") -> None:
+        """
+        Save agent configuration to a file.
+
+        Args:
+            agent: Agent to save
+            file_path: Output file path
+            format: File format ("yaml" or "json")
+        """
+        file_path = Path(file_path)
+
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                if format.lower() == "yaml":
+                    yaml.dump(agent.to_dict(), f, default_flow_style=False, indent=2)
+                else:
+                    json.dump(agent.to_dict(), f, indent=2)
+        except Exception as e:
+            raise ValidationError(f"Failed to save agent configuration: {e}")
 
     def close(self) -> None:
         """Close the HTTP session."""

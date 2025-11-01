@@ -91,7 +91,7 @@ backend:
 	@echo "API docs will be available at: http://localhost:8000/docs"
 	@echo "Press Ctrl+C to stop the server"
 	@echo ""
-	@source venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+	@source venv/bin/activate && uvicorn registry.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Run all examples
 examples:

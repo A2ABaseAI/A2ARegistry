@@ -122,7 +122,7 @@ SLOs: p95 < 200 ms for cache-warm reads (local region), 99.9% availability, scal
 
 6. **Start the backend**
    ```bash
-   python -m app.main
+   python -m registry.main
    ```
 
 7. **Start the frontend** (in a new terminal)

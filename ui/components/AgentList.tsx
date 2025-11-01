@@ -19,7 +19,7 @@ export default function AgentList({ agents }: AgentListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {agents.map((agent, index) => {
-        const agentId = agent.agentId || agent.id;
+        const agentId = agent.id;
         if (!agentId) {
           console.warn('Agent missing ID at index', index, agent);
           return null;
