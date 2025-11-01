@@ -27,7 +27,7 @@ if curl -s -H "Authorization: Bearer dev-admin-api-key" http://localhost:8000/he
     echo "✅ A2A Registry is running on http://localhost:8000"
 else
     echo "❌ A2A Registry is not running. Please start it first:"
-    echo "   cd /Users/user/dev/a2a-registry && source venv/bin/activate && python -m app.main"
+    echo "   cd /Users/user/dev/a2a-registry && source venv/bin/activate && python -m registry.main"
     exit 1
 fi
 

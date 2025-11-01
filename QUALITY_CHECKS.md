@@ -80,7 +80,7 @@ make help             # Show help message
 # Start the backend server
 make backend
 # or
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn registry.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 - Starts the A2A Registry API server
 - Available at: http://localhost:8000

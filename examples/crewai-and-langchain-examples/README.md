@@ -307,7 +307,7 @@ result = client.publish_agent(agent_card)
    # Start the A2A Registry
    cd /Users/user/dev/a2a-registry
    source venv/bin/activate
-   python -m app.main
+   python -m registry.main
    ```
 
 2. **Agents Not Registered**

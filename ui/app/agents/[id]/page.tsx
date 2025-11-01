@@ -182,8 +182,12 @@ export default function AgentDetailPage() {
               <div className="flex items-start space-x-3">
                 <User className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Publisher</p>
-                  <p className="text-gray-900 dark:text-white">{agent.publisherId || agent.url?.host || 'Unknown'}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Provider</p>
+                  <p className="text-gray-900 dark:text-white">
+                    {typeof agent.provider === 'string' 
+                      ? agent.provider 
+                      : agent.provider?.organization || 'Unknown'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
@@ -191,13 +195,6 @@ export default function AgentDetailPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Version</p>
                   <p className="text-gray-900 dark:text-white">{agent.version}</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <Code className="h-5 w-5 text-gray-400 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Protocol Version</p>
-                  <p className="text-gray-900 dark:text-white">{agent.protocolVersion || '1.0'}</p>
                 </div>
               </div>
               {agent.url && (
@@ -324,39 +321,31 @@ function TestAgentTab({
     setTestResponse(null);
 
     try {
-      // Get agent URL from card
-      const agentUrl = (agent as any).url || (agent as any).location?.url;
+      // Get agent URL from card - use url field from AgentCardSpec
+      const agentUrl = (agent as any).url;
       if (!agentUrl) {
         throw new Error('Agent URL not found in card. Cannot test agent without an endpoint.');
       }
 
-      // Determine endpoint from card
-      const baseUrl = typeof agentUrl === 'string' ? agentUrl : agentUrl.url || '';
-      let endpoint = (agent as any).endpoints?.chat || (agent as any).endpoints?.message;
-      if (!endpoint) {
-        // Default to common A2A endpoints
-        endpoint = '/chat';
+      // Determine endpoint from card interface
+      const baseUrl = typeof agentUrl === 'string' ? agentUrl : '';
+      // Use interface information if available
+      const interface_ = (agent as any).interface;
+      let endpoint = '/chat'; // Default endpoint
+      
+      // Check if there are additional interfaces defined
+      if (interface_?.additionalInterfaces && interface_.additionalInterfaces.length > 0) {
+        const httpInterface = interface_.additionalInterfaces.find((i: any) => i.transport === 'http');
+        if (httpInterface?.url) {
+          endpoint = httpInterface.url;
+        }
       }
-      const fullUrl = `${baseUrl.replace(/\/$/, '')}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+      
+      const fullUrl = endpoint.startsWith('http') ? endpoint : `${baseUrl.replace(/\/$/, '')}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
       // Prepare request based on card skills schema
       const skills = agent.skills || [];
       let requestBody: any = { message };
-
-      // If skills have input schema, try to match it
-      if (skills.length > 0 && skills[0]?.inputSchema) {
-        const inputSchema = skills[0].inputSchema;
-        // Use schema to construct request
-        requestBody = { message };
-        // Add any required fields from schema
-        if (inputSchema.required) {
-          for (const field of inputSchema.required) {
-            if (field !== 'message' && !requestBody[field]) {
-              requestBody[field] = null;
-            }
-          }
-        }
-      }
 
       // Handle authentication if needed
       const headers: Record<string, string> = {

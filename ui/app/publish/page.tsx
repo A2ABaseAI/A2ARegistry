@@ -80,7 +80,7 @@ export default function PublishPage() {
       }
 
       const result = await agentApi.publishAgent(publishData);
-      setSuccess(`Agent ${result.agentId} v${result.version} published successfully!`);
+      setSuccess(`Agent ${result.id} v${result.version} published successfully!`);
       
       // Reset form
       setFormData({
@@ -91,7 +91,7 @@ export default function PublishPage() {
 
       // Redirect to agent page after 2 seconds
       setTimeout(() => {
-        router.push(`/agents/${result.agentId}`);
+        router.push(`/agents/${result.id}`);
       }, 2000);
     } catch (err: any) {
       setError(formatErrorMessage(err) || 'Failed to publish agent');

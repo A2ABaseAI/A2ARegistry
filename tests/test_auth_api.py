@@ -5,8 +5,8 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.services.auth_service import AuthService
+from registry.main import app
+from registry.services.auth_service import AuthService
 from tests.base_test import BaseTest
 
 
@@ -17,7 +17,7 @@ class TestAuthAPI(BaseTest):
     def client(self, db_session, mock_redis, mock_opensearch, mock_services_db):
         """Create a test client with mocked dependencies."""
         # Mock the AuthService to use the test database session
-        with patch("app.api.auth.AuthService") as mock_auth_service:
+        with patch("registry.api.auth.AuthService") as mock_auth_service:
 
             def create_auth_service():
                 service = AuthService(db_session=db_session)
@@ -186,7 +186,7 @@ class TestAuthAPI(BaseTest):
         refresh_token = login_response.json()["refresh_token"]
 
         # Mock the verify_access_token call to avoid external JWKS dependency
-        with patch("app.security.jwt.verify_access_token") as mock_verify:
+        with patch("registry.security.jwt.verify_access_token") as mock_verify:
             mock_verify.return_value = {
                 "user_id": "test-user-id",
                 "username": "testuser",
@@ -384,7 +384,7 @@ class TestAuthAPI(BaseTest):
         assert me_response.json()["username"] == "flowtest"
 
         # 4. Refresh token (with JWKS mocking)
-        with patch("app.security.jwt.verify_access_token") as mock_verify:
+        with patch("registry.security.jwt.verify_access_token") as mock_verify:
             mock_verify.return_value = {
                 "user_id": "test-user-id",
                 "username": "flowtest",

@@ -11,8 +11,8 @@ interface AgentCardProps {
 }
 
 export default function AgentCard({ agent, className }: AgentCardProps) {
-  // Handle both 'id' and 'agentId' fields (backend inconsistency)
-  const agentId = agent.agentId || agent.id;
+  // Use SDK field names: id (not agentId), provider (not publisherId)
+  const agentId = agent.id;
   
   if (!agentId) {
     console.warn('Agent missing ID:', agent);
@@ -42,11 +42,11 @@ export default function AgentCard({ agent, className }: AgentCardProps) {
         </div>
 
         <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
-          {agent.publisherId && (
+          {agent.provider && (
             <div className="flex items-center space-x-1">
               <User className="h-4 w-4" />
-              <span className="font-medium">Publisher:</span>
-              <span>{agent.publisherId}</span>
+              <span className="font-medium">Provider:</span>
+              <span>{agent.provider}</span>
             </div>
           )}
           {agent.version && (
@@ -56,11 +56,6 @@ export default function AgentCard({ agent, className }: AgentCardProps) {
               <span>{agent.version}</span>
             </div>
           )}
-          <div className="flex items-center space-x-1">
-            <Code className="h-4 w-4" />
-            <span className="font-medium">Protocol:</span>
-            <span>{agent.protocolVersion || '1.0'}</span>
-          </div>
         </div>
 
         {agent.skills && agent.skills.length > 0 && (

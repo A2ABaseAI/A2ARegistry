@@ -77,7 +77,7 @@ Before creating an issue, please:
 
 7. **Start the application**:
    ```bash
-   python -m app.main
+   python -m registry.main
    ```
 
 ### Running Tests

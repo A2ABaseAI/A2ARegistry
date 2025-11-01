@@ -14,8 +14,7 @@ export default function SearchPage() {
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    protocolVersion: '',
-    publisherId: '',
+    provider: '',
   });
   const [showFilters, setShowFilters] = useState(false);
 
@@ -30,11 +29,8 @@ export default function SearchPage() {
     try {
       setSearching(true);
       const searchFilters: Record<string, any> = {};
-      if (filters.protocolVersion) {
-        searchFilters.protocolVersion = filters.protocolVersion;
-      }
-      if (filters.publisherId) {
-        searchFilters.publisherId = filters.publisherId;
+      if (filters.provider) {
+        searchFilters.provider = filters.provider;
       }
 
       const response = await agentApi.searchAgents({
@@ -62,7 +58,7 @@ export default function SearchPage() {
   };
 
   const clearFilters = () => {
-    setFilters({ protocolVersion: '', publisherId: '' });
+    setFilters({ provider: '' });
     setSearchQuery('');
     setSearchResults([]);
   };
@@ -117,32 +113,17 @@ export default function SearchPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Protocol Version
-                </label>
-                <input
-                  type="text"
-                  value={filters.protocolVersion}
-                  onChange={(e) => handleFilterChange('protocolVersion', e.target.value)}
-                  placeholder="e.g., 1.0"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Publisher ID
-                </label>
-                <input
-                  type="text"
-                  value={filters.publisherId}
-                  onChange={(e) => handleFilterChange('publisherId', e.target.value)}
-                  placeholder="e.g., example.com"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Provider
+              </label>
+              <input
+                type="text"
+                value={filters.provider}
+                onChange={(e) => handleFilterChange('provider', e.target.value)}
+                placeholder="e.g., example.com"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
             </div>
           </div>
         )}
@@ -163,22 +144,11 @@ export default function SearchPage() {
                 </button>
               </span>
             )}
-            {filters.protocolVersion && (
+            {filters.provider && (
               <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm flex items-center space-x-2">
-                <span>Protocol: {filters.protocolVersion}</span>
+                <span>Provider: {filters.provider}</span>
                 <button
-                  onClick={() => handleFilterChange('protocolVersion', '')}
-                  className="hover:text-primary-900 dark:hover:text-primary-100"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </span>
-            )}
-            {filters.publisherId && (
-              <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm flex items-center space-x-2">
-                <span>Publisher: {filters.publisherId}</span>
-                <button
-                  onClick={() => handleFilterChange('publisherId', '')}
+                  onClick={() => handleFilterChange('provider', '')}
                   className="hover:text-primary-900 dark:hover:text-primary-100"
                 >
                   <X className="h-4 w-4" />

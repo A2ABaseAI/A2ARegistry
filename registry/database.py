@@ -1,0 +1,41 @@
+"""Database configuration and session management."""
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from .config import settings
+from .core.logging import get_logger
+from .models.base import Base
+
+logger = get_logger(__name__)
+
+# Create database engine
+engine = create_engine(
+    settings.database_url,
+    poolclass=StaticPool,
+    connect_args=({"check_same_thread": False} if "sqlite" in settings.database_url else {}),
+    echo=settings.debug,
+)
+
+# Create session factory
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def create_tables():
+    """Create all database tables."""
+    # Ensure models are imported so tables are registered in metadata
+    try:
+        import registry.models  # noqa: F401
+    except Exception as e:
+        logger.warning(f"Failed to import models: {e}")
+    Base.metadata.create_all(bind=engine)
+
+
+def get_db():
+    """Get database session."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
