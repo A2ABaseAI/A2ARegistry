@@ -68,6 +68,7 @@ export default function Navbar() {
   const navLinks = [
     { href: '/', label: 'Agents' },
     { href: '/search', label: 'Search' },
+    { href: '/docs', label: 'Docs' },
   ];
 
   const authLinks = isAuthenticated

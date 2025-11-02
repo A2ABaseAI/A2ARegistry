@@ -221,12 +221,16 @@ export class A2ARegClient {
       supportsAuthenticatedExtendedCard: capabilities.supportsAuthenticatedExtendedCard || false,
     };
 
-    // Convert auth schemes to security schemes
-    const securitySchemes = (agentDict.auth_schemes || []).map((scheme: SecurityScheme) => ({
-      type: scheme.type || 'apiKey',
-      location: 'header',
-      name: scheme.name || 'Authorization',
-    }));
+    // Convert auth schemes to security schemes (as dict for ADK compatibility)
+    const securitySchemes: Record<string, SecurityScheme> = {};
+    for (const scheme of (agentDict.auth_schemes || [])) {
+      const schemeType = scheme.type || 'apiKey';
+      securitySchemes[schemeType] = {
+        type: schemeType,
+        location: 'header',
+        name: scheme.name || 'Authorization',
+      };
+    }
 
     // Convert skills
     const skills: any[] = [];
@@ -268,6 +272,9 @@ export class A2ARegClient {
       securitySchemes: securitySchemes,
       skills: skills,
       interface: interface_,
+      // Add top-level defaultInputModes and defaultOutputModes for ADK compatibility
+      defaultInputModes: interface_.defaultInputModes,
+      defaultOutputModes: interface_.defaultOutputModes,
     };
 
     // Add provider if available

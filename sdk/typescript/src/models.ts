@@ -66,12 +66,14 @@ export interface AgentCardSpec {
   url: string;
   version: string;
   capabilities: AgentCapabilities;
-  securitySchemes: SecurityScheme[];
+  securitySchemes: Record<string, SecurityScheme>;  // Changed from array to dict for ADK compatibility
   skills: AgentSkill[];
   interface: AgentInterface;
   provider?: AgentProvider;
   documentationUrl?: string;
   signature?: AgentCardSignature;
+  defaultInputModes?: string[];  // ADK-compatible top-level field
+  defaultOutputModes?: string[];  // ADK-compatible top-level field
 }
 
 // Core Agent model
@@ -164,9 +166,27 @@ export function agentCardSpecFromDict(data: any): AgentCardSpec {
     url: data.url,
     version: data.version,
     capabilities: capabilitiesFromDict(data.capabilities || {}),
-    securitySchemes: (data.securitySchemes || data.security_schemes || []).map((scheme: any) =>
-      securitySchemeFromDict(scheme)
-    ),
+    // Handle securitySchemes as either array or dict for backward compatibility
+    securitySchemes: (() => {
+      const schemes = data.securitySchemes || data.security_schemes || {};
+      if (Array.isArray(schemes)) {
+        // Convert array to dict keyed by type
+        const schemesDict: Record<string, SecurityScheme> = {};
+        for (const scheme of schemes) {
+          const schemeObj = securitySchemeFromDict(scheme);
+          schemesDict[schemeObj.type] = schemeObj;
+        }
+        return schemesDict;
+      } else if (typeof schemes === 'object' && schemes !== null) {
+        // Already a dict, convert values
+        const schemesDict: Record<string, SecurityScheme> = {};
+        for (const [key, scheme] of Object.entries(schemes)) {
+          schemesDict[key] = securitySchemeFromDict(scheme as any);
+        }
+        return schemesDict;
+      }
+      return {};
+    })(),
     skills: (data.skills || []).map((skill: any) => agentSkillFromDict(skill)),
     interface: {
       preferredTransport: data.interface.preferredTransport,
@@ -177,6 +197,9 @@ export function agentCardSpecFromDict(data: any): AgentCardSpec {
     provider: data.provider ? agentProviderFromDict(data.provider) : undefined,
     documentationUrl: data.documentationUrl || data.documentation_url,
     signature: data.signature ? agentCardSignatureFromDict(data.signature) : undefined,
+    // Get top-level defaultInputModes and defaultOutputModes, or copy from interface
+    defaultInputModes: data.defaultInputModes || data.interface?.defaultInputModes,
+    defaultOutputModes: data.defaultOutputModes || data.interface?.defaultOutputModes,
   };
 }
 

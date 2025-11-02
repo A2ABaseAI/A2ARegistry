@@ -5,9 +5,9 @@ Section 5.5 - AgentCard Object Structure. For more details, see:
 https://a2a-protocol.org/dev/specification/#355-extension-method-naming
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
 
 
 class AgentProvider(BaseModel):
@@ -35,11 +35,16 @@ class SecurityScheme(BaseModel):
     
     Section 5.5.3 of the A2A Protocol specification. Defines how clients should
     authenticate when interacting with the Agent.
+    
+    ADK compatibility: ADK's RemoteA2aAgent expects 'in' field for API key schemes
+    (OpenAPI format). This field is auto-populated from 'location' if not provided.
     """
 
     type: str = Field(..., description="Authentication type. Valid values: apiKey, oauth2, jwt, mTLS")
     location: Optional[str] = Field(None, description="Location of credentials in the request. Valid values: header, query, body")
     name: Optional[str] = Field(None, description="Parameter name for credentials (e.g., 'Authorization', 'X-API-Key')")
+    # ADK compatibility: 'in' field (OpenAPI format, alias for 'location')
+    in_: Optional[str] = Field(None, alias="in", description="Location of credentials (OpenAPI format: header, query, body). Auto-populated from 'location' if not provided.")
     flow: Optional[str] = Field(None, description="OAuth2 flow type (e.g., 'client_credentials', 'authorization_code')")
     tokenUrl: Optional[HttpUrl] = Field(None, description="OAuth2 token URL for obtaining access tokens")
     scopes: Optional[List[str]] = Field(None, description="OAuth2 scopes required for access")
@@ -107,13 +112,81 @@ class AgentCardSpec(BaseModel):
     # A2A Protocol objects (required)
     provider: Optional[AgentProvider] = Field(None, description="Agent Provider Object (Section 5.5.1) - Service provider information")
     capabilities: AgentCapabilities = Field(..., description="Agent Capabilities Object (Section 5.5.2) - Optional capabilities supported by the Agent")
-    securitySchemes: List[SecurityScheme] = Field(..., description="Security Scheme Objects (Section 5.5.3) - Authentication requirements for accessing the Agent")
+    securitySchemes: Dict[str, SecurityScheme] = Field(..., description="Security Scheme Objects (Section 5.5.3) - Authentication requirements for accessing the Agent. Dictionary keyed by scheme type (e.g., 'apiKey', 'oauth2')")
     skills: List[AgentSkill] = Field(..., description="Agent Skill Objects (Section 5.5.4) - Collection of capability units the Agent can perform")
     interface: AgentInterface = Field(..., description="Agent Interface Object (Section 5.5.5) - Transport and interaction capabilities")
+    
+    # ADK-compatible fields (required at top level for Google ADK RemoteA2aAgent)
+    defaultInputModes: Optional[List[str]] = Field(None, description="Default input MIME types supported at top level (e.g., ['text/plain', 'application/json']). If not provided, will be copied from interface.defaultInputModes")
+    defaultOutputModes: Optional[List[str]] = Field(None, description="Default output MIME types supported at top level (e.g., ['text/plain', 'application/json']). If not provided, will be copied from interface.defaultOutputModes")
 
     # Optional fields
     documentationUrl: Optional[HttpUrl] = Field(None, description="URL for the Agent's documentation and API reference")
     signature: Optional[AgentCardSignature] = Field(None, description="Agent Card Signature Object (Section 5.5.6) - Digital signature information for verification")
+
+    @field_validator("securitySchemes", mode="before")
+    @classmethod
+    def convert_security_schemes_to_dict(cls, v: Any) -> Dict[str, SecurityScheme]:
+        """
+        Convert securitySchemes from list to dict format for ADK compatibility.
+        
+        If securitySchemes is provided as a list, convert it to a dict keyed by scheme type.
+        This ensures compatibility with Google ADK RemoteA2aAgent which expects a dict.
+        """
+        if isinstance(v, list):
+            # Convert list to dict keyed by type
+            schemes_dict: Dict[str, SecurityScheme] = {}
+            for scheme in v:
+                if isinstance(scheme, dict):
+                    scheme_type = scheme.get("type", "apiKey")
+                    schemes_dict[scheme_type] = SecurityScheme(**scheme)
+                elif isinstance(scheme, SecurityScheme):
+                    schemes_dict[scheme.type] = scheme
+                else:
+                    # Fallback for other types
+                    scheme_type = getattr(scheme, "type", "apiKey")
+                    schemes_dict[scheme_type] = SecurityScheme.model_validate(scheme)
+            return schemes_dict
+        elif isinstance(v, dict):
+            # Already a dict, validate each value
+            validated_dict: Dict[str, SecurityScheme] = {}
+            for key, value in v.items():
+                if isinstance(value, SecurityScheme):
+                    validated_dict[key] = value
+                else:
+                    validated_dict[key] = SecurityScheme.model_validate(value)
+            return validated_dict
+        return v
+    
+    @model_validator(mode="after")
+    def ensure_security_scheme_in_field(self) -> "AgentCardSpec":
+        """Ensure 'in' field is populated in security schemes for ADK compatibility."""
+        if self.securitySchemes:
+            for scheme_type, scheme in self.securitySchemes.items():
+                if scheme.in_ is None and scheme.location is not None:
+                    scheme.in_ = scheme.location
+        return self
+    
+    @model_validator(mode="after")
+    def populate_default_input_output_modes(self) -> "AgentCardSpec":
+        """
+        Populate defaultInputModes and defaultOutputModes from interface if not provided.
+        
+        This ensures ADK compatibility by having these fields at the top level,
+        even if they're only specified in the interface object.
+        """
+        # If defaultInputModes not provided, copy from interface
+        if self.defaultInputModes is None and self.interface and self.interface.defaultInputModes:
+            # Use model_copy to avoid mutating the original
+            from copy import deepcopy
+            self.defaultInputModes = deepcopy(self.interface.defaultInputModes)
+        
+        # If defaultOutputModes not provided, copy from interface
+        if self.defaultOutputModes is None and self.interface and self.interface.defaultOutputModes:
+            from copy import deepcopy
+            self.defaultOutputModes = deepcopy(self.interface.defaultOutputModes)
+        
+        return self
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -129,20 +202,20 @@ class AgentCardSpec(BaseModel):
                     "stateTransitionHistory": True,
                     "supportsAuthenticatedExtendedCard": False,
                 },
-                "securitySchemes": [
-                    {
+                "securitySchemes": {
+                    "apiKey": {
                         "type": "apiKey",
                         "location": "header",
                         "name": "X-API-Key",
                         "credentials": "api_key_for_private_recipes",
                     },
-                    {
+                    "oauth2": {
                         "type": "oauth2",
                         "flow": "client_credentials",
                         "tokenUrl": "https://culinary-ai.com/oauth/token",
                         "scopes": ["read", "write"],
                     },
-                ],
+                },
                 "skills": [
                     {
                         "id": "find_recipe",
@@ -175,6 +248,8 @@ class AgentCardSpec(BaseModel):
                     "defaultInputModes": ["text/plain", "application/json"],
                     "defaultOutputModes": ["text/plain", "application/json"],
                 },
+                "defaultInputModes": ["text/plain", "application/json"],
+                "defaultOutputModes": ["text/plain", "application/json"],
                 "documentationUrl": "https://recipe-agent.example.com/docs",
                 "signature": {
                     "algorithm": "RS256",

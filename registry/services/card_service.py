@@ -99,6 +99,12 @@ class CardService:
             # Validate against AgentCardSpec using Pydantic validation
             try:
                 card = AgentCardSpec.model_validate(card_data)
+                # Use the validated card's dict to ensure ADK-compatible format
+                # This ensures securitySchemes is dict and defaultInputModes/defaultOutputModes are at top level
+                # Use by_alias=True to serialize 'in_' as 'in' for ADK compatibility
+                import json
+                validated_card_data = json.loads(card.model_dump_json(by_alias=True))
+                card_data = validated_card_data
             except Exception as exc:
                 logger.error(f"Invalid agent card spec: {exc}")
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid agent card") from exc

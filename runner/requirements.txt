@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+httpx
+python-dotenv
+google-adk[a2a]
+-e ../sdk/python
+
+# Testing
+pytest
+pytest-asyncio
+

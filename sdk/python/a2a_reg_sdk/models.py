@@ -282,12 +282,14 @@ class AgentCardSpec:
     url: str
     version: str
     capabilities: AgentCapabilities
-    securitySchemes: List[SecurityScheme]
+    securitySchemes: Dict[str, SecurityScheme]  # Changed from List to Dict for ADK compatibility
     skills: List[AgentSkill]
     interface: AgentInterface
     provider: Optional[AgentProvider] = None
     documentationUrl: Optional[str] = None
     signature: Optional[AgentCardSignature] = None
+    defaultInputModes: Optional[List[str]] = None  # ADK-compatible top-level field
+    defaultOutputModes: Optional[List[str]] = None  # ADK-compatible top-level field
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "AgentCardSpec":
@@ -298,9 +300,23 @@ class AgentCardSpec:
 
         capabilities = AgentCapabilities.from_dict(data.get("capabilities", {}))
 
-        security_schemes = []
-        for scheme_data in data.get("securitySchemes", []):
-            security_schemes.append(SecurityScheme.from_dict(scheme_data))
+        # Handle securitySchemes as either List or Dict for backward compatibility
+        security_schemes_data = data.get("securitySchemes", {})
+        security_schemes: Dict[str, SecurityScheme] = {}
+        if isinstance(security_schemes_data, list):
+            # Convert list to dict keyed by type
+            for scheme_data in security_schemes_data:
+                scheme = SecurityScheme.from_dict(scheme_data)
+                security_schemes[scheme.type] = scheme
+        elif isinstance(security_schemes_data, dict):
+            # Already a dict, convert values
+            for key, scheme_data in security_schemes_data.items():
+                if isinstance(scheme_data, SecurityScheme):
+                    security_schemes[key] = scheme_data
+                else:
+                    security_schemes[key] = SecurityScheme.from_dict(scheme_data)
+        else:
+            security_schemes = {}
 
         skills = []
         for skill_data in data.get("skills", []):
@@ -311,6 +327,15 @@ class AgentCardSpec:
         signature = None
         if data.get("signature"):
             signature = AgentCardSignature.from_dict(data["signature"])
+
+        # Get top-level defaultInputModes and defaultOutputModes, or copy from interface
+        default_input_modes = data.get("defaultInputModes")
+        if default_input_modes is None and interface and interface.defaultInputModes:
+            default_input_modes = interface.defaultInputModes
+
+        default_output_modes = data.get("defaultOutputModes")
+        if default_output_modes is None and interface and interface.defaultOutputModes:
+            default_output_modes = interface.defaultOutputModes
 
         return cls(
             name=data["name"],
@@ -324,6 +349,8 @@ class AgentCardSpec:
             interface=interface,
             documentationUrl=data.get("documentationUrl"),
             signature=signature,
+            defaultInputModes=default_input_modes,
+            defaultOutputModes=default_output_modes,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -334,7 +361,7 @@ class AgentCardSpec:
             "url": self.url,
             "version": self.version,
             "capabilities": self.capabilities.to_dict(),
-            "securitySchemes": [scheme.to_dict() for scheme in self.securitySchemes],
+            "securitySchemes": {key: scheme.to_dict() for key, scheme in self.securitySchemes.items()},
             "skills": [skill.to_dict() for skill in self.skills],
             "interface": self.interface.to_dict(),
         }
@@ -344,6 +371,15 @@ class AgentCardSpec:
             result["documentationUrl"] = self.documentationUrl
         if self.signature is not None:
             result["signature"] = self.signature.to_dict()
+        # Add top-level defaultInputModes and defaultOutputModes for ADK compatibility
+        if self.defaultInputModes is not None:
+            result["defaultInputModes"] = self.defaultInputModes
+        elif self.interface and self.interface.defaultInputModes:
+            result["defaultInputModes"] = self.interface.defaultInputModes
+        if self.defaultOutputModes is not None:
+            result["defaultOutputModes"] = self.defaultOutputModes
+        elif self.interface and self.interface.defaultOutputModes:
+            result["defaultOutputModes"] = self.interface.defaultOutputModes
         return result
 
 
@@ -674,7 +710,7 @@ class AgentCardSpecBuilder:
             url=url,
             version=version,
             capabilities=AgentCapabilities(),
-            securitySchemes=[],
+            securitySchemes={},  # Changed from [] to {} for ADK compatibility
             skills=[],
             interface=None,  # Will be set via with_interface
         )
@@ -700,13 +736,14 @@ class AgentCardSpecBuilder:
         return self
 
     def add_security_scheme(self, scheme: SecurityScheme) -> "AgentCardSpecBuilder":
-        """Add a security scheme."""
-        self._card_spec.securitySchemes.append(scheme)
+        """Add a security scheme (dict format for ADK compatibility)."""
+        self._card_spec.securitySchemes[scheme.type] = scheme
         return self
 
     def add_security_scheme_builder(self, builder: SecuritySchemeBuilder) -> "AgentCardSpecBuilder":
-        """Add a security scheme using SecuritySchemeBuilder."""
-        self._card_spec.securitySchemes.append(builder.build())
+        """Add a security scheme using SecuritySchemeBuilder (dict format for ADK compatibility)."""
+        scheme = builder.build()
+        self._card_spec.securitySchemes[scheme.type] = scheme
         return self
 
     def add_skill(self, skill: AgentSkill) -> "AgentCardSpecBuilder":
@@ -748,6 +785,13 @@ class AgentCardSpecBuilder:
         """Build the AgentCardSpec."""
         if self._card_spec.interface is None:
             raise ValueError("AgentInterface is required. Use with_interface() or with_interface_builder()")
+        
+        # Auto-populate defaultInputModes and defaultOutputModes from interface if not set
+        if self._card_spec.defaultInputModes is None and self._card_spec.interface.defaultInputModes:
+            self._card_spec.defaultInputModes = list(self._card_spec.interface.defaultInputModes)
+        if self._card_spec.defaultOutputModes is None and self._card_spec.interface.defaultOutputModes:
+            self._card_spec.defaultOutputModes = list(self._card_spec.interface.defaultOutputModes)
+        
         return self._card_spec
 
 
