@@ -478,14 +478,16 @@ public class A2ARegClient {
             }
         }
 
-        List<Map<String, Object>> securitySchemes = new ArrayList<>();
+        // Convert auth schemes to security schemes (as map for ADK compatibility)
+        Map<String, Map<String, Object>> securitySchemes = new HashMap<>();
         if (agent.getAuthSchemes() != null) {
             for (SecurityScheme authScheme : agent.getAuthSchemes()) {
+                String schemeType = authScheme.getType();
                 Map<String, Object> scheme = new HashMap<>();
-                scheme.put("type", authScheme.getType());
+                scheme.put("type", schemeType);
                 scheme.put("location", "header");
                 scheme.put("name", authScheme.getName() != null ? authScheme.getName() : "Authorization");
-                securitySchemes.add(scheme);
+                securitySchemes.put(schemeType, scheme);
             }
         }
 
@@ -533,6 +535,9 @@ public class A2ARegClient {
         cardSpec.put("securitySchemes", securitySchemes);
         cardSpec.put("skills", skills);
         cardSpec.put("interface", interface_);
+        // Add top-level defaultInputModes and defaultOutputModes for ADK compatibility
+        cardSpec.put("defaultInputModes", interface_.get("defaultInputModes"));
+        cardSpec.put("defaultOutputModes", interface_.get("defaultOutputModes"));
 
         if (agent.getProvider() != null) {
             Map<String, Object> provider = new HashMap<>();

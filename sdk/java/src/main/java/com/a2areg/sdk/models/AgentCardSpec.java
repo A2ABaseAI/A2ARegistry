@@ -2,6 +2,7 @@ package com.a2areg.sdk.models;
 
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Agent Card specification following A2A Protocol specification.
@@ -24,13 +25,19 @@ public class AgentCardSpec {
     private AgentCapabilities capabilities;
 
     @SerializedName("securitySchemes")
-    private List<SecurityScheme> securitySchemes;
+    private Map<String, SecurityScheme> securitySchemes;  // Changed from List to Map for ADK compatibility
 
     @SerializedName("skills")
     private List<AgentSkill> skills;
 
     @SerializedName("interface")
     private AgentInterface interface_;
+
+    @SerializedName("defaultInputModes")
+    private List<String> defaultInputModes;  // ADK-compatible top-level field
+
+    @SerializedName("defaultOutputModes")
+    private List<String> defaultOutputModes;  // ADK-compatible top-level field
 
     @SerializedName("provider")
     private AgentProvider provider;
@@ -81,12 +88,28 @@ public class AgentCardSpec {
         this.capabilities = capabilities;
     }
 
-    public List<SecurityScheme> getSecuritySchemes() {
+    public Map<String, SecurityScheme> getSecuritySchemes() {
         return securitySchemes;
     }
 
-    public void setSecuritySchemes(List<SecurityScheme> securitySchemes) {
+    public void setSecuritySchemes(Map<String, SecurityScheme> securitySchemes) {
         this.securitySchemes = securitySchemes;
+    }
+
+    public List<String> getDefaultInputModes() {
+        return defaultInputModes;
+    }
+
+    public void setDefaultInputModes(List<String> defaultInputModes) {
+        this.defaultInputModes = defaultInputModes;
+    }
+
+    public List<String> getDefaultOutputModes() {
+        return defaultOutputModes;
+    }
+
+    public void setDefaultOutputModes(List<String> defaultOutputModes) {
+        this.defaultOutputModes = defaultOutputModes;
     }
 
     public List<AgentSkill> getSkills() {

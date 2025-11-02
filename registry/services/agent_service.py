@@ -170,6 +170,10 @@ class AgentService:
         try:
             # Validate card data
             card = AgentCardSpec.model_validate(card_data)
+            # Use validated card's dict to ensure ADK-compatible format is stored
+            # Use by_alias=True to serialize 'in_' as 'in' for ADK compatibility
+            import json
+            card_data = json.loads(card.model_dump_json(by_alias=True))
 
             # Compute hash and version
             canonical = _canonical_json(card_data)

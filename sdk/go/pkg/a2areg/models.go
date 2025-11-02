@@ -72,17 +72,19 @@ type AgentCardSignature struct {
 // AgentCardSpec represents the Agent Card specification following A2A Protocol.
 // Section 5.5 of the A2A Protocol specification.
 type AgentCardSpec struct {
-	Name            string            `json:"name"`
-	Description     string            `json:"description"`
-	URL             string            `json:"url"`
-	Version         string            `json:"version"`
-	Capabilities    AgentCapabilities `json:"capabilities"`
-	SecuritySchemes []SecurityScheme `json:"securitySchemes"`
-	Skills          []AgentSkill      `json:"skills"`
-	Interface       AgentInterface    `json:"interface"`
-	Provider        *AgentProvider    `json:"provider,omitempty"`
-	DocumentationURL *string          `json:"documentationUrl,omitempty"`
-	Signature       *AgentCardSignature `json:"signature,omitempty"`
+	Name             string                       `json:"name"`
+	Description      string                       `json:"description"`
+	URL              string                       `json:"url"`
+	Version          string                       `json:"version"`
+	Capabilities     AgentCapabilities            `json:"capabilities"`
+	SecuritySchemes  map[string]SecurityScheme    `json:"securitySchemes"`  // Changed from slice to map for ADK compatibility
+	Skills           []AgentSkill                 `json:"skills"`
+	Interface        AgentInterface               `json:"interface"`
+	Provider         *AgentProvider               `json:"provider,omitempty"`
+	DocumentationURL *string                      `json:"documentationUrl,omitempty"`
+	Signature        *AgentCardSignature          `json:"signature,omitempty"`
+	DefaultInputModes []string                    `json:"defaultInputModes,omitempty"`  // ADK-compatible top-level field
+	DefaultOutputModes []string                   `json:"defaultOutputModes,omitempty"`  // ADK-compatible top-level field
 }
 
 // Agent represents an A2A Agent.

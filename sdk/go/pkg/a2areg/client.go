@@ -478,10 +478,15 @@ func (c *A2ARegClient) convertToCardSpec(agent *Agent) map[string]interface{} {
 		}
 	}
 
-	securitySchemes := []map[string]interface{}{}
+	// Convert auth schemes to security schemes (as map for ADK compatibility)
+	securitySchemes := make(map[string]map[string]interface{})
 	for _, authScheme := range agent.AuthSchemes {
+		schemeType := authScheme.Type
+		if schemeType == "" {
+			schemeType = "apiKey"
+		}
 		scheme := map[string]interface{}{
-			"type":     authScheme.Type,
+			"type":     schemeType,
 			"location": "header",
 		}
 		if authScheme.Name != nil {
@@ -489,7 +494,7 @@ func (c *A2ARegClient) convertToCardSpec(agent *Agent) map[string]interface{} {
 		} else {
 			scheme["name"] = "Authorization"
 		}
-		securitySchemes = append(securitySchemes, scheme)
+		securitySchemes[schemeType] = scheme
 	}
 
 	skills := []map[string]interface{}{}
@@ -533,6 +538,9 @@ func (c *A2ARegClient) convertToCardSpec(agent *Agent) map[string]interface{} {
 		"securitySchemes": securitySchemes,
 		"skills":          skills,
 		"interface":       interfaceMap,
+		// Add top-level defaultInputModes and defaultOutputModes for ADK compatibility
+		"defaultInputModes":  interfaceMap["defaultInputModes"],
+		"defaultOutputModes": interfaceMap["defaultOutputModes"],
 	}
 
 	if agent.Provider != "" {

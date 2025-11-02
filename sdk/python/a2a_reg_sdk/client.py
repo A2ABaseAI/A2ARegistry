@@ -163,15 +163,16 @@ class A2ARegClient:
                 "supportsAuthenticatedExtendedCard": getattr(capabilities, "supportsAuthenticatedExtendedCard", False) or False,
             }
 
-        # Convert auth schemes to security schemes
-        security_schemes = []
+        # Convert auth schemes to security schemes (as dict for ADK compatibility)
+        security_schemes = {}
         for auth_scheme in agent_dict.get("auth_schemes", []):
+            scheme_type = auth_scheme.get("type", "apiKey")
             security_scheme = {
-                "type": auth_scheme.get("type", "apiKey"),
+                "type": scheme_type,
                 "location": "header",
                 "name": auth_scheme.get("header_name", "Authorization"),
             }
-            security_schemes.append(security_scheme)
+            security_schemes[scheme_type] = security_scheme
 
         # Convert skills
         skills = []
@@ -217,6 +218,9 @@ class A2ARegClient:
             "securitySchemes": security_schemes,
             "skills": skills,
             "interface": interface,
+            # Add top-level defaultInputModes and defaultOutputModes for ADK compatibility
+            "defaultInputModes": interface.get("defaultInputModes", ["text/plain"]),
+            "defaultOutputModes": interface.get("defaultOutputModes", ["text/plain"]),
         }
 
         # Add provider if available
@@ -420,8 +424,12 @@ class A2ARegClient:
                 if errors:
                     raise ValidationError(f"Agent validation failed: {'; '.join(errors)}")
 
-            # Convert Agent model to AgentCardSpec format
-            card_data = self._convert_to_card_spec(agent_dict)
+            # Use agent_card.to_dict() if available (has correct ADK format), otherwise convert
+            if agent.agent_card:
+                card_data = agent.agent_card.to_dict()
+            else:
+                # Convert Agent model to AgentCardSpec format (fallback)
+                card_data = self._convert_to_card_spec(agent_dict)
 
             # Format the request body according to the API spec
             request_body = {"public": agent_dict.get("is_public", True), "card": card_data}
