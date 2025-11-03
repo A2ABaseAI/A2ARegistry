@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: a2a-registry-ingress
+  namespace: a2a-registry
+  annotations:
+    # NGINX Ingress Controller annotations
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Alternatively, use cert-manager for TLS
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx  # Change to your ingress class
+  tls:
+  - hosts:
+    - a2areg.com
+    - api.a2areg.com
+    - runner.a2areg.com
+    secretName: a2a-registry-tls  # Create TLS secret or use cert-manager
+  rules:
+  - host: api.a2areg.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: registry
+            port:
+              number: 8000
+  - host: runner.a2areg.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: runner
+            port:
+              number: 8001
+  # UI ingress - uncomment after building and deploying UI image
+  # - host: a2areg.com
+  #   http:
+  #     paths:
+  #     - path: /
+  #       pathType: Prefix
+  #       backend:
+  #         service:
+  #           name: ui
+  #           port:
+  #             number: 3000
+

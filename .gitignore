@@ -175,6 +175,7 @@ logs/
 # Environment files
 .env
 .env.local
+.env.local_*
 .env.production
 .env.staging
 .env.development
@@ -235,3 +236,4 @@ bandit-report-full.json
 bandit-report-app.json
 .gitignore
 bandit-report-tests.json
+k8s/secrets.yaml

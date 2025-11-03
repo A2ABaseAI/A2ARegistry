@@ -1,6 +1,7 @@
-from typing import Dict
 from datetime import datetime
-from .models import AgentSession, AgentMessage, GlobalSession
+from typing import Dict
+
+from .models import AgentMessage, AgentSession, GlobalSession
 
 
 class SessionMemory:
@@ -65,4 +66,3 @@ class SessionMemory:
     def save_agent_session(self, session: AgentSession):
         key = self._agent_key(session.token, session.agent_id)
         self._per_agent[key] = session
-

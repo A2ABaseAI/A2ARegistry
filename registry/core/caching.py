@@ -252,21 +252,21 @@ class CacheWarmer:
 
     async def warm_client_caches(self, db_session):
         """Warm up client caches.
-        
+
         Note: This method is currently disabled as ClientService is not implemented.
         If client caching is needed, implement ClientService in registry/services/client_service.py
         and uncomment this implementation.
         """
         # TODO: Implement ClientService and restore this functionality
         # from registry.services.client_service import ClientService
-        # 
+        #
         # client_service = ClientService(db_session)
-        # 
+        #
         # # Cache active clients
         # clients = client_service.list_clients(limit=1000)
         # for client in clients:
         #     self.client_cache.set_client(client.id, client.to_client_response())
         #     self.client_cache.set_client_by_oauth_id(client.client_id, client.to_client_response())
-        # 
+        #
         # logger.info(f"Warmed client caches: {len(clients)} clients")
         logger.info("Client cache warming is disabled (ClientService not implemented)")

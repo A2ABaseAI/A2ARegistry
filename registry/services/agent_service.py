@@ -173,6 +173,7 @@ class AgentService:
             # Use validated card's dict to ensure ADK-compatible format is stored
             # Use by_alias=True to serialize 'in_' as 'in' for ADK compatibility
             import json
+
             card_data = json.loads(card.model_dump_json(by_alias=True))
 
             # Compute hash and version
@@ -343,11 +344,7 @@ class AgentService:
         """
         try:
             # Find agent record
-            rec = (
-                self.db.query(AgentRecord)
-                .filter(AgentRecord.id == agent_id, AgentRecord.tenant_id == tenant_id)
-                .first()
-            )
+            rec = self.db.query(AgentRecord).filter(AgentRecord.id == agent_id, AgentRecord.tenant_id == tenant_id).first()
 
             if not rec:
                 logger.info(f"Agent {agent_id} not found for deletion")
@@ -374,6 +371,7 @@ class AgentService:
             # Invalidate cache (non-critical)
             try:
                 from ..core.caching import CacheManager
+
                 cache = CacheManager()
                 cache.invalidate_pattern("agents:*")
             except Exception as e:

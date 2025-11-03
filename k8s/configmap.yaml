@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: a2a-registry-config
+  namespace: a2a-registry
+data:
+  # Registry Configuration
+  APP_NAME: "A2A Agent Registry"
+  APP_VERSION: "1.0.0"
+  DEBUG: "false"
+  TEST_MODE: "false"
+  
+  # Database URL is stored in secrets.yaml (contains password)
+  
+  # Redis
+  REDIS_URL: "redis://redis:6379/0"
+  
+  # OpenSearch
+  OPENSEARCH_URL: "http://opensearch:9200"
+  OPENSEARCH_INDEX: "a2a_agents"
+  
+  # Security
+  ALGORITHM: "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+  
+  # API Key Configuration
+  API_KEY_CLIENT_ID_HEADER: "X-Client-Id"
+  API_KEY_TENANT_HEADER: "X-Tenant-Id"
+  API_KEY_DEFAULT_TENANT: "default"
+  
+  # Registry Settings
+  REGISTRY_BASE_URL: "http://registry:8000"
+  SEARCH_TIMEOUT_SECONDS: "30"
+  MAX_AGENTS_PER_CLIENT: "1000"
+  ENABLE_FEDERATION: "false"
+  
+  # Database Bootstrap
+  AUTO_CREATE_TABLES: "true"
+  AUTO_CREATE_INDEX: "true"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: runner-config
+  namespace: a2a-registry
+data:
+  ENV: "production"
+  REGISTRY_URL: "http://registry:8000"
+  LOAD_AGENTS_ON_STARTUP: "true"
+  AGENTS_REFRESH_INTERVAL: "300"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: a2a-registry
+data:
+  POSTGRES_DB: "a2a_registry"
+  POSTGRES_USER: "postgres"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opensearch-config
+  namespace: a2a-registry
+data:
+  discovery.type: "single-node"
+  plugins.security.disabled: "true"
+  OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+  bootstrap.memory_lock: "true"
+  network.host: "0.0.0.0"
+

@@ -269,7 +269,7 @@ class TestSchemas(BaseTest):
         assert isinstance(agent_card.description, str)
         assert isinstance(agent_card.version, str)
         assert isinstance(agent_card.capabilities.streaming, bool)
-        assert isinstance(agent_card.securitySchemes, list)
+        assert isinstance(agent_card.securitySchemes, dict)
         assert isinstance(agent_card.interface.defaultInputModes, list)
         assert isinstance(agent_card.interface.defaultOutputModes, list)
         assert isinstance(agent_card.skills, list)
@@ -346,9 +346,11 @@ class TestSchemas(BaseTest):
         assert agent_card.provider is not None
         assert agent_card.provider.organization == "Test Org"
         assert len(agent_card.securitySchemes) == 2
-        assert agent_card.securitySchemes[0].type == "apiKey"
-        assert agent_card.securitySchemes[1].type == "oauth2"
-        assert agent_card.securitySchemes[1].flow == "client_credentials"
+        assert "apiKey" in agent_card.securitySchemes
+        assert agent_card.securitySchemes["apiKey"].type == "apiKey"
+        assert "oauth2" in agent_card.securitySchemes
+        assert agent_card.securitySchemes["oauth2"].type == "oauth2"
+        assert agent_card.securitySchemes["oauth2"].flow == "client_credentials"
         assert len(agent_card.skills) == 1
         assert agent_card.skills[0].id == "skill1"
         assert agent_card.interface.preferredTransport == "jsonrpc"

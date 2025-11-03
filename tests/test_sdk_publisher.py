@@ -1,24 +1,18 @@
 """Tests for A2ARegClient publisher methods - SDK client publishing functionality."""
 
-import pytest
-from unittest.mock import MagicMock, patch
-from pathlib import Path
 import json
-import yaml
-import tempfile
 import os
+import tempfile
+from unittest.mock import MagicMock, patch
 
+import pytest
+import yaml
 from a2a_reg_sdk.client import A2ARegClient
+from a2a_reg_sdk.exceptions import ValidationError
 from a2a_reg_sdk.models import (
     Agent,
     AgentBuilder,
-    AgentCardSpecBuilder,
-    AgentInterfaceBuilder,
-    AgentCapabilitiesBuilder,
-    SecuritySchemeBuilder,
-    AgentSkillBuilder,
 )
-from a2a_reg_sdk.exceptions import ValidationError
 
 
 class TestA2ARegClientPublisher:
@@ -159,9 +153,7 @@ class TestA2ARegClientPublisher:
             mock_post.return_value = mock_response
 
             with patch.object(client, "get_agent") as mock_get:
-                mock_get.return_value = Agent(
-                    id="agent-1", name="Test Agent", description="A test agent", version="1.0.0", provider="test-provider"
-                )
+                mock_get.return_value = Agent(id="agent-1", name="Test Agent", description="A test agent", version="1.0.0", provider="test-provider")
 
                 result = client.publish_agent(agent, validate=True)
                 assert isinstance(result, Agent)
@@ -214,9 +206,7 @@ class TestA2ARegClientPublisher:
         """Test updating an agent."""
         agent = AgentBuilder("Updated Agent", "An updated agent", "1.0.1", "test-provider").build()
 
-        client.update_agent.return_value = Agent(
-            id="agent-1", name="Updated Agent", description="An updated agent", version="1.0.1", provider="test-provider"
-        )
+        client.update_agent.return_value = Agent(id="agent-1", name="Updated Agent", description="An updated agent", version="1.0.1", provider="test-provider")
 
         result = client.update_agent("agent-1", agent)
         assert isinstance(result, Agent)

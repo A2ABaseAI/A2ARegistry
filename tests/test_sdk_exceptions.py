@@ -1,14 +1,12 @@
 """Tests for a2a_reg_sdk.exceptions - SDK exception classes."""
 
-import pytest
-
 from a2a_reg_sdk.exceptions import (
     A2AError,
     AuthenticationError,
-    ValidationError,
     NotFoundError,
     RateLimitError,
     ServerError,
+    ValidationError,
 )
 
 
@@ -73,4 +71,3 @@ class TestExceptions:
         error.details = {"field": "name", "reason": "required"}
         assert error.details["field"] == "name"
         assert error.details["reason"] == "required"
-

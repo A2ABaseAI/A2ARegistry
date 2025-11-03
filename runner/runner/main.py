@@ -1,17 +1,19 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+
 from a2a_reg_sdk import A2ARegClient
 from a2a_reg_sdk.models import Agent
-from .models import HostRunRequest, HostRunResponse
-from .memory import SessionMemory
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from .a2a_executor import A2ARemoteExecutor
 from .agent_registry import AgentRegistry
-from .skill_selector import SkillSelector
-from .host_agent import HostAgent
 from .config import settings
+from .host_agent import HostAgent
+from .memory import SessionMemory
+from .models import HostRunRequest, HostRunResponse
+from .skill_selector import SkillSelector
 from .utils import agent_to_card
 
 logger = logging.getLogger(__name__)
@@ -29,7 +31,7 @@ registry_client: A2ARegClient | None = None
 async def load_agents_from_registry():
     """Load agents from the A2A registry using the Python SDK."""
     global registry_client
-    
+
     try:
         # Initialize registry client with authentication
         # Authentication is required to get full agent details (including endpoints)
@@ -49,31 +51,28 @@ async def load_agents_from_registry():
             logger.info("Using OAuth authentication for registry")
         else:
             # No auth - log warning but try anyway (will likely fail to get full details)
-            logger.warning(
-                "No authentication configured for registry. "
-                "Set REGISTRY_API_KEY or REGISTRY_CLIENT_ID/SECRET to load agents with endpoints."
-            )
+            logger.warning("No authentication configured for registry. " "Set REGISTRY_API_KEY or REGISTRY_CLIENT_ID/SECRET to load agents with endpoints.")
             registry_client = A2ARegClient(registry_url=settings.registry_url)
-        
+
         # Load agents
         logger.info(f"Loading agents from registry at {settings.registry_url}")
-        
+
         # Fetch agents in pages
         page = 1
         limit = 50  # Fetch 50 at a time
         total_loaded = 0
-        
+
         # Clear existing registry
         registry._agents.clear()
-        
+
         while True:
             try:
                 agents_response = registry_client.list_agents(public_only=True, page=page, limit=limit)
-                
+
                 agents_list = agents_response.get("items", [])
                 if not agents_list:
                     break
-                
+
                 # Convert and register agents
                 for agent_item in agents_list:
                     try:
@@ -82,15 +81,14 @@ async def load_agents_from_registry():
                         if not agent_id:
                             logger.warning(f"Skipping agent item with no ID: {agent_item}")
                             continue
-                        
+
                         # Try to fetch full agent details
                         agent = None
-                        agent_name = agent_item.get("name", "Unknown Agent")
-                        
+
                         try:
                             # Use SDK to get full agent details
                             agent = registry_client.get_agent(agent_id)
-                            
+
                             # Always try to get agent card for endpoint info
                             if not agent.location_url or not agent.agent_card:
                                 try:
@@ -116,18 +114,18 @@ async def load_agents_from_registry():
                                             agent.location_url = endpoint
                                 except Exception as card_error:
                                     logger.debug(f"Could not get agent card for {agent_id}: {card_error}")
-                        
+
                         except Exception as auth_error:
                             # If get_agent fails, try to use SDK's get_agent_card method directly
                             logger.debug(f"Could not get agent {agent_id} with auth, trying agent card: {auth_error}")
-                            
+
                             try:
                                 # Use SDK's get_agent_card method
                                 agent_card = registry_client.get_agent_card(agent_id)
-                                
+
                                 # Extract endpoint from agent card
                                 endpoint = agent_card.url if agent_card.url else ""
-                                
+
                                 # Try to get endpoint from interface additionalInterfaces
                                 if not endpoint and agent_card.interface and agent_card.interface.additionalInterfaces:
                                     for iface in agent_card.interface.additionalInterfaces:
@@ -137,11 +135,11 @@ async def load_agents_from_registry():
                                         else:
                                             transport = getattr(iface, "transport", None)
                                             url = getattr(iface, "url", None)
-                                        
+
                                         if transport == "http" and url:
                                             endpoint = url
                                             break
-                                
+
                                 if endpoint:
                                     agent = Agent(
                                         id=agent_id,
@@ -160,16 +158,16 @@ async def load_agents_from_registry():
                                 # Skip agent if we can't get details
                                 logger.warning(f"Skipping agent {agent_id}: unable to get agent details or endpoint")
                                 continue
-                        
+
                         if not agent:
                             logger.warning(f"Could not create agent for {agent_id}")
                             continue
-                        
+
                         # Skip if agent doesn't have a valid endpoint
                         if not agent.location_url and not (agent.agent_card and agent.agent_card.url):
                             logger.warning(f"Skipping agent {agent.id or agent.name}: no endpoint found")
                             continue
-                        
+
                         # Convert to A2AAgentCard and register
                         card = agent_to_card(agent)
                         if not card:
@@ -181,25 +179,25 @@ async def load_agents_from_registry():
                     except Exception as e:
                         logger.error(f"Failed to register agent {agent_item.get('id', 'unknown')}: {e}")
                         continue
-                
+
                 # Check if there are more pages
                 # The API might return a "next" field or we can check if we got fewer than limit
                 if len(agents_list) < limit:
                     break
-                
+
                 page += 1
-                
+
                 # Safety limit - don't load more than 500 agents
                 if total_loaded >= 500:
-                    logger.info(f"Reached maximum agent limit (500), stopping")
+                    logger.info("Reached maximum agent limit (500), stopping")
                     break
-                    
+
             except Exception as e:
                 logger.error(f"Error loading page {page}: {e}")
                 break
-        
+
         logger.info(f"Loaded {total_loaded} agents from registry")
-        
+
     except Exception as e:
         logger.error(f"Failed to load agents from registry: {e}")
         # Don't raise - allow service to start even if registry is unavailable
@@ -223,9 +221,9 @@ async def lifespan(app: FastAPI):
         await load_agents_from_registry()
         # Start background task to refresh agents
         asyncio.create_task(refresh_agents_periodically())
-    
+
     yield
-    
+
     # Shutdown
     if registry_client:
         registry_client.close()
@@ -279,6 +277,3 @@ async def refresh_agents():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to refresh agents: {str(e)}")
-
-
-
