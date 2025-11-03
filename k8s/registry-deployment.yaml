@@ -1,0 +1,212 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: a2a-registry
+  labels:
+    app: registry
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+      - name: registry
+        image: ghcr.io/a2areg/a2a-registry/registry:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        # Database - full connection string from secret
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: a2a-registry-secrets
+              key: DATABASE_URL
+        # Redis
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: REDIS_URL
+        # OpenSearch
+        - name: OPENSEARCH_URL
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: OPENSEARCH_URL
+        - name: OPENSEARCH_INDEX
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: OPENSEARCH_INDEX
+        # Security
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: a2a-registry-secrets
+              key: SECRET_KEY
+        - name: ALGORITHM
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: ALGORITHM
+        - name: ACCESS_TOKEN_EXPIRE_MINUTES
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: ACCESS_TOKEN_EXPIRE_MINUTES
+        # API Keys
+        - name: API_KEYS
+          valueFrom:
+            secretKeyRef:
+              name: a2a-registry-secrets
+              key: API_KEYS
+        - name: API_KEY_DEFAULT_ROLES
+          valueFrom:
+            secretKeyRef:
+              name: a2a-registry-secrets
+              key: API_KEY_DEFAULT_ROLES
+        - name: API_KEY_CLIENT_ID_HEADER
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: API_KEY_CLIENT_ID_HEADER
+        - name: API_KEY_TENANT_HEADER
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: API_KEY_TENANT_HEADER
+        - name: API_KEY_DEFAULT_TENANT
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: API_KEY_DEFAULT_TENANT
+        # Registry Settings
+        - name: REGISTRY_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: REGISTRY_BASE_URL
+        - name: SEARCH_TIMEOUT_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: SEARCH_TIMEOUT_SECONDS
+        - name: MAX_AGENTS_PER_CLIENT
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: MAX_AGENTS_PER_CLIENT
+        - name: ENABLE_FEDERATION
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: ENABLE_FEDERATION
+        # Bootstrap
+        - name: AUTO_CREATE_TABLES
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: AUTO_CREATE_TABLES
+        - name: AUTO_CREATE_INDEX
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: AUTO_CREATE_INDEX
+        # App Settings
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: APP_NAME
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: a2a-registry-config
+              key: DEBUG
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15
+        command: ['sh', '-c', 'until pg_isready -h postgres -p 5432 -U postgres; do sleep 2; done']
+      - name: wait-for-redis
+        image: redis:7-alpine
+        command: ['sh', '-c', 'until redis-cli -h redis ping; do sleep 2; done']
+      - name: wait-for-opensearch
+        image: curlimages/curl:latest
+        command: ['sh', '-c', 'until curl -f http://opensearch:9200/_cluster/health; do sleep 2; done']
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: a2a-registry
+  labels:
+    app: registry
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: registry
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: registry-hpa
+  namespace: a2a-registry
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: registry
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+

@@ -1,4 +1,5 @@
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
 from .models import A2AAgentCard
 
 
@@ -14,4 +15,3 @@ class AgentRegistry:
 
     def get(self, agent_id: str) -> Optional[A2AAgentCard]:
         return self._agents.get(agent_id)
-

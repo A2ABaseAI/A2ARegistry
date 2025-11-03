@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runner
+  namespace: a2a-registry
+  labels:
+    app: runner
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: runner
+  template:
+    metadata:
+      labels:
+        app: runner
+    spec:
+      containers:
+      - name: runner
+        image: ghcr.io/a2areg/a2a-registry/runner:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8001
+          name: http
+        env:
+        # Runner Configuration
+        - name: ENV
+          valueFrom:
+            configMapKeyRef:
+              name: runner-config
+              key: ENV
+        - name: REGISTRY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: runner-config
+              key: REGISTRY_URL
+        - name: LOAD_AGENTS_ON_STARTUP
+          valueFrom:
+            configMapKeyRef:
+              name: runner-config
+              key: LOAD_AGENTS_ON_STARTUP
+        - name: AGENTS_REFRESH_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: runner-config
+              key: AGENTS_REFRESH_INTERVAL
+        # Registry Authentication
+        - name: REGISTRY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: runner-secrets
+              key: REGISTRY_API_KEY
+        # Optional: OAuth credentials (comment out if using API key)
+        # - name: REGISTRY_CLIENT_ID
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: runner-secrets
+        #       key: REGISTRY_CLIENT_ID
+        # - name: REGISTRY_CLIENT_SECRET
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: runner-secrets
+        #       key: REGISTRY_CLIENT_SECRET
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+      initContainers:
+      - name: wait-for-registry
+        image: curlimages/curl:latest
+        command: ['sh', '-c', 'until curl -f http://registry:8000/health; do sleep 2; done']
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: runner
+  namespace: a2a-registry
+  labels:
+    app: runner
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8001
+    targetPort: 8001
+    protocol: TCP
+    name: http
+  selector:
+    app: runner
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: runner-hpa
+  namespace: a2a-registry
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: runner
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+

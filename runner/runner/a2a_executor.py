@@ -1,9 +1,11 @@
-from typing import Dict, Any, List, Tuple, Optional
+import json
 import logging
 import re
-import json
 import uuid
+from typing import Any, Dict, List, Optional, Tuple
+
 import httpx
+
 from .models import A2AAgentCard, AgentMessage, GlobalSession
 
 logger = logging.getLogger(__name__)
@@ -26,6 +28,7 @@ FIELD_CUSTOM_METADATA = "custom_metadata"
 # Import registry SDK for fetching agent cards
 try:
     from a2a_reg_sdk import A2ARegClient
+
     REGISTRY_SDK_AVAILABLE = True
 except ImportError:
     REGISTRY_SDK_AVAILABLE = False
@@ -33,10 +36,11 @@ except ImportError:
 
 # Import Google ADK components
 try:
-    from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
     from google.adk.agents.invocation_context import InvocationContext
-    from google.adk.sessions.session import Session
+    from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
     from google.adk.sessions.base_session_service import BaseSessionService
+    from google.adk.sessions.session import Session
+
     ADK_AVAILABLE = True
     # Agent class is only needed for fallback wrapper
     try:
@@ -58,27 +62,27 @@ except ImportError:
 
 class SimpleSessionService(BaseSessionService if ADK_AVAILABLE else object):
     """Simple in-memory session service for RemoteA2aAgent."""
-    
+
     def __init__(self):
         if ADK_AVAILABLE and BaseSessionService:
             super().__init__()
         self._sessions: Dict[str, Any] = {}
-    
+
     async def create_session(self, session_id: str, user_id: str, app_name: str) -> Session:
         """Create a new session."""
         session = Session(id=session_id, app_name=app_name, user_id=user_id)
         self._sessions[session_id] = session
         return session
-    
+
     async def get_session(self, session_id: str) -> Session:
         """Get a session by ID."""
         return self._sessions.get(session_id)
-    
+
     async def delete_session(self, session_id: str) -> None:
         """Delete a session."""
         if session_id in self._sessions:
             del self._sessions[session_id]
-    
+
     async def list_sessions(self, user_id: str = None, app_name: str = None) -> List[Session]:
         """List sessions, optionally filtered by user_id or app_name."""
         sessions = list(self._sessions.values())
@@ -87,7 +91,7 @@ class SimpleSessionService(BaseSessionService if ADK_AVAILABLE else object):
         if app_name:
             sessions = [s for s in sessions if s.app_name == app_name]
         return sessions
-    
+
     async def get_or_create_session(self, session_id: str, user_id: str, app_name: str) -> Session:
         """Get or create a session."""
         if session_id in self._sessions:
@@ -97,12 +101,12 @@ class SimpleSessionService(BaseSessionService if ADK_AVAILABLE else object):
 
 class ResponseParser:
     """Helper class for parsing various response formats from ADK and agents."""
-    
+
     @staticmethod
     def extract_text_from_content(content_obj: Any) -> List[str]:
         """Extract text parts from a Content object."""
         text_parts = []
-        
+
         if hasattr(content_obj, FIELD_CONTENT):
             content = content_obj.content
             if isinstance(content, list):
@@ -112,14 +116,14 @@ class ResponseParser:
                 text_parts.append(content)
         elif hasattr(content_obj, FIELD_TEXT) and content_obj.text:
             text_parts.append(content_obj.text)
-        
+
         return text_parts
-    
+
     @staticmethod
     def _extract_text_from_part(part: Any) -> List[str]:
         """Extract text from a content part."""
         text_parts = []
-        
+
         if isinstance(part, str):
             text_parts.append(part)
         elif isinstance(part, dict):
@@ -127,9 +131,9 @@ class ResponseParser:
                 text_parts.append(part[FIELD_TEXT])
         elif hasattr(part, FIELD_TEXT):
             text_parts.append(part.text)
-        
+
         return text_parts
-    
+
     @staticmethod
     def extract_delegate_from_dict(data: Dict[str, Any]) -> Optional[str]:
         """Extract delegate field from various locations in a dict."""
@@ -137,11 +141,11 @@ class ResponseParser:
         if FIELD_CUSTOM_METADATA in data and isinstance(data[FIELD_CUSTOM_METADATA], dict):
             if FIELD_DELEGATE in data[FIELD_CUSTOM_METADATA]:
                 return data[FIELD_CUSTOM_METADATA][FIELD_DELEGATE]
-        
+
         # Check top level
         if FIELD_DELEGATE in data:
             return data[FIELD_DELEGATE]
-        
+
         # Check content parts for JSON with delegate
         if FIELD_CONTENT in data:
             content = data[FIELD_CONTENT]
@@ -156,9 +160,9 @@ class ResponseParser:
                                     return parsed[FIELD_DELEGATE]
                             except (json.JSONDecodeError, ValueError):
                                 pass
-        
+
         return None
-    
+
     @staticmethod
     def parse_json_response(text: str) -> Optional[Dict[str, Any]]:
         """Parse JSON from text string if it looks like JSON."""
@@ -170,29 +174,25 @@ class ResponseParser:
             except (json.JSONDecodeError, ValueError):
                 pass
         return None
-    
+
     @staticmethod
     def extract_output_from_dict(data: Dict[str, Any]) -> str:
         """Extract output text from a dictionary response."""
-        return (data.get(FIELD_OUTPUT) or 
-                data.get(FIELD_TEXT) or 
-                data.get(FIELD_MESSAGE) or 
-                data.get(FIELD_RESPONSE) or 
-                str(data))
-    
+        return data.get(FIELD_OUTPUT) or data.get(FIELD_TEXT) or data.get(FIELD_MESSAGE) or data.get(FIELD_RESPONSE) or str(data)
+
     @staticmethod
     def process_chunks(chunks: List[Any]) -> Tuple[str, Dict[str, Any]]:
         """Process async generator chunks into output text and data dict."""
         if not chunks:
             return "", {FIELD_OUTPUT: ""}
-        
+
         first_chunk = chunks[0]
-        
+
         # Handle string chunks
         if isinstance(first_chunk, str):
             result = " ".join(str(c) for c in chunks)
             return result, {FIELD_OUTPUT: result}
-        
+
         # Handle dict chunks
         if isinstance(first_chunk, dict):
             result_dict = {}
@@ -202,84 +202,78 @@ class ResponseParser:
                     break
             result = ResponseParser.extract_output_from_dict(result_dict)
             return result, result_dict
-        
+
         # Handle Content objects or Pydantic models
         if hasattr(first_chunk, FIELD_CONTENT) or hasattr(first_chunk, FIELD_TEXT) or hasattr(first_chunk, "model_dump"):
             return ResponseParser._process_model_chunks(chunks)
-        
+
         # Fallback: try to convert last chunk
         last_chunk = chunks[-1]
         return ResponseParser._extract_from_last_chunk(last_chunk)
-    
+
     @staticmethod
     def _process_model_chunks(chunks: List[Any]) -> Tuple[str, Dict[str, Any]]:
         """Process chunks that are Content objects or Pydantic models."""
         text_parts = []
         last_chunk_dict = None
-        
+
         for chunk in chunks:
             # Extract text
             chunk_text = ResponseParser.extract_text_from_content(chunk)
             text_parts.extend(chunk_text)
-            
+
             # Extract dict representation
             if hasattr(chunk, "model_dump"):
                 try:
                     chunk_dict = chunk.model_dump()
                     last_chunk_dict = chunk_dict
-                    
+
                     # Try to extract delegate
                     delegate = ResponseParser.extract_delegate_from_dict(chunk_dict)
                     if delegate and last_chunk_dict:
                         last_chunk_dict[FIELD_DELEGATE] = delegate
                 except Exception as e:
                     logger.debug(f"Error extracting from chunk: {e}")
-        
+
         # Combine text parts
         result = " ".join(text_parts) if text_parts else ""
-        
+
         # Handle empty result
         if not result:
             result, last_chunk_dict = ResponseParser._handle_empty_result(chunks)
-        
+
         # Build data dict
         data = last_chunk_dict.copy() if last_chunk_dict else {}
-        
+
         # Try to parse result as JSON for delegate
         if result and result.strip().startswith("{"):
             parsed = ResponseParser.parse_json_response(result)
             if parsed:
                 data.update(parsed)
                 result = ResponseParser.extract_output_from_dict(parsed) or result
-        
+
         # Ensure output field is set
         if FIELD_OUTPUT not in data:
             data[FIELD_OUTPUT] = result
-        
+
         return result, data
-    
+
     @staticmethod
     def _handle_empty_result(chunks: List[Any]) -> Tuple[str, Dict[str, Any]]:
         """Handle case where no text was extracted from chunks."""
         last_chunk = chunks[-1] if chunks else None
-        
+
         if last_chunk and hasattr(last_chunk, "model_dump"):
             try:
                 chunk_dict = last_chunk.model_dump()
-                result = (chunk_dict.get(FIELD_TEXT) or 
-                         chunk_dict.get(FIELD_OUTPUT) or 
-                         chunk_dict.get(FIELD_MESSAGE) or 
-                         "")
-                
+                result = chunk_dict.get(FIELD_TEXT) or chunk_dict.get(FIELD_OUTPUT) or chunk_dict.get(FIELD_MESSAGE) or ""
+
                 # Check custom_metadata
                 if not result and FIELD_CUSTOM_METADATA in chunk_dict:
                     custom_meta = chunk_dict.get(FIELD_CUSTOM_METADATA)
                     if isinstance(custom_meta, dict):
-                        result = (custom_meta.get(FIELD_OUTPUT) or 
-                                 custom_meta.get(FIELD_TEXT) or 
-                                 custom_meta.get(FIELD_MESSAGE) or 
-                                 "")
-                
+                        result = custom_meta.get(FIELD_OUTPUT) or custom_meta.get(FIELD_TEXT) or custom_meta.get(FIELD_MESSAGE) or ""
+
                 # Check content field
                 if not result and FIELD_CONTENT in chunk_dict:
                     content = chunk_dict[FIELD_CONTENT]
@@ -287,13 +281,13 @@ class ResponseParser:
                         result = content.get(FIELD_OUTPUT, "")
                     elif isinstance(content, str):
                         result = content
-                
+
                 return result, chunk_dict
             except Exception as e:
                 logger.debug(f"Error extracting from empty Content chunk: {e}")
-        
+
         return (str(last_chunk) if last_chunk else ""), {}
-    
+
     @staticmethod
     def _extract_from_last_chunk(last_chunk: Any) -> Tuple[str, Dict[str, Any]]:
         """Extract output from the last chunk as fallback."""
@@ -319,7 +313,7 @@ class ResponseParser:
 class A2ARemoteExecutor:
     """
     Remote-only executor using Google ADK RemoteA2aAgent.
-    
+
     Uses RemoteA2aAgent from google.adk.agents.remote_a2a_agent for A2A protocol communication.
     Falls back to httpx if ADK is not available.
     """
@@ -328,11 +322,12 @@ class A2ARemoteExecutor:
         """Initialize the executor."""
         self._remote_agents: Dict[str, RemoteA2aAgent] = {}
         self._registry_client = None
-        
+
         # Initialize registry client for fetching agent cards
         if REGISTRY_SDK_AVAILABLE:
             try:
                 from .config import settings
+
                 if settings.registry_api_key:
                     self._registry_client = A2ARegClient(
                         registry_url=settings.registry_url,
@@ -341,7 +336,7 @@ class A2ARemoteExecutor:
                     logger.info("Registry SDK available for fetching agent cards")
             except Exception as e:
                 logger.warning(f"Failed to initialize registry client: {e}")
-        
+
         if ADK_AVAILABLE:
             self._session_service = SimpleSessionService()
             logger.info("Using Google ADK RemoteA2aAgent for remote agent execution")
@@ -352,20 +347,21 @@ class A2ARemoteExecutor:
     def _sanitize_agent_name(self, name: str) -> str:
         """Sanitize agent name to be a valid identifier."""
         sanitized = name.lower().replace(" ", "_").replace("-", "_")
-        sanitized = re.sub(r'[^a-z0-9_]', '', sanitized)
-        
-        if sanitized and not sanitized[0].isalpha() and sanitized[0] != '_':
-            sanitized = 'agent_' + sanitized
-        
+        sanitized = re.sub(r"[^a-z0-9_]", "", sanitized)
+
+        if sanitized and not sanitized[0].isalpha() and sanitized[0] != "_":
+            sanitized = "agent_" + sanitized
+
         return sanitized or f"agent_{hash(name) % 10000}"
 
     def _create_httpx_client(self) -> Optional[httpx.AsyncClient]:
         """Create httpx client with authentication headers."""
         if not self._registry_client:
             return None
-        
+
         try:
             from .config import settings
+
             headers = {}
             if settings.registry_api_key:
                 headers["Authorization"] = f"Bearer {settings.registry_api_key}"
@@ -378,9 +374,10 @@ class A2ARemoteExecutor:
         """Get the registry card endpoint URL for an agent."""
         if not self._registry_client:
             return None
-        
+
         try:
             from .config import settings
+
             return f"{settings.registry_url}/agents/{agent_card.id}/card"
         except Exception as e:
             logger.warning(f"Failed to construct registry card URL: {e}")
@@ -390,28 +387,28 @@ class A2ARemoteExecutor:
         """Get or create a RemoteA2aAgent instance for the given card."""
         if not ADK_AVAILABLE:
             return None
-        
+
         if agent_card.id in self._remote_agents:
             return self._remote_agents[agent_card.id]
-        
+
         agent_card_url = self._get_agent_card_url(agent_card)
         if not agent_card_url:
             logger.warning(f"No agent card URL available from registry for {agent_card.id}, cannot create RemoteA2aAgent")
             return None
-        
+
         try:
             sanitized_name = self._sanitize_agent_name(agent_card.name)
             httpx_client = self._create_httpx_client()
-            
+
             remote_agent_kwargs = {
                 "name": sanitized_name,
                 "description": agent_card.description or "",
                 "agent_card": agent_card_url,
             }
-            
+
             if httpx_client:
                 remote_agent_kwargs["httpx_client"] = httpx_client
-            
+
             remote_agent = RemoteA2aAgent(**remote_agent_kwargs)
             self._remote_agents[agent_card.id] = remote_agent
             logger.info(f"Created RemoteA2aAgent for {agent_card.id} using registry card endpoint URL")
@@ -420,18 +417,12 @@ class A2ARemoteExecutor:
             logger.warning(f"Failed to create RemoteA2aAgent for {agent_card.id}: {e}", exc_info=True)
             return None
 
-    def _create_invocation_context(
-        self,
-        remote_agent: RemoteA2aAgent,
-        session: Session,
-        prompt: str,
-        invocation_id: str
-    ) -> InvocationContext:
+    def _create_invocation_context(self, remote_agent: RemoteA2aAgent, session: Session, prompt: str, invocation_id: str) -> InvocationContext:
         """Create InvocationContext for ADK execution."""
         from google.genai.types import Content, Part
-        
+
         user_content = Content(parts=[Part(text=prompt)])
-        
+
         return InvocationContext(
             invocation_id=invocation_id,
             agent=remote_agent,
@@ -450,43 +441,37 @@ class A2ARemoteExecutor:
         remote_agent = self._get_or_create_remote_agent(agent_card)
         if not remote_agent:
             raise ValueError("Failed to create RemoteA2aAgent")
-        
+
         # Create session and invocation context
         invocation_id = str(uuid.uuid4())
         session_id = f"session-{global_session.token}-{agent_card.id}"
-        
-        session = await self._session_service.get_or_create_session(
-            session_id=session_id,
-            user_id=global_session.token,
-            app_name=APP_NAME
-        )
-        
-        parent_context = self._create_invocation_context(
-            remote_agent, session, prompt, invocation_id
-        )
-        
+
+        session = await self._session_service.get_or_create_session(session_id=session_id, user_id=global_session.token, app_name=APP_NAME)
+
+        parent_context = self._create_invocation_context(remote_agent, session, prompt, invocation_id)
+
         # Execute via async generator
         async_generator = remote_agent.run_async(parent_context)
         if not async_generator:
             # Try fallback methods
             return await self._try_fallback_execution(remote_agent, prompt)
-        
+
         # Process async generator chunks
         chunks = []
         async for chunk in async_generator:
             chunks.append(chunk)
-        
+
         if not chunks:
             raise ValueError("ADK returned empty response, falling back to httpx")
-        
+
         # Parse chunks
         result, data = ResponseParser.process_chunks(chunks)
-        
+
         # Validate result
         if not result or result == EMPTY_RESPONSE_MSG:
             logger.warning(f"Empty Content object from ADK for agent {agent_card.id}, falling back to httpx for JSON response")
             raise ValueError("ADK returned empty response, falling back to httpx")
-        
+
         logger.debug(f"RemoteA2aAgent ask successful for {agent_card.id}")
         return result, data
 
@@ -505,7 +490,7 @@ class A2ARemoteExecutor:
             result = await temp_agent.run(prompt)
         else:
             raise ValueError("RemoteA2aAgent has no run_async, run_live, or run method, and Agent wrapper unavailable")
-        
+
         # Parse result
         return self._parse_adk_result(result)
 
@@ -517,16 +502,16 @@ class A2ARemoteExecutor:
                 output = ResponseParser.extract_output_from_dict(parsed)
                 return output, parsed
             return result, {FIELD_OUTPUT: result}
-        
+
         if isinstance(result, dict):
             output = ResponseParser.extract_output_from_dict(result)
             return output, result
-        
+
         if hasattr(result, FIELD_CONTENT):
             # Content model - extract text from parts
             text_parts = ResponseParser.extract_text_from_content(result)
             output = " ".join(text_parts) if text_parts else ""
-            
+
             if hasattr(result, "model_dump"):
                 data = result.model_dump()
                 # Try to parse output as JSON
@@ -537,21 +522,21 @@ class A2ARemoteExecutor:
                         output = ResponseParser.extract_output_from_dict(parsed) or output
             else:
                 data = {FIELD_OUTPUT: output}
-            
+
             return output, data
-        
+
         if hasattr(result, FIELD_TEXT):
             output = result.text
             data = result.model_dump() if hasattr(result, "model_dump") else {FIELD_OUTPUT: output}
-            
+
             # Check if output text is JSON with delegate
             parsed = ResponseParser.parse_json_response(output)
             if parsed:
                 data.update(parsed)
                 output = ResponseParser.extract_output_from_dict(parsed) or output
-            
+
             return output, data
-        
+
         # Fallback: convert to string
         output = str(result)
         parsed = ResponseParser.parse_json_response(output)
@@ -573,14 +558,8 @@ class A2ARemoteExecutor:
             "context_id": f"runner-{agent_card.id}",
             "task_id": f"task-{agent_card.id}",
             "metadata": {
-                "agent_messages": [
-                    {"role": m.role, "content": m.content, "ts": m.ts.isoformat()}
-                    for m in agent_messages
-                ],
-                "global_messages": [
-                    {"role": m.role, "content": m.content, "ts": m.ts.isoformat()}
-                    for m in global_session.messages
-                ],
+                "agent_messages": [{"role": m.role, "content": m.content, "ts": m.ts.isoformat()} for m in agent_messages],
+                "global_messages": [{"role": m.role, "content": m.content, "ts": m.ts.isoformat()} for m in global_session.messages],
                 "shared_state": global_session.shared_state,
                 "agent_id": agent_card.id,
             },
@@ -596,14 +575,14 @@ class A2ARemoteExecutor:
         """Fallback HTTP executor for agents that don't support A2A protocol."""
         payload = self._build_httpx_payload(prompt, agent_card, agent_messages, global_session)
         method = agent_card.method.upper()
-        
+
         try:
             async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
                 if method == "POST":
                     resp = await client.post(agent_card.endpoint, json=payload)
                 else:
                     resp = await client.request(method, agent_card.endpoint, json=payload)
-                
+
                 resp.raise_for_status()
                 data = resp.json()
                 output = ResponseParser.extract_output_from_dict(data)
@@ -612,11 +591,11 @@ class A2ARemoteExecutor:
             error_msg = f"Agent endpoint returned {e.response.status_code}: {e.response.text[:200]}"
             logger.error(f"Agent {agent_card.id} endpoint error: {error_msg}")
             raise ValueError(f"Agent {agent_card.name} endpoint unreachable: {e.response.status_code}")
-        except httpx.ConnectError as e:
+        except httpx.ConnectError:
             error_msg = f"Cannot connect to agent endpoint {agent_card.endpoint}"
             logger.error(f"Agent {agent_card.id} connection error: {error_msg}")
             raise ValueError(f"Agent {agent_card.name} service is not running at {agent_card.endpoint}")
-        except httpx.TimeoutException as e:
+        except httpx.TimeoutException:
             error_msg = f"Timeout connecting to agent endpoint {agent_card.endpoint}"
             logger.error(f"Agent {agent_card.id} timeout error: {error_msg}")
             raise ValueError(f"Agent {agent_card.name} request timed out")

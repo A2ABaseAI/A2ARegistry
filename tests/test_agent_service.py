@@ -1,12 +1,11 @@
 """Tests for app/services/agent_service.py - Agent service functionality."""
 
-import pytest
 from unittest.mock import MagicMock, patch
-from datetime import datetime, timezone
 
-from registry.services.agent_service import AgentService
+import pytest
+
 from registry.models.agent_core import AgentRecord, AgentVersion
-from registry.schemas.agent_card_spec import AgentCardSpec
+from registry.services.agent_service import AgentService
 
 from .base_test import BaseTest
 
@@ -39,9 +38,7 @@ class TestAgentService(BaseTest):
         }
         card_hash = "test_hash_1234567890123456789012"
 
-        record = agent_service.create_or_update_agent_record(
-            card_data, card_hash, "default", "test-publisher", "test-agent", "1.0.0"
-        )
+        record = agent_service.create_or_update_agent_record(card_data, card_hash, "default", "test-publisher", "test-agent", "1.0.0")
 
         assert record is not None
         assert record.tenant_id == "default"
@@ -83,9 +80,7 @@ class TestAgentService(BaseTest):
         }
         card_hash = "test_hash_1234567890123456789012"
 
-        record = agent_service.create_or_update_agent_record(
-            card_data, card_hash, "default", "test-publisher", "test-agent", "2.0.0"
-        )
+        record = agent_service.create_or_update_agent_record(card_data, card_hash, "default", "test-publisher", "test-agent", "2.0.0")
 
         assert record.id == "existing-agent"
         assert record.latest_version == "2.0.0"
@@ -205,9 +200,7 @@ class TestAgentService(BaseTest):
             assert agent_record is not None
 
             # Verify agent version was created
-            agent_version = (
-                db_session.query(AgentVersion).filter_by(agent_id=result["agentId"], version="1.0.0").first()
-            )
+            agent_version = db_session.query(AgentVersion).filter_by(agent_id=result["agentId"], version="1.0.0").first()
             assert agent_version is not None
 
     def test_publish_agent_with_card_url(self, agent_service, db_session):
@@ -233,14 +226,10 @@ class TestAgentService(BaseTest):
             mock_index.index_version = MagicMock()
             mock_search.return_value = mock_index
 
-            result = agent_service.publish_agent(
-                card_data, "https://test.example.com/card.json", False, "default"
-            )
+            result = agent_service.publish_agent(card_data, "https://test.example.com/card.json", False, "default")
 
             assert "agentId" in result
-            agent_version = (
-                db_session.query(AgentVersion).filter_by(agent_id=result["agentId"], version="1.0.0").first()
-            )
+            agent_version = db_session.query(AgentVersion).filter_by(agent_id=result["agentId"], version="1.0.0").first()
             assert agent_version.card_url == "https://test.example.com/card.json"
 
     def test_publish_agent_invalid_card(self, agent_service):
@@ -308,4 +297,3 @@ class TestAgentService(BaseTest):
         # The registry service should handle public agents
         # Since we're using the real registry service in tests, this may vary
         assert isinstance(has_access, bool)
-

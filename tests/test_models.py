@@ -1,26 +1,23 @@
 """Unit tests for a2a_reg_sdk.models - A2A Protocol specification models and builders."""
 
 import pytest
-from datetime import datetime
-
 from a2a_reg_sdk.models import (
-    AgentProvider,
-    AgentCapabilities,
-    SecurityScheme,
-    AgentSkill,
-    AgentInterface,
-    AgentCardSignature,
-    AgentCardSpec,
     Agent,
-    AgentTeeDetails,
-    AgentProviderBuilder,
-    AgentCapabilitiesBuilder,
-    SecuritySchemeBuilder,
-    AgentSkillBuilder,
-    AgentInterfaceBuilder,
-    AgentCardSignatureBuilder,
-    AgentCardSpecBuilder,
     AgentBuilder,
+    AgentCapabilities,
+    AgentCapabilitiesBuilder,
+    AgentCardSignature,
+    AgentCardSignatureBuilder,
+    AgentCardSpec,
+    AgentCardSpecBuilder,
+    AgentInterface,
+    AgentInterfaceBuilder,
+    AgentProvider,
+    AgentProviderBuilder,
+    AgentSkill,
+    AgentSkillBuilder,
+    SecurityScheme,
+    SecuritySchemeBuilder,
 )
 
 
@@ -292,9 +289,7 @@ class TestAgentCardSpec:
             "version": "1.0.0",
             "capabilities": {"streaming": True},
             "securitySchemes": [{"type": "apiKey", "location": "header", "name": "X-API-Key"}],
-            "skills": [
-                {"id": "find_recipe", "name": "Find Recipe", "description": "Find recipes", "tags": ["cooking"]}
-            ],
+            "skills": [{"id": "find_recipe", "name": "Find Recipe", "description": "Find recipes", "tags": ["cooking"]}],
             "interface": {
                 "preferredTransport": "jsonrpc",
                 "defaultInputModes": ["text/plain"],
@@ -309,10 +304,8 @@ class TestAgentCardSpec:
     def test_agent_card_spec_to_dict(self):
         """Test converting AgentCardSpec to dictionary."""
         capabilities = AgentCapabilities(streaming=True)
-        security_schemes = [SecurityScheme(type="apiKey")]
-        skills = [
-            AgentSkill(id="find_recipe", name="Find Recipe", description="Find recipes", tags=["cooking"])
-        ]
+        security_schemes = {"apiKey": SecurityScheme(type="apiKey")}
+        skills = [AgentSkill(id="find_recipe", name="Find Recipe", description="Find recipes", tags=["cooking"])]
         interface = AgentInterface(
             preferredTransport="jsonrpc",
             defaultInputModes=["text/plain"],
@@ -404,9 +397,7 @@ class TestAgent:
         """Test Agent with AgentCardSpec."""
         capabilities = AgentCapabilities(streaming=True)
         security_schemes = [SecurityScheme(type="apiKey")]
-        skills = [
-            AgentSkill(id="skill1", name="Skill 1", description="First skill", tags=["test"])
-        ]
+        skills = [AgentSkill(id="skill1", name="Skill 1", description="First skill", tags=["test"])]
         interface = AgentInterface(
             preferredTransport="jsonrpc",
             defaultInputModes=["text/plain"],
@@ -475,13 +466,7 @@ class TestSecuritySchemeBuilder:
 
     def test_build_api_key_scheme(self):
         """Test building an API key SecurityScheme."""
-        scheme = (
-            SecuritySchemeBuilder("apiKey")
-            .location("header")
-            .name("X-API-Key")
-            .credentials("test_key")
-            .build()
-        )
+        scheme = SecuritySchemeBuilder("apiKey").location("header").name("X-API-Key").credentials("test_key").build()
         assert scheme.type == "apiKey"
         assert scheme.location == "header"
         assert scheme.name == "X-API-Key"
@@ -489,13 +474,7 @@ class TestSecuritySchemeBuilder:
 
     def test_build_oauth2_scheme(self):
         """Test building an OAuth2 SecurityScheme."""
-        scheme = (
-            SecuritySchemeBuilder("oauth2")
-            .flow("client_credentials")
-            .token_url("https://example.com/token")
-            .scopes(["read", "write"])
-            .build()
-        )
+        scheme = SecuritySchemeBuilder("oauth2").flow("client_credentials").token_url("https://example.com/token").scopes(["read", "write"]).build()
         assert scheme.type == "oauth2"
         assert scheme.flow == "client_credentials"
         assert scheme.tokenUrl == "https://example.com/token"
@@ -545,13 +524,7 @@ class TestAgentCardSignatureBuilder:
 
     def test_build_signature(self):
         """Test building an AgentCardSignature using the builder."""
-        signature = (
-            AgentCardSignatureBuilder()
-            .algorithm("RS256")
-            .signature("test_signature")
-            .jwks_url("https://example.com/.well-known/jwks.json")
-            .build()
-        )
+        signature = AgentCardSignatureBuilder().algorithm("RS256").signature("test_signature").jwks_url("https://example.com/.well-known/jwks.json").build()
         assert signature.algorithm == "RS256"
         assert signature.signature == "test_signature"
         assert signature.jwksUrl == "https://example.com/.well-known/jwks.json"
@@ -647,4 +620,3 @@ class TestAgentBuilder:
         assert agent.is_active is True
         assert agent.agent_card == card_spec
         assert agent.skills == [skill]
-

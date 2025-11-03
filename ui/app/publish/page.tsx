@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { agentApi, authApi } from '@/lib/api';
 import { formatErrorMessage } from '@/lib/error-handler';
@@ -21,11 +21,7 @@ export default function PublishPage() {
     cardJson: '',
   });
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
       router.push('/login');
@@ -50,7 +46,11 @@ export default function PublishPage() {
         setError('Failed to verify authentication');
       }
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

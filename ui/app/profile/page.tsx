@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { formatErrorMessage } from '@/lib/error-handler';
@@ -13,11 +13,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
       router.push('/login');
@@ -38,7 +34,11 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const handleLogout = async () => {
     try {

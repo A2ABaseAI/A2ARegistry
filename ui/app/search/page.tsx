@@ -132,7 +132,7 @@ export default function SearchPage() {
           <div className="flex flex-wrap gap-2">
             {searchQuery && (
               <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm flex items-center space-x-2">
-                <span>Query: "{searchQuery}"</span>
+                <span>Query: &quot;{searchQuery}&quot;</span>
                 <button
                   onClick={() => {
                     setSearchQuery('');

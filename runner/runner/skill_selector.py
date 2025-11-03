@@ -1,4 +1,5 @@
-from typing import List, Dict, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
+
 from .models import A2AAgentCard
 
 
@@ -38,4 +39,3 @@ class SkillSelector:
         best_id = max(scores, key=lambda k: scores[k])
         best_agent = next(a for a in agents if a.id == best_id)
         return best_agent, scores
-

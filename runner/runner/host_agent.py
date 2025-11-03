@@ -1,18 +1,18 @@
-from typing import Dict
 import logging
-from fastapi import HTTPException
-from .memory import SessionMemory
 
-logger = logging.getLogger(__name__)
-from .agent_registry import AgentRegistry
-from .skill_selector import SkillSelector
+from fastapi import HTTPException
+
 from .a2a_executor import A2ARemoteExecutor
+from .agent_registry import AgentRegistry
+from .memory import SessionMemory
 from .models import (
+    DelegationTrace,
     HostRunRequest,
     HostRunResponse,
-    A2AAgentCard,
-    DelegationTrace,
 )
+from .skill_selector import SkillSelector
+
+logger = logging.getLogger(__name__)
 
 
 class HostAgent:
@@ -83,11 +83,11 @@ class HostAgent:
             # delegate is a dict: {agent_id?, prompt, context_overrides?}
             if not isinstance(delegate, dict):
                 raise HTTPException(status_code=400, detail="Delegate must be a dict")
-            
+
             delegate_prompt = delegate.get("prompt")
             if not delegate_prompt:
                 raise HTTPException(status_code=400, detail="Delegate must include 'prompt' field")
-            
+
             sub_req = HostRunRequest(
                 prompt=delegate_prompt,
                 token=req.token,
@@ -99,9 +99,7 @@ class HostAgent:
 
             # update shared state with delegated result
             self.memory.update_global_state(req.token, sub_resp.global_session.shared_state)
-            combined_output = (
-                f"{output}\n\n[Delegated to {sub_resp.chosen_agent_id} → {sub_resp.output}]"
-            )
+            combined_output = f"{output}\n\n[Delegated to {sub_resp.chosen_agent_id} → {sub_resp.output}]"
             global_session = self.memory.append_global_agent(req.token, combined_output)
 
             return HostRunResponse(
@@ -128,4 +126,3 @@ class HostAgent:
                 return card, {}
         agents = self.registry.list_agents()
         return self.selector.pick_best(req.prompt, agents)
-

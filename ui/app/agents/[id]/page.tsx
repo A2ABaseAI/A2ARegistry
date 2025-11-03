@@ -455,7 +455,7 @@ function TestAgentTab({
           Testing Agent with A2A Card
         </h3>
         <p className="text-sm text-blue-800 dark:text-blue-300">
-          This test uses the agent card definition to call the agent's endpoint. 
+          This test uses the agent card definition to call the agent&apos;s endpoint. 
           The card provides the URL, endpoints, and schema information needed to interact with the agent.
         </p>
       </div>
@@ -491,7 +491,7 @@ function TestAgentTab({
             disabled={testLoading}
             className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white rounded-lg transition-colors text-sm"
           >
-            Quick Test: "hello what you do?"
+            Quick Test: &quot;hello what you do?&quot;
           </button>
         </div>
 

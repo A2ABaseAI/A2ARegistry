@@ -1,12 +1,14 @@
-from typing import Optional, Dict, List, Any
-from pydantic import BaseModel
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel
 
 
 class A2AAgentCard(BaseModel):
     """
     Remote-only A2A Agent Card.
     """
+
     id: str
     name: str
     description: Optional[str] = None
@@ -49,6 +51,7 @@ class DelegateRequest(BaseModel):
     This is what a REMOTE AGENT can send back to the HOST
     to ask it to call another agent.
     """
+
     agent_id: Optional[str] = None
     prompt: str
     context_overrides: Optional[Dict[str, Any]] = None
@@ -58,6 +61,7 @@ class DelegationTrace(BaseModel):
     """
     Used to prevent infinite delegation loops.
     """
+
     chain: List[str] = []
     hops: int = 0
 
@@ -89,4 +93,3 @@ class HostRunResponse(BaseModel):
     session: AgentSession
     global_session: GlobalSession
     routing_scores: Dict[str, float] = {}
-

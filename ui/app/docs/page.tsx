@@ -130,7 +130,7 @@ export default function DocsPage() {
               A2A stands for <strong>Agent-to-Agent</strong> — a protocol and ecosystem that enables AI agents to discover, communicate, and collaborate with each other seamlessly.
             </p>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
-              Think of it like a marketplace where AI agents can find each other, understand each other's capabilities, and work together to solve complex problems. Just like how humans collaborate by understanding what each person can do, A2A agents can discover each other's skills and capabilities.
+              Think of it like a marketplace where AI agents can find each other, understand each other&apos;s capabilities, and work together to solve complex problems. Just like how humans collaborate by understanding what each person can do, A2A agents can discover each other&apos;s skills and capabilities.
             </p>
 
             <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -138,7 +138,7 @@ export default function DocsPage() {
                 <Network className="h-8 w-8 text-primary-600 dark:text-primary-400 mb-3" />
                 <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Agent Discovery</h4>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Agents can discover each other's capabilities and find the right agents for specific tasks.
+                  Agents can discover each other&apos;s capabilities and find the right agents for specific tasks.
                 </p>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -179,7 +179,7 @@ export default function DocsPage() {
                       <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                       <span className="font-semibold text-gray-900 dark:text-white">Customer asks question</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">"Where is my package?"</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">&quot;Where is my package?&quot;</p>
                   </div>
                 </div>
                 
@@ -217,7 +217,7 @@ export default function DocsPage() {
                       <Network className="h-5 w-5 text-green-600 dark:text-green-400" />
                       <span className="font-semibold text-gray-900 dark:text-white">Delegates to UPS Tracking Agent</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Agent detected UPS tracking number (starts with "1Z")</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Agent detected UPS tracking number (starts with &quot;1Z&quot;)</p>
                   </div>
                 </div>
 
@@ -250,7 +250,7 @@ export default function DocsPage() {
 
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 mt-8">What is the A2A Registry?</h3>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              The <strong>A2A Agent Registry</strong> is like a phone book or directory for AI agents. It's a centralized service where:
+              The <strong>A2A Agent Registry</strong> is like a phone book or directory for AI agents. It&apos;s a centralized service where:
             </p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 mb-6">
               <li>Agents can <strong>register</strong> themselves and describe their capabilities</li>
@@ -261,7 +261,7 @@ export default function DocsPage() {
 
             <InfoBox type="tip">
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                <strong>💡 Think of it this way:</strong> Just like you use Google to find websites, agents use the A2A Registry to find other agents. The registry tells agents "who can do what" and "how to talk to them."
+                <strong>💡 Think of it this way:</strong> Just like you use Google to find websites, agents use the A2A Registry to find other agents. The registry tells agents &quot;who can do what&quot; and &quot;how to talk to them.&quot;
               </p>
             </InfoBox>
           </div>
@@ -276,7 +276,7 @@ export default function DocsPage() {
         <div className="space-y-6">
           <div className="prose dark:prose-invert max-w-none">
             <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
-              Let's walk through building your first A2A-integrated application step by step!
+              Let&apos;s walk through building your first A2A-integrated application step by step!
             </p>
 
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Step 1: Install the SDK</h3>
@@ -313,7 +313,7 @@ print("✅ Successfully authenticated!")`}
             </CodeBlock>
             <InfoBox type="tip">
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                <strong>💡 Tip:</strong> The SDK automatically handles token management for you. It will authenticate, refresh tokens, and manage session state - you don't need to worry about tokens manually!
+                <strong>💡 Tip:</strong> The SDK automatically handles token management for you. It will authenticate, refresh tokens, and manage session state - you don&apos;t need to worry about tokens manually!
               </p>
             </InfoBox>
 
@@ -415,7 +415,7 @@ print(f"Endpoint: {agent_card.url}")
 
             <InfoBox>
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                <strong>🎉 Congratulations!</strong> You've learned how to use the A2A Registry SDK to discover and explore agents. The SDK makes it much easier than using REST API calls directly!
+                <strong>🎉 Congratulations!</strong> You&apos;ve learned how to use the A2A Registry SDK to discover and explore agents. The SDK makes it much easier than using REST API calls directly!
               </p>
             </InfoBox>
           </div>
@@ -1000,7 +1000,7 @@ print("✅ Authenticated successfully!")
             </CodeBlock>
             <InfoBox type="tip">
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                <strong>💡 Tip:</strong> The SDK automatically handles token authentication, refresh, and management. You don't need to manually handle tokens!
+                <strong>💡 Tip:</strong> The SDK automatically handles token authentication, refresh, and management. You don&apos;t need to manually handle tokens!
               </p>
             </InfoBox>
 
@@ -1323,7 +1323,7 @@ SearchResults results = client.searchAgents(
           Need Help?
         </h3>
         <p className="text-gray-600 dark:text-gray-400 mb-4">
-          Can't find what you're looking for? Check out the interactive Swagger documentation, explore examples in the repository, or visit our GitHub.
+          Can&apos;t find what you&apos;re looking for? Check out the interactive Swagger documentation, explore examples in the repository, or visit our GitHub.
         </p>
         <div className="flex gap-4">
           <Link

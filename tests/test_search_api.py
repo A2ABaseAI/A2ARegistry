@@ -1,8 +1,9 @@
 """Tests for app/api/search.py - Search API endpoints."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 
 from registry.main import app
 from tests.base_test import BaseTest
@@ -178,4 +179,3 @@ class TestSearchAPI(BaseTest):
         assert isinstance(data["items"], list)
         assert isinstance(data["count"], int)
         assert data["count"] >= 0
-

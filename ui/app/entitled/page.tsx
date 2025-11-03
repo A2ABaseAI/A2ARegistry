@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { agentApi, Agent } from '@/lib/api';
 import { formatErrorMessage } from '@/lib/error-handler';
@@ -15,11 +15,7 @@ export default function EntitledPage() {
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
       router.push('/login');
@@ -38,9 +34,9 @@ export default function EntitledPage() {
         setLoading(false);
       }
     }
-  };
+  }, [router, loadEntitledAgents]);
 
-  const loadEntitledAgents = async () => {
+  const loadEntitledAgents = useCallback(async () => {
     try {
       setLoading(true);
       const response = await agentApi.getEntitledAgents(20, 0);
@@ -56,7 +52,11 @@ export default function EntitledPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   if (!isAuthenticated) {
     return (
@@ -78,7 +78,7 @@ export default function EntitledPage() {
           </h1>
         </div>
         <p className="text-gray-600 dark:text-gray-400">
-          Agents you have access to, including public agents and those you're entitled to
+          Agents you have access to, including public agents and those you&apos;re entitled to
         </p>
       </div>
 
@@ -119,7 +119,7 @@ export default function EntitledPage() {
             No entitled agents found
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            You don't have access to any private agents yet.
+            You don&apos;t have access to any private agents yet.
           </p>
           <div className="space-x-4">
             <Link

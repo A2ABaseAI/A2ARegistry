@@ -1,10 +1,10 @@
 """
 Tests for the A2A Host Orchestrator.
 """
-import pytest
-from runner.models import A2AAgentCard, HostRunRequest
+
 from runner.agent_registry import AgentRegistry
 from runner.memory import SessionMemory
+from runner.models import A2AAgentCard
 from runner.skill_selector import SkillSelector
 
 
@@ -26,18 +26,18 @@ def test_memory():
     memory = SessionMemory()
     token = "test-token"
     agent_id = "test-agent"
-    
+
     # Test global session
     global_session = memory.get_global(token)
     assert global_session.token == token
     assert len(global_session.messages) == 0
-    
+
     # Test appending messages
     memory.append_global_user(token, "Hello")
     global_session = memory.get_global(token)
     assert len(global_session.messages) == 1
     assert global_session.messages[0].content == "Hello"
-    
+
     # Test agent session
     agent_session = memory.get_agent_session(token, agent_id)
     assert agent_session.agent_id == agent_id
@@ -65,11 +65,10 @@ def test_skill_selector():
             priority=2,
         ),
     ]
-    
+
     prompt = "check my shopify orders"
     scores = selector.score(prompt, agents)
     assert scores["shopify"] > scores["ups"]
-    
+
     best_agent, all_scores = selector.pick_best(prompt, agents)
     assert best_agent.id == "shopify"
-

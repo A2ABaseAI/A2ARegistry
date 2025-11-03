@@ -103,6 +103,7 @@ class CardService:
                 # This ensures securitySchemes is dict and defaultInputModes/defaultOutputModes are at top level
                 # Use by_alias=True to serialize 'in_' as 'in' for ADK compatibility
                 import json
+
                 validated_card_data = json.loads(card.model_dump_json(by_alias=True))
                 card_data = validated_card_data
             except Exception as exc:

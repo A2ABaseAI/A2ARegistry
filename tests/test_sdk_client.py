@@ -1,13 +1,13 @@
 """Tests for a2a_reg_sdk.client - A2A Registry Client SDK."""
 
-import pytest
-from unittest.mock import MagicMock, patch, Mock
-import requests
-from requests.exceptions import RequestException, Timeout, ConnectionError
+from unittest.mock import MagicMock, patch
 
+import pytest
+import requests
 from a2a_reg_sdk.client import A2ARegClient
-from a2a_reg_sdk.exceptions import A2AError, AuthenticationError, ValidationError, NotFoundError
+from a2a_reg_sdk.exceptions import A2AError, AuthenticationError, NotFoundError
 from a2a_reg_sdk.models import Agent, AgentCardSpec
+from requests.exceptions import ConnectionError, Timeout
 
 
 class TestA2ARegClient:
@@ -269,11 +269,7 @@ class TestA2ARegClient:
         client = A2ARegClient(registry_url="https://registry.example.com", api_key="test-key")
 
         capabilities = AgentCapabilitiesBuilder().streaming(False).build()
-        agent = (
-            AgentBuilder("Test Agent", "A test agent", "1.0.0", "test-provider")
-            .with_capabilities(capabilities)
-            .build()
-        )
+        agent = AgentBuilder("Test Agent", "A test agent", "1.0.0", "test-provider").with_capabilities(capabilities).build()
 
         publish_response = MagicMock()
         publish_response.status_code = 201
@@ -404,4 +400,3 @@ class TestA2ARegClient:
         client.close()
         # Can't easily verify session is closed, but it should handle multiple closes
         client.close()
-
