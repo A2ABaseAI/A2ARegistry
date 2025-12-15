@@ -131,7 +131,7 @@ jobs:
         bandit -r registry/ runner/ -f json -o bandit-report.json || true
     
     - name: Upload security report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: security-report
         path: bandit-report.json
