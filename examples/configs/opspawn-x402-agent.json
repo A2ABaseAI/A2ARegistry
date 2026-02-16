@@ -1,0 +1,118 @@
+{
+  "name": "OpSpawn AI Agent",
+  "description": "AI agent providing screenshot, PDF, document generation, code security scanning, dependency auditing, and Gemini-powered AI analysis services via x402 V2 micropayments. Pay per request with USDC on Base, SKALE Europa (gasless), or Arbitrum One.",
+  "url": "https://a2a.opspawn.com/",
+  "provider": {
+    "organization": "OpSpawn",
+    "url": "https://opspawn.com"
+  },
+  "version": "2.2.0",
+  "documentationUrl": "https://github.com/opspawn/a2a-x402-gateway",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": true
+  },
+  "securitySchemes": [
+    {
+      "type": "x402",
+      "description": "x402 V2 micropayments via HTTP 402 Payment Required. Payment in USDC on Base or SKALE Europa (gasless).",
+      "location": "header",
+      "name": "Payment-Signature"
+    }
+  ],
+  "interface": {
+    "preferredTransport": "jsonrpc",
+    "additionalInterfaces": [
+      {
+        "transport": "http",
+        "url": "https://a2a.opspawn.com/"
+      }
+    ],
+    "defaultInputModes": ["text/plain", "application/json"],
+    "defaultOutputModes": ["image/png", "application/pdf", "text/html", "text/plain", "application/json"]
+  },
+  "skills": [
+    {
+      "id": "screenshot",
+      "name": "Web Screenshot",
+      "description": "Capture a screenshot of any URL. Returns PNG image with optional Gemini AI analysis of page content.",
+      "tags": ["screenshot", "web", "capture", "image", "x402", "gemini"],
+      "examples": [
+        "Take a screenshot of https://example.com",
+        "Capture and analyze the homepage of a competitor"
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["image/png", "image/jpeg", "text/plain"]
+    },
+    {
+      "id": "ai-analysis",
+      "name": "AI Content Analysis (Gemini)",
+      "description": "Analyze, summarize, or extract insights from text content using Google Gemini 2.0 Flash.",
+      "tags": ["ai", "analysis", "summary", "gemini", "nlp"],
+      "examples": [
+        "Analyze: The future of autonomous AI agents...",
+        "Summarize this article about blockchain payments"
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["text/plain", "application/json"]
+    },
+    {
+      "id": "markdown-to-pdf",
+      "name": "Markdown to PDF",
+      "description": "Convert markdown text to a styled PDF document.",
+      "tags": ["markdown", "pdf", "document", "conversion"],
+      "examples": [
+        "Convert to PDF: # Project Report\n\n## Summary\n\nKey findings..."
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["application/pdf"]
+    },
+    {
+      "id": "markdown-to-html",
+      "name": "Markdown to HTML",
+      "description": "Convert markdown to styled HTML. Free endpoint - no payment required.",
+      "tags": ["markdown", "html", "conversion", "free"],
+      "examples": [
+        "Convert to HTML: # Hello World\n\nThis is a test."
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["text/html"]
+    },
+    {
+      "id": "code-scan",
+      "name": "Code Security Scan",
+      "description": "Scan source code for security vulnerabilities including SQL injection, XSS, command injection, path traversal, hardcoded secrets, and insecure crypto.",
+      "tags": ["security", "code-scan", "vulnerability", "sast"],
+      "examples": [
+        "Scan this JavaScript code for vulnerabilities",
+        "Check Python code for SQL injection risks"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "dep-audit",
+      "name": "Dependency Vulnerability Audit",
+      "description": "Scan dependency lists for known CVEs using OSV.dev. Supports npm, pip, and Go ecosystems.",
+      "tags": ["security", "dep-audit", "vulnerability", "dependencies", "cve"],
+      "examples": [
+        "Audit my npm dependencies for vulnerabilities",
+        "Check pip requirements.txt for known CVEs"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "x402-test",
+      "name": "x402 Test Flow",
+      "description": "Test x402 payment flow with zero cost. Validates x402 client integration without spending real money.",
+      "tags": ["x402", "test", "integration", "validation", "free"],
+      "examples": [
+        "Test x402 payment flow"
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["application/json"]
+    }
+  ]
+}
